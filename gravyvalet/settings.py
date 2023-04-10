@@ -75,23 +75,23 @@ WSGI_APPLICATION = 'gravyvalet.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # },
     'default': {
-        'CONN_MAX_AGE': 0,
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('OSF_DB_NAME', 'gravyvalet'),
-        'USER': os.environ.get('OSF_DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
-        'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('OSF_DB_PORT', '5432'),
-        'ATOMIC_REQUESTS': True,
-        'TEST': {
-            'SERIALIZE': False,
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     },
+    # 'default': {
+    #     'CONN_MAX_AGE': 0,
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': os.environ.get('OSF_DB_NAME', 'gravyvalet'),
+    #     'USER': os.environ.get('OSF_DB_USER', 'postgres'),
+    #     'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
+    #     'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
+    #     'PORT': os.environ.get('OSF_DB_PORT', '5432'),
+    #     'ATOMIC_REQUESTS': True,
+    #     'TEST': {
+    #         'SERIALIZE': False,
+    #     },
+    # },
 
 }
 

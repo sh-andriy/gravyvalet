@@ -1,10 +1,10 @@
 flake:
-    flake8
+	flake8
 
 black:
-    black -S gravyvalet charon
+	black -S gravyvalet charon
 
 isort:
-    isort .
+	isort .
 
 lintall: black isort flake

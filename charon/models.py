@@ -1,4 +1,9 @@
-from django.db import models
+import bson
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.exceptions import ValidationError
+from django.db import connections, models
+from django.db.models import ForeignKey
 from django.db.models.query import QuerySet
 from django_extensions.db.models import TimeStampedModel
 
@@ -12,7 +17,7 @@ class QuerySetExplainMixin:
         for item in args:
             extra_arguments = (
                 '{} {}'.format(extra_arguments, item)
-                if isinstance(item, basestring)
+                if isinstance(item, str)
                 else extra_arguments
             )
         cursor = connections[self.db].cursor()
@@ -67,14 +72,6 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
-            if isinstance(data, basestring):
-                # Some models (CitationStyle) have an _id that is not a bson
-                # Looking up things by pk will never work with a basestring
-                return (
-                    cls.objects.get(_id=data)
-                    if not select_for_update
-                    else cls.objects.filter(_id=data).select_for_update().get()
-                )
             return (
                 cls.objects.get(pk=data)
                 if not select_for_update
@@ -146,6 +143,6 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
         ):
             try:
                 self.full_clean()
-            except DjangoValidationError as err:
+            except ValidationError as err:
                 raise ValidationError(*err.args)
         return super(BaseModel, self).save(*args, **kwargs)

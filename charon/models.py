@@ -1,8 +1,10 @@
 import bson
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
-from django.db import connections, models
+from django.db import (
+    connections,
+    models,
+)
 from django.db.models import ForeignKey
 from django.db.models.query import QuerySet
 from django_extensions.db.models import TimeStampedModel

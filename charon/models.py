@@ -13,6 +13,10 @@ from django_extensions.db.models import TimeStampedModel
 # Create your models here.
 
 
+def generate_object_id():
+    return str(bson.ObjectId())
+
+
 class QuerySetExplainMixin:
     def explain(self, *args):
         extra_arguments = ''
@@ -148,3 +152,34 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
             except ValidationError as err:
                 raise ValidationError(*err.args)
         return super(BaseModel, self).save(*args, **kwargs)
+
+
+class BaseIDMixin(models.Model):
+    class Meta:
+        abstract = True
+
+
+class ObjectIDMixin(BaseIDMixin):
+    primary_identifier_name = '_id'
+
+    _id = models.CharField(
+        max_length=24, default=generate_object_id, unique=True, db_index=True
+    )
+
+    def __unicode__(self):
+        return '_id: {}'.format(self._id)
+
+    @classmethod
+    def load(cls, q, select_for_update=False):
+        try:
+            return (
+                cls.objects.get(_id=q)
+                if not select_for_update
+                else cls.objects.filter(_id=q).select_for_update().get()
+            )
+        except cls.DoesNotExist:
+            # modm doesn't throw exceptions when loading things that don't exist
+            return None
+
+    class Meta:
+        abstract = True

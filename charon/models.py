@@ -4,18 +4,10 @@ import settings as charon_settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import ArrayField  # replace with sqlite equiv?
 from django.core.exceptions import ValidationError
-from django.db import (
-    connections,
-    models,
-)
-from django.db.models import (
-    DateTimeField,
-    ForeignKey,
-    TextField,
-)
+from django.db import connections, models
+from django.db.models import DateTimeField, ForeignKey, TextField
 from django.db.models.query import QuerySet
 from django_extensions.db.models import TimeStampedModel
-
 
 SENSITIVE_DATA_KEY = jwe.kdf(
     charon_settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
@@ -31,8 +23,8 @@ def generate_object_id():
 
 
 def ensure_bytes(value):
-    """Helper function to ensure all inputs are encoded to the proper value utf-8 value regardless
-    of input type"""
+    """Helper function to ensure all inputs are encoded to the proper value utf-8 value
+    regardless of input type"""
     if isinstance(value, bytes):
         return value
     return value.encode('utf-8')
@@ -68,8 +60,9 @@ class NaiveDatetimeException(Exception):
 
 class EncryptedTextField(TextField):
     """
-    This field transparently encrypts data in the database. It should probably only be used with PG
-    unless the user takes into account the db specific trade-offs with TextFields.
+    This field transparently encrypts data in the database. It should probably only be
+    used with PG unless the user takes into account the db specific trade-offs with
+    TextFields.
     """
 
     prefix = 'jwe:::'
@@ -180,12 +173,12 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
         #
         # See https://docs.djangoproject.com/en/2.2/ref/models/instances/#django.db.models.Model.refresh_from_db  # noqa: E501
         #
-        # However, the default `refresh_from_db()` doesn't refresh related fields. Neither can we
-        # refresh related field(s) since it will inevitably cause infinite loop; and
-        # Many/One-to-Many relations add to the complexity.
+        # However, the default `refresh_from_db()` doesn't refresh related fields.
+        # Neither can we refresh related field(s) since it will inevitably cause
+        # infinite loop; and Many/One-to-Many relations add to the complexity.
         #
-        # The recommended behavior is to explicitly refresh the fields when necessary. In order to
-        # preserve pre-upgrade behavior, our customization only reloads GFKs.
+        # The recommended behavior is to explicitly refresh the fields when necessary.
+        # In order to preserve pre-upgrade behavior, our customization only reloads GFKs
         for f in self._meta._get_fields(reverse=False):
             # Note: the following `if` condition is how django internally identifies GFK
             if (

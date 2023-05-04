@@ -1,7 +1,6 @@
 import bson
 import jwe
-
-
+import settings as charon_settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import ArrayField  # replace with sqlite equiv?
 from django.core.exceptions import ValidationError
@@ -17,10 +16,11 @@ from django.db.models import (
 from django.db.models.query import QuerySet
 from django_extensions.db.models import TimeStampedModel
 
-import settings as charon_settings
 
-SENSITIVE_DATA_KEY = jwe.kdf(charon_settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
-                             charon_settings.SENSITIVE_DATA_SALT.encode('utf-8'))
+SENSITIVE_DATA_KEY = jwe.kdf(
+    charon_settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
+    charon_settings.SENSITIVE_DATA_SALT.encode('utf-8'),
+)
 
 
 # Create your models here.
@@ -58,8 +58,12 @@ def decrypt_string(value, prefix='jwe:::'):
     if value:
         value = ensure_bytes(value)
         if value.startswith(prefix):
-            value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
+            value = jwe.decrypt(value[len(prefix) :], SENSITIVE_DATA_KEY).decode()
     return value
+
+
+class NaiveDatetimeException(Exception):
+    pass
 
 
 class EncryptedTextField(TextField):

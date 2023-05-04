@@ -1,13 +1,26 @@
 import bson
+import jwe
+
+
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.postgres.fields import ArrayField  # replace with sqlite equiv?
 from django.core.exceptions import ValidationError
 from django.db import (
     connections,
     models,
 )
-from django.db.models import ForeignKey
+from django.db.models import (
+    DateTimeField,
+    ForeignKey,
+    TextField,
+)
 from django.db.models.query import QuerySet
 from django_extensions.db.models import TimeStampedModel
+
+import settings as charon_settings
+
+SENSITIVE_DATA_KEY = jwe.kdf(charon_settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
+                             charon_settings.SENSITIVE_DATA_SALT.encode('utf-8'))
 
 
 # Create your models here.
@@ -15,6 +28,66 @@ from django_extensions.db.models import TimeStampedModel
 
 def generate_object_id():
     return str(bson.ObjectId())
+
+
+def ensure_bytes(value):
+    """Helper function to ensure all inputs are encoded to the proper value utf-8 value regardless
+    of input type"""
+    if isinstance(value, bytes):
+        return value
+    return value.encode('utf-8')
+
+
+def ensure_str(value):
+    if isinstance(value, bytes):
+        return value.decode()
+    return value
+
+
+def encrypt_string(value, prefix='jwe:::'):
+    prefix = ensure_bytes(prefix)
+    if value:
+        value = ensure_bytes(value)
+        if value and not value.startswith(prefix):
+            value = (prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)).decode()
+    return value
+
+
+def decrypt_string(value, prefix='jwe:::'):
+    prefix = ensure_bytes(prefix)
+    if value:
+        value = ensure_bytes(value)
+        if value.startswith(prefix):
+            value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
+    return value
+
+
+class EncryptedTextField(TextField):
+    """
+    This field transparently encrypts data in the database. It should probably only be used with PG
+    unless the user takes into account the db specific trade-offs with TextFields.
+    """
+
+    prefix = 'jwe:::'
+
+    def get_db_prep_value(self, value, **kwargs):
+        return encrypt_string(value, prefix=self.prefix)
+
+    def to_python(self, value):
+        return decrypt_string(value, prefix=self.prefix)
+
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
+
+
+class NonNaiveDateTimeField(DateTimeField):
+    def get_prep_value(self, value):
+        value = super(NonNaiveDateTimeField, self).get_prep_value(value)
+        if value is not None and (
+            value.tzinfo is None or value.tzinfo.utcoffset(value) is None
+        ):
+            raise NaiveDatetimeException('Tried to encode a naive datetime.')
+        return value
 
 
 class QuerySetExplainMixin:
@@ -185,7 +258,7 @@ class ObjectIDMixin(BaseIDMixin):
         abstract = True
 
 
-class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
+class ExternalAccount(ObjectIDMixin, BaseModel):
     """An account on an external service.
 
     Note that this object is not and should not be aware of what other objects

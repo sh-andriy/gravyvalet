@@ -1,6 +1,5 @@
 import bson
 import jwe
-import settings as charon_settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import ArrayField  # replace with sqlite equiv?
 from django.core.exceptions import ValidationError
@@ -8,6 +7,8 @@ from django.db import connections, models
 from django.db.models import DateTimeField, ForeignKey, TextField
 from django.db.models.query import QuerySet
 from django_extensions.db.models import TimeStampedModel
+
+import charon.settings as charon_settings
 
 SENSITIVE_DATA_KEY = jwe.kdf(
     charon_settings.SENSITIVE_DATA_SECRET.encode('utf-8'),

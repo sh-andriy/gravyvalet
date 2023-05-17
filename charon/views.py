@@ -1,8 +1,7 @@
+import json
 import logging
 
 import requests
-import json
-
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template import loader
@@ -40,10 +39,13 @@ def _get_user_id(request):
         logger.error('@@@ got response data from osf: {}'.format(resp_data))
         user_id = resp_data['data']['user_id']
     else:
-        logger.error('@@@ got bad response data from osf: code:({}) '
-                     'content:({})'.format(resp.status_code, resp.content))
+        logger.error(
+            '@@@ got bad response data from osf: code:({}) '
+            'content:({})'.format(resp.status_code, resp.content)
+        )
 
     return user_id
+
 
 def _lookup_creds_and_settings_for(user_id, node_id, args):
     credentials, settings = None, None
@@ -52,7 +54,8 @@ def _lookup_creds_and_settings_for(user_id, node_id, args):
         'settings': settings,
     }
 
-def _make_auth(user.id):
+
+def _make_auth(user):
     if user is not None:
         return {
             'id': user._id,
@@ -61,6 +64,7 @@ def _make_auth(user.id):
         }
     return {}
 
+
 def _make_osf_callback_url(node_props):
     callback_url = settings.OSF_CALLBACK_BASE
 
@@ -68,13 +72,13 @@ def _make_osf_callback_url(node_props):
     # _internal=True
 
     if node_props.is_registration:
-        callback_url .= 'registration_callbacks'
+        callback_url += 'registration_callbacks'
     else:
-        callback_url .= 'create_waterbutler_log'
+        callback_url += 'create_waterbutler_log'
 
     return callback_url
 
-    
+
 def connect_box(request):
     logger.error('@@@ got request for connect_box')
     logger.error('@@@   request ib:({})'.format(request))
@@ -95,8 +99,8 @@ def callback_box(request):
     logger.error('@@@   request ib:({})'.format(request))
     logger.error('@@@   headers are:({})'.format(request.headers))
     template = loader.get_template('charon/callback.html')
-    user = _get_user(request)}
-    context = {'user_id':  user['id'] if user else '*no user id*'}
+    user = _get_user(request)
+    context = {'user_id': user['id'] if user else '*no user id*'}
     return HttpResponse(
         template.render(context, request),
         headers={'Cross-Origin-Opener-Policy': 'unsafe-none'},
@@ -118,18 +122,21 @@ def get_credentials(request):
     creds_and_settings = _lookup_creds_and_settings_for(user_id, node_id, args)
 
     callback_url = _make_api_url_for(node_props)
-    
+
     return {
         'payload': jwe.encrypt(
             jwt.encode(
                 {
-                 'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-                 'data': {
-                     'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-                     'credentials': credentials,
-                     'settings': waterbutler_settings,
-                     'callback_url': callback_url,
-                 },
+                    'exp': timezone.now()
+                    + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                    'data': {
+                        'auth': make_auth(
+                            auth.user
+                        ),  # A waterbutler auth dict not an Auth object
+                        'credentials': credentials,
+                        'settings': waterbutler_settings,
+                        'callback_url': callback_url,
+                    },
                 },
                 settings.WATERBUTLER_JWT_SECRET,
                 algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
@@ -138,7 +145,7 @@ def get_credentials(request):
         ).decode()
     }
 
-    
+
 # from website.oauth.views
 # @must_be_logged_in
 # def oauth_connect(service_name, auth):

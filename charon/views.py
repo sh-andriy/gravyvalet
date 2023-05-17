@@ -1,5 +1,8 @@
 import logging
 
+import requests
+import json
+
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template import loader
@@ -18,22 +21,51 @@ def index(request):
     )
 
 
+def _get_user_id(request):
+    headers = {'Content-type': 'application/json'}
+    if "Authorization" in request.headers:
+        headers['Authorization'] = request.headers['Authorization']
+    cookies = request.COOKIES
+    resp = requests.get(
+        'http://localhost:5000/api/v1/user/auth/',
+        headers=headers,
+        cookies=cookies,
+    )
+
+    user_id = None
+    if resp.status_code == 200:
+        # raw_data = resp.json
+        # logger.error('@@@ got raw response data from osf: {}'.format(raw_data))
+        resp_data = resp.json()
+        logger.error('@@@ got response data from osf: {}'.format(resp_data))
+        user_id = resp_data['data']['user_id']
+    else:
+        logger.error('@@@ got bad response data from osf: code:({}) '
+                     'content:({})'.format(resp.status_code, resp.content))
+
+    return user_id
+
 def connect_box(request):
-    logger.info('@@@ got request for connect_box')
-    logger.info('@@@   request ib:({})'.format(request))
+    logger.error('@@@ got request for connect_box')
+    logger.error('@@@   request ib:({})'.format(request))
+
+    user_id = _get_user_id(request)
 
     auth_url_base = 'https://www.box.com/api/oauth2/authorize'
     callback_url = 'https://www.box.com/api/oauth2/token'
 
     # return HttpResponse("You tried to box, but box we didn't.")
-    return redirect(callback_box)
+    response = redirect(callback_box)
+    response['Cross-Origin-Opener-Policy'] = 'unsafe-none'
+    return response
 
 
 def callback_box(request):
     logger.error('@@@ got request for callback_box')
     logger.error('@@@   request ib:({})'.format(request))
+    logger.error('@@@   headers are:({})'.format(request.headers))
     template = loader.get_template('charon/callback.html')
-    context = {}
+    context = {'user_id':  _get_user_id(request)}
     return HttpResponse(
         template.render(context, request),
         headers={'Cross-Origin-Opener-Policy': 'unsafe-none'},

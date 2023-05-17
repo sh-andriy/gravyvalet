@@ -11,3 +11,4 @@ Django==4.2
 bson==0.5.10
 pyjwe==1.0.0
 django-extensions==3.2.1
+requests==2.30.0

@@ -3,11 +3,13 @@
     <head lang="en">
         <script>
             // window.opener.oauthComplete(true);
-            window.opener.postMessage('meowMeow', 'http://localhost:5000/');
+            window.opener.postMessage({type: 'meowMeow', addon: 'box', success: true}, 'http://localhost:5000/');
             //window.close();
         </script>
         <meta charset="UTF-8">
         <title>OAuth Complete</title>
     </head>
-    <body></body>
+    <body>
+      <h1>Charon user id: {{ user_id }}</h1>
+    </body>
 </html>

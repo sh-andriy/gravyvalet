@@ -1,26 +1,35 @@
+import datetime
 import json
 import logging
 
+import jwe
+import jwt
 import requests
+
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template import loader
+from django.utils import timezone
+
+
+from charon import settings
 
 # from django.shortcuts import render
+
 
 # Create your views here.
 
 
 logger = logging.getLogger(__name__)
+WATERBUTLER_JWE_KEY = jwe.kdf(
+    settings.WATERBUTLER_JWE_SECRET.encode('utf-8'),
+    settings.WATERBUTLER_JWE_SALT.encode('utf-8'),
+)
 
 
-def index(request):
-    return HttpResponse(
-        "Hello, world. Welcome to the continental, rated two stars on tripadvisor."
-    )
+## ========== UTILITY ==========
 
-
-def _get_user_id(request):
+def _get_user(request):
     headers = {'Content-type': 'application/json'}
     if "Authorization" in request.headers:
         headers['Authorization'] = request.headers['Authorization']
@@ -44,10 +53,14 @@ def _get_user_id(request):
             'content:({})'.format(resp.status_code, resp.content)
         )
 
-    return user_id
+    return {'id': user_id}
 
 
-def _lookup_creds_and_settings_for(user_id, node_id, args):
+def _get_node_properties(node_id):
+    return {}
+
+
+def _lookup_creds_and_settings_for(user_id, node_props):
     credentials, settings = None, None
     return {
         'credentials': credentials,
@@ -79,6 +92,14 @@ def _make_osf_callback_url(node_props):
     return callback_url
 
 
+## ========== VIEWS ==========
+
+def index(request):
+    return HttpResponse(
+        "Hello, world. Welcome to the continental, rated two stars on tripadvisor."
+    )
+
+
 def connect_box(request):
     logger.error('@@@ got request for connect_box')
     logger.error('@@@   request ib:({})'.format(request))
@@ -107,10 +128,76 @@ def callback_box(request):
     )
 
 
+def import_auth_box(request):
+    SHORT_NAME, BoxSerializer = None, None
+    return
+
+def _import_auth(request):
+    """
+    based off of addons.base.generic_views._import_auth
+    inlined decorators from website.project.decorators:
+    must_have_permission
+    must_have_addon
+    """
+    logger.error('### in import_auth_box! request ib:({})'.format(request.json))
+
+    node_id = ''
+    target = kwargs.get('node') or getattr(Guid.load(kwargs.get('guid')), 'referent', None)
+
+    kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    user = kwargs['auth'].user
+
+    # User must be logged in
+    if user is None:
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
+
+    # User must have permissions
+    if not target.has_permission(user, permission):
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+
+    user = _get_user_by_auth(request)
+
+    if user is None:
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
+    user_addon = user.get_addon(addon_name)
+
+    node = _get_node_by_id(node_id)
+    node_addon = node.get_addon(addon_name)
+
+    _verify_permissions('WRITE', user, node)
+
+    external_account = ExternalAccount.load(
+        request.json['external_account_id']
+    )
+
+    if not user_addon.external_accounts.filter(id=external_account.id).exists():
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+
+    try:
+        node_addon.set_auth(external_account, user_addon.owner)
+    except PermissionsError:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+
+    node_addon.save()
+
+    return {
+        'result': Serializer().serialize_settings(node_addon, auth.user),
+        'message': 'Successfully imported access token from profile.',
+    }
+
+
+def get_root_folder_box(request):
+    return {}
+
+
+def get_folder_listing_box(request):
+    return {}
+
+
 def get_credentials(request):
     logger.error('@@@ got request for get_credentials')
 
-    user_id = _get_user_id(request)
+    user = _get_user(request)
     # check_access(node, auth, action, cas_resp)
     # provider_settings = None
     # if hasattr(node, 'get_addon'):
@@ -118,10 +205,11 @@ def get_credentials(request):
     #     if not provider_settings:
     #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
+    node_id = None
     node_props = _get_node_properties(node_id)
-    creds_and_settings = _lookup_creds_and_settings_for(user_id, node_id, args)
+    creds_and_settings = _lookup_creds_and_settings_for(user['id'], node_props)
 
-    callback_url = _make_api_url_for(node_props)
+    callback_url = _make_osf_callback_url(node_props)
 
     return {
         'payload': jwe.encrypt(
@@ -130,11 +218,11 @@ def get_credentials(request):
                     'exp': timezone.now()
                     + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
                     'data': {
-                        'auth': make_auth(
-                            auth.user
+                        'auth': _make_auth(
+                            user
                         ),  # A waterbutler auth dict not an Auth object
-                        'credentials': credentials,
-                        'settings': waterbutler_settings,
+                        'credentials': creds_and_settings['credentials'],
+                        'settings': creds_and_settings['settings'],
                         'callback_url': callback_url,
                     },
                 },
@@ -145,6 +233,8 @@ def get_credentials(request):
         ).decode()
     }
 
+
+## ========== CODE BEING REIMPLEMENTED ==========
 
 # from website.oauth.views
 # @must_be_logged_in
@@ -302,3 +392,44 @@ def get_credentials(request):
 #             )
 #         }
 #     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY).decode()}
+
+# from: website.project.decorators
+# def must_have_addon(addon_name, model):
+#     """Decorator factory that ensures that a given addon has been added to
+#     the target node. The decorated function will throw a 404 if the required
+#     addon is not found. Must be applied after a decorator that adds `node` and
+#     `project` to the target function's keyword arguments, such as
+#     `must_be_contributor.
+
+#     :param str addon_name: Name of addon
+#     :param str model: Name of model
+#     :returns: Decorator function
+
+#     """
+#     def wrapper(func):
+
+#         @functools.wraps(func)
+#         @collect_auth
+#         def wrapped(*args, **kwargs):
+#             if model == 'node':
+#                 _inject_nodes(kwargs)
+#                 owner = kwargs['node']
+#             elif model == 'user':
+#                 auth = kwargs.get('auth')
+#                 owner = auth.user if auth else None
+#                 if owner is None:
+#                     raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
+#             else:
+#                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+#             addon = owner.get_addon(addon_name)
+#             if addon is None:
+#                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+#             kwargs['{0}_addon'.format(model)] = addon
+
+#             return func(*args, **kwargs)
+
+#         return wrapped
+
+#     return wrapper

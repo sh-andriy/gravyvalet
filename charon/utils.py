@@ -1,8 +1,18 @@
+import datetime
 import logging
 
+import jwe
+import jwt
 import requests
+from django.utils import timezone
+
+from . import settings
 
 logger = logging.getLogger(__name__)
+WATERBUTLER_JWE_KEY = jwe.kdf(
+    settings.WATERBUTLER_JWE_SECRET.encode('utf-8'),
+    settings.WATERBUTLER_JWE_SALT.encode('utf-8'),
+)
 
 
 def _get_user(request):
@@ -66,3 +76,27 @@ def _make_osf_callback_url(node_props):
         callback_url += 'create_waterbutler_log'
 
     return callback_url
+
+
+def _make_wb_auth_payload(user, creds_and_settings, callback_url):
+    return {
+        'payload': jwe.encrypt(
+            jwt.encode(
+                {
+                    'exp': timezone.now()
+                    + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                    'data': {
+                        'auth': _make_auth(
+                            user
+                        ),  # A waterbutler auth dict not an Auth object
+                        'credentials': creds_and_settings['credentials'],
+                        'settings': creds_and_settings['settings'],
+                        'callback_url': callback_url,
+                    },
+                },
+                settings.WATERBUTLER_JWT_SECRET,
+                algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
+            ),
+            WATERBUTLER_JWE_KEY,
+        ).decode()
+    }

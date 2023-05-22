@@ -10,7 +10,8 @@ from django.shortcuts import redirect
 from django.template import loader
 from django.utils import timezone
 
-from charon import settings
+from . import settings, urls
+
 
 # from django.shortcuts import render
 
@@ -25,74 +26,7 @@ WATERBUTLER_JWE_KEY = jwe.kdf(
 )
 
 
-## ========== UTILITY ==========
-
-
-def _get_user(request):
-    headers = {'Content-type': 'application/json'}
-    if "Authorization" in request.headers:
-        headers['Authorization'] = request.headers['Authorization']
-    cookies = request.COOKIES
-    resp = requests.get(
-        'http://localhost:5000/api/v1/user/auth/',
-        headers=headers,
-        cookies=cookies,
-    )
-
-    user_id = None
-    if resp.status_code == 200:
-        # raw_data = resp.json
-        # logger.error('@@@ got raw response data from osf: {}'.format(raw_data))
-        resp_data = resp.json()
-        logger.error('@@@ got response data from osf: {}'.format(resp_data))
-        user_id = resp_data['data']['user_id']
-    else:
-        logger.error(
-            '@@@ got bad response data from osf: code:({}) '
-            'content:({})'.format(resp.status_code, resp.content)
-        )
-
-    return {'id': user_id}
-
-
-def _get_node_properties(node_id):
-    return {}
-
-
-def _lookup_creds_and_settings_for(user_id, node_props):
-    credentials, settings = None, None
-    return {
-        'credentials': credentials,
-        'settings': settings,
-    }
-
-
-def _make_auth(user):
-    if user is not None:
-        return {
-            'id': user._id,
-            'email': '{}@osf.io'.format(user._id),
-            'name': user.fullname,
-        }
-    return {}
-
-
-def _make_osf_callback_url(node_props):
-    callback_url = settings.OSF_CALLBACK_BASE
-
-    # _absolute=True,
-    # _internal=True
-
-    if node_props.is_registration:
-        callback_url += 'registration_callbacks'
-    else:
-        callback_url += 'create_waterbutler_log'
-
-    return callback_url
-
-
-## ========== VIEWS ==========
-
+# ========== VIEWS ==========
 
 def index(request):
     return HttpResponse(
@@ -104,7 +38,7 @@ def connect_box(request):
     logger.error('@@@ got request for connect_box')
     logger.error('@@@   request ib:({})'.format(request))
 
-    user = _get_user(request)
+    user = utils._get_user(request)
 
     auth_url_base = 'https://www.box.com/api/oauth2/authorize'
     callback_url = 'https://www.box.com/api/oauth2/token'
@@ -120,17 +54,13 @@ def callback_box(request):
     logger.error('@@@   request ib:({})'.format(request))
     logger.error('@@@   headers are:({})'.format(request.headers))
     template = loader.get_template('charon/callback.html')
-    user = _get_user(request)
+    user = utils._get_user(request)
     context = {'user_id': user['id'] if user else '*no user id*'}
     return HttpResponse(
         template.render(context, request),
         headers={'Cross-Origin-Opener-Policy': 'unsafe-none'},
     )
 
-
-def import_auth_box(request):
-    SHORT_NAME, BoxSerializer = None, None
-    return
 
 
 def _import_auth(request):
@@ -158,7 +88,7 @@ def _import_auth(request):
     if not target.has_permission(user, permission):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
-    user = _get_user_by_auth(request)
+    user = utils._get_user_by_auth(request)
 
     if user is None:
         raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
@@ -182,7 +112,7 @@ def _import_auth(request):
     node_addon.save()
 
     return {
-        'result': Serializer().serialize_settings(node_addon, auth.user),
+        'result': BoxSerializer().serialize_settings(node_addon, auth.user),
         'message': 'Successfully imported access token from profile.',
     }
 
@@ -198,7 +128,7 @@ def get_folder_listing_box(request):
 def get_credentials(request):
     logger.error('@@@ got request for get_credentials')
 
-    user = _get_user(request)
+    user = utils._get_user(request)
     # check_access(node, auth, action, cas_resp)
     # provider_settings = None
     # if hasattr(node, 'get_addon'):
@@ -207,10 +137,10 @@ def get_credentials(request):
     #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     node_id = None
-    node_props = _get_node_properties(node_id)
-    creds_and_settings = _lookup_creds_and_settings_for(user['id'], node_props)
+    node_props = utils._get_node_properties(node_id)
+    creds_and_settings = utils._lookup_creds_and_settings_for(user['id'], node_props)
 
-    callback_url = _make_osf_callback_url(node_props)
+    callback_url = utils._make_osf_callback_url(node_props)
 
     return {
         'payload': jwe.encrypt(
@@ -219,7 +149,7 @@ def get_credentials(request):
                     'exp': timezone.now()
                     + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
                     'data': {
-                        'auth': _make_auth(
+                        'auth': utils._make_auth(
                             user
                         ),  # A waterbutler auth dict not an Auth object
                         'credentials': creds_and_settings['credentials'],
@@ -235,7 +165,7 @@ def get_credentials(request):
     }
 
 
-## ========== CODE BEING REIMPLEMENTED ==========
+# ========== CODE BEING REIMPLEMENTED ==========
 
 # from website.oauth.views
 # @must_be_logged_in

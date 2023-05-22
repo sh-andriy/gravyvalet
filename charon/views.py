@@ -2,7 +2,6 @@ import logging
 
 from django.http import HttpResponse
 from django.shortcuts import redirect
-# from django.shortcuts import render
 from django.template import loader
 
 from . import utils
@@ -11,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 # ========== VIEWS ==========
+
 
 def index(request):
     return HttpResponse(
@@ -22,10 +22,9 @@ def connect_box(request):
     logger.error('@@@ got request for connect_box')
     logger.error('@@@   request ib:({})'.format(request))
 
-    user = utils._get_user(request)
-
-    auth_url_base = 'https://www.box.com/api/oauth2/authorize'
-    callback_url = 'https://www.box.com/api/oauth2/token'
+    # user = utils._get_user(request)
+    # auth_url_base = 'https://www.box.com/api/oauth2/authorize'
+    # callback_url = 'https://www.box.com/api/oauth2/token'
 
     # return HttpResponse("You tried to box, but box we didn't.")
     response = redirect(callback_box)

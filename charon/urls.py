@@ -13,14 +13,12 @@ urlpatterns = [
         views.get_folder_listing_box,
         name='get_folder_listing_box',
     ),
-
     # GET is $addon_account_list
     path(
         'settings/box/accounts/',
         views.box_account_list,
         name='box_account_list',
     ),
-
     # GET is $addon_get_config
     # PUT is $addon_set_config
     path(
@@ -28,7 +26,6 @@ urlpatterns = [
         views.get_project_settings_for_box,
         name='get_project_settings_for_box',
     ),
-
     # PUT is $addon_import_auth
     # DELETE is $addon_deauthorize_node
     path(
@@ -36,16 +33,12 @@ urlpatterns = [
         views.box_user_auth,
         name='box_user_auth',
     ),
-
     # GET is $addon_folders_list
     path(
         'projects/<str:project_guid>/box/folders/',
         views.box_folders_list,
         name='box_folders_list',
     ),
-
-
-
     # not specified in addons.base.views
     # from website.routes, view is website.project.views.node.node_choose_addons
     #   which calls .config_addons() on node model object
@@ -55,5 +48,4 @@ urlpatterns = [
         views.get_project_addons,
         name='get_project_addons',
     ),
-
 ]

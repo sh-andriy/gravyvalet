@@ -5,12 +5,10 @@ import logging
 import jwe
 import jwt
 import requests
-
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template import loader
 from django.utils import timezone
-
 
 from charon import settings
 
@@ -28,6 +26,7 @@ WATERBUTLER_JWE_KEY = jwe.kdf(
 
 
 ## ========== UTILITY ==========
+
 
 def _get_user(request):
     headers = {'Content-type': 'application/json'}
@@ -94,6 +93,7 @@ def _make_osf_callback_url(node_props):
 
 ## ========== VIEWS ==========
 
+
 def index(request):
     return HttpResponse(
         "Hello, world. Welcome to the continental, rated two stars on tripadvisor."
@@ -132,6 +132,7 @@ def import_auth_box(request):
     SHORT_NAME, BoxSerializer = None, None
     return
 
+
 def _import_auth(request):
     """
     based off of addons.base.generic_views._import_auth
@@ -142,7 +143,9 @@ def _import_auth(request):
     logger.error('### in import_auth_box! request ib:({})'.format(request.json))
 
     node_id = ''
-    target = kwargs.get('node') or getattr(Guid.load(kwargs.get('guid')), 'referent', None)
+    target = kwargs.get('node') or getattr(
+        Guid.load(kwargs.get('guid')), 'referent', None
+    )
 
     kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
     user = kwargs['auth'].user
@@ -166,9 +169,7 @@ def _import_auth(request):
 
     _verify_permissions('WRITE', user, node)
 
-    external_account = ExternalAccount.load(
-        request.json['external_account_id']
-    )
+    external_account = ExternalAccount.load(request.json['external_account_id'])
 
     if not user_addon.external_accounts.filter(id=external_account.id).exists():
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)

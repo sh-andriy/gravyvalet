@@ -1,6 +1,6 @@
 import logging
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.template import loader
 
@@ -45,7 +45,7 @@ def callback_box(request):
     )
 
 
-def box_user_auth(request):
+def box_user_auth(request, project_guid):
     """
     based off of addons.base.generic_views._import_auth
     inlined decorators from website.project.decorators:
@@ -54,42 +54,52 @@ def box_user_auth(request):
     """
     logger.error('### in import_auth_box! request ib:({})'.format(request.json))
 
-    node_id = ''
-    target = kwargs.get('node') or getattr(
-        Guid.load(kwargs.get('guid')), 'referent', None
-    )
+    # kwargs ib:({'pid': 'dve82', 'parent': None,
+    #   'node': (title='Provider - S3', category='project') with guid 'dve82'})
 
+    # inflate node
+    node = utils._get_node_by_guid(project_guid)
+
+    # inflate user
+    user = utils._get_user_by_auth(request)
+    if user is None:
+        raise HttpResponse('Unauthorized', status=401)
+
+    addon_name = 'box'
+    query_params = request.GET
+    kwargs = {**query_params}
+    kwargs['project_guid'] = project_guid
+    kwargs['node'] = node
+
+    # ===> utils._verify_permissions('WRITE', user, node, kwargs)
     kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
     user = kwargs['auth'].user
-
     # User must be logged in
     if user is None:
-        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
-
+        raise HttpResponse('Unauthorized', status=401)
     # User must have permissions
-    if not target.has_permission(user, permission):
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+    if not node.has_permission(user, permission):
+        raise HttpResponseForbidden('User has not permissions on node')
 
-    user = utils._get_user_by_auth(request)
-
-    if user is None:
-        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
+    # ====> @must_have_addon('box', 'user')
     user_addon = user.get_addon(addon_name)
+    if user_addon is None:
+        raise HttpResponseBadRequest('No user addon found')
 
-    node = _get_node_by_id(node_id)
+    # ====> @must_have_addon('box', 'node')
     node_addon = node.get_addon(addon_name)
-
-    _verify_permissions('WRITE', user, node)
+    if node_addon is None:
+        raise HttpResponseBadRequest('No node addon found')
 
     external_account = ExternalAccount.load(request.json['external_account_id'])
 
     if not user_addon.external_accounts.filter(id=external_account.id).exists():
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+        raise HttpResponseForbidden('User has no such account')
 
     try:
         node_addon.set_auth(external_account, user_addon.owner)
     except PermissionsError:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+        raise HttpResponseForbidden('Unable to apply users auth to node')
 
     node_addon.save()
 

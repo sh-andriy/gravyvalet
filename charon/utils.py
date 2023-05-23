@@ -100,3 +100,7 @@ def _make_wb_auth_payload(user, creds_and_settings, callback_url):
             WATERBUTLER_JWE_KEY,
         ).decode()
     }
+
+
+def _get_node_by_guid(project_guid):
+    return getattr(Guid.load(project_guid), 'referent', None)

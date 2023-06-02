@@ -2,7 +2,6 @@ import abc
 
 
 class BoxSerializer(StorageAddonSerializer):
-
     # explicit in addons.base.serializer.AddonSerializer
     __metaclass__ = abc.ABCMeta
 
@@ -11,14 +10,21 @@ class BoxSerializer(StorageAddonSerializer):
     addon_short_name = 'box'
 
     # from addons.base.serializer.StorageAddonSerializer
-    REQUIRED_URLS = ('auth', 'importAuth', 'folders', 'files', 'config', 'deauthorize', 'accounts')
+    REQUIRED_URLS = (
+        'auth',
+        'importAuth',
+        'folders',
+        'files',
+        'config',
+        'deauthorize',
+        'accounts',
+    )
 
     # explicit in addons.base.serializer.AddonSerializer
     #   copy-over-comment: TODO take addon_node_settings, addon_user_settings
     def __init__(self, node_settings=None, user_settings=None):
         self.node_settings = node_settings
         self.user_settings = user_settings
-
 
     # abstract in addons.base.serializer.AddonSerializer
     # explicit in addons.base.serializer.OAuthAddonSerializer
@@ -35,8 +41,8 @@ class BoxSerializer(StorageAddonSerializer):
 
         user_accounts = self.user_settings.external_accounts.all()
         return bool(
-            self.node_settings.has_auth and
-            self.node_settings.external_account in user_accounts
+            self.node_settings.has_auth
+            and self.node_settings.external_account in user_accounts
         )
 
     # abstract in addons.base.serializer.AddonSerializer
@@ -87,8 +93,9 @@ class BoxSerializer(StorageAddonSerializer):
         if self.node_settings.has_auth:
             owner = self.credentials_owner
             if owner:
-                result['urls']['owner'] = web_url_for('profile_view_id',
-                                                  uid=owner._primary_key)
+                result['urls']['owner'] = web_url_for(
+                    'profile_view_id', uid=owner._primary_key
+                )
                 result['ownerName'] = owner.fullname
         return result
 
@@ -114,10 +121,7 @@ class BoxSerializer(StorageAddonSerializer):
     # from addons.base.serializer.OAuthAddonSerializer
     @collect_auth
     def serialize_granted_node(self, node, auth):
-
-        node_settings = node.get_addon(
-            self.user_settings.oauth_provider.short_name
-        )
+        node_settings = node.get_addon(self.user_settings.oauth_provider.short_name)
         serializer = node_settings.serializer(node_settings=node_settings)
         urls = serializer.addon_serialized_urls
         urls['view'] = node.url
@@ -133,7 +137,9 @@ class BoxSerializer(StorageAddonSerializer):
         user_settings = node_settings.user_settings
         self.node_settings = node_settings
         current_user_settings = current_user.get_addon(self.addon_short_name)
-        user_is_owner = user_settings is not None and user_settings.owner == current_user
+        user_is_owner = (
+            user_settings is not None and user_settings.owner == current_user
+        )
 
         valid_credentials = self.credentials_are_valid(user_settings, client)
 
@@ -142,14 +148,14 @@ class BoxSerializer(StorageAddonSerializer):
             'nodeHasAuth': node_settings.has_auth,
             'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
-            'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
+            'userHasAuth': current_user_settings is not None
+            and current_user_settings.has_auth,
         }
 
         if node_settings.has_auth:
             # Add owner's profile URL
             result['urls']['owner'] = web_url_for(
-                'profile_view_id',
-                uid=user_settings.owner._id
+                'profile_view_id', uid=user_settings.owner._id
             )
             result['ownerName'] = user_settings.owner.fullname
             # Show available folders
@@ -162,12 +168,17 @@ class BoxSerializer(StorageAddonSerializer):
     # from addons.box.serializer.BoxSerializer
     def credentials_are_valid(self, user_settings, client):
         from addons.box.models import Provider as Box  # Avoid circular import
+
         if self.node_settings.has_auth:
             if Box(self.node_settings.external_account).refresh_oauth_key():
                 return True
 
         if user_settings:
-            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=user_settings.external_accounts[0].oauth_key)
+            oauth = OAuth2(
+                client_id=settings.BOX_KEY,
+                client_secret=settings.BOX_SECRET,
+                access_token=user_settings.external_accounts[0].oauth_key,
+            )
             client = client or Client(oauth)
             try:
                 client.user()
@@ -180,7 +191,7 @@ class BoxSerializer(StorageAddonSerializer):
         path = node_settings.fetch_full_folder_path()
         return {
             'path': path,
-            'name': path.replace('All Files', '', 1) if path != '/' else '/ (Full Box)'
+            'name': path.replace('All Files', '', 1) if path != '/' else '/ (Full Box)',
         }
 
     # abstract in addons.base.serializer.AddonSerializer
@@ -190,8 +201,7 @@ class BoxSerializer(StorageAddonSerializer):
         node = self.node_settings.owner
 
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='box'),
+            'auth': api_url_for('oauth_connect', service_name='box'),
             'importAuth': node.api_url_for('box_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('box_folder_list'),

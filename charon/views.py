@@ -72,17 +72,28 @@ def box_user_auth(request, project_guid):
     kwargs['node'] = node
 
     # ===> utils._verify_permissions('WRITE', user, node, kwargs)
-    kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
-    user = kwargs['auth'].user
+    # Auth defined in frameworks.auth.core.Auth
+    #   three params:
+    #     self.user = user
+    #     self.api_node = api_node
+    #     self.private_key = private_key
+    #   @prop.logged_in
+    #   @prop.private_link
+    #   def from_kwargs(cls, request_args, kwargs):
+    #     user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+    #     private_key = request_args.get('view_only')
+    #     cls(user=user, private_key=private_key)
+    kwargs['auth_user'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    auth_user = kwargs['auth_user'].user
     # User must be logged in
-    if user is None:
+    if auth_user is None:
         raise HttpResponse('Unauthorized', status=401)
     # User must have permissions
-    if not node.has_permission(user, permission):
+    if not node.has_permission(auth_user, 'WRITE'):
         raise HttpResponseForbidden('User has not permissions on node')
 
     # ====> @must_have_addon('box', 'user')
-    user_addon = user.get_addon(addon_name)
+    user_addon = auth_user.get_addon(addon_name)
     if user_addon is None:
         raise HttpResponseBadRequest('No user addon found')
 
@@ -104,7 +115,7 @@ def box_user_auth(request, project_guid):
     node_addon.save()
 
     return {
-        'result': BoxSerializer().serialize_settings(node_addon, auth.user),
+        'result': BoxSerializer().serialize_settings(node_addon, auth_user),
         'message': 'Successfully imported access token from profile.',
     }
 

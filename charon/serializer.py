@@ -1,7 +1,17 @@
 import abc
 
+from . import settings
 
-class BoxSerializer(StorageAddonSerializer):
+
+def web_url_for():
+    return ''
+
+
+def api_url_for():
+    return ''
+
+
+class BoxSerializer(object):
     # explicit in addons.base.serializer.AddonSerializer
     __metaclass__ = abc.ABCMeta
 
@@ -68,7 +78,7 @@ class BoxSerializer(StorageAddonSerializer):
     # from addons.base.serializer.OAuthAddonSerializer
     @property
     def serialized_user_settings(self):
-        # inlined called to addons.base.serializer.AddonSerializer.serialized_user_settings
+        # inlined call addons.base.serializer.AddonSerializer.serialized_user_settings
         retval = {}
         retval['accounts'] = []
         if self.user_settings:

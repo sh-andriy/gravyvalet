@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from django.template import loader
 
 from . import utils
+from serializer import BoxSerializer
 
 logger = logging.getLogger(__name__)
 

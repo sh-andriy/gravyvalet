@@ -1,5 +1,8 @@
 import abc
 
+from boxsdk import Client, OAuth2
+from boxsdk.exception import BoxAPIException
+
 from . import settings
 
 
@@ -129,8 +132,17 @@ class BoxSerializer(object):
         }
 
     # from addons.base.serializer.OAuthAddonSerializer
-    @collect_auth
+    # @collect_auth
     def serialize_granted_node(self, node, auth):
+        # inline @collect_auth decorator (sortof)
+        # this is weird, serialize_granted_node is called by serialize_account, which
+        # is called by the serialized_accounts property. But why are we fucking w/ the
+        # request this deep into the serializer?
+        # serialized_accounts property is called by serialized_user_settings property
+        # serialized_user_settings is called by addons.views.generic_views.account_list
+        request = None  # this should be a flask request object, what is it doing here?
+        kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+
         node_settings = node.get_addon(self.user_settings.oauth_provider.short_name)
         serializer = node_settings.serializer(node_settings=node_settings)
         urls = serializer.addon_serialized_urls

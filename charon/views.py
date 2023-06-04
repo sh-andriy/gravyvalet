@@ -135,7 +135,23 @@ def _box_import_auth(request, project_guid):
 
 
 def _box_deauthorize_node(request, project_guid):
-    return {}
+    """
+    based off of addons.base.generic_views.deauthorize_node
+    box versions currys above with args ('box')
+
+    impl based off of addons.base.generic_views._deauthorize_node
+
+    inlined decorators from website.project.decorators:
+    @must_not_be_registration    decorator does ???
+    @must_have_addon('node')     decorator does ???
+    @must_have_permission(WRITE) decorator does ???
+    """
+    node_addon = None  # TODO: where this come from?
+    auth = None  # TODO: injected by ???
+
+    node_addon.deauthorize(auth=auth)
+    node_addon.save()
+    return None
 
 
 def box_folders_list(request, project_guid):

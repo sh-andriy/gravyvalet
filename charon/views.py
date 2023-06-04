@@ -4,8 +4,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbid
 from django.shortcuts import redirect
 from django.template import loader
 
-from . import utils
-from serializer import BoxSerializer
+from . import serializer, utils
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +128,7 @@ def _box_import_auth(request, project_guid):
     node_addon.save()
 
     return {
-        'result': BoxSerializer().serialize_settings(node_addon, auth_user),
+        'result': serializer.BoxSerializer().serialize_settings(node_addon, auth_user),
         'message': 'Successfully imported access token from profile.',
     }
 
@@ -191,8 +190,8 @@ def box_account_list(request):
         return redirect(cas.get_login_url(request.url))
 
     user_settings = auth.user.get_addon('box')
-    serializer = BoxSerializer(user_settings=user_settings)
-    return serializer.serialized_user_settings
+    our_serializer = serializer.BoxSerializer(user_settings=user_settings)
+    return our_serializer.serialized_user_settings
 
 
 def get_project_settings_for_box(request, project_guid):
@@ -220,12 +219,7 @@ def _box_get_config(request, project_guid):
     """
     node_addon = None  # TODO: where this come from?
     auth = None  # TODO: injected bu must_be_logged_in
-    return {
-        'result': BoxSerializer().serialize_settings(
-            node_addon,
-            auth.user
-        )
-    }
+    return {'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)}
 
 
 def _box_set_config(request, project_guid):
@@ -243,6 +237,7 @@ def _box_set_config(request, project_guid):
     _set_config docstring
     View for changing a node's linked folder.
     """
+
     def set_folder(node_addon, folder, auth):
         uid = folder['id']
         node_addon.set_folder(uid, auth=auth)
@@ -269,7 +264,7 @@ def _box_set_config(request, project_guid):
                 'name': folder_name,
                 'path': path,
             },
-            'urls': BoxSerializer(node_settings=node_addon).addon_serialized_urls,
+            'urls': serializer.BoxSerializer(node_settings=node_addon).addon_serialized_urls,
         },
         'message': 'Successfully updated settings.',
     }

@@ -49,10 +49,11 @@ def callback_box(request):
 def box_user_auth(request, project_guid):
     if request.method == 'PUT':
         _box_import_auth(request, project_guid)
-    elif request.method = 'DELETE':
+    elif request.method == 'DELETE':
         _box_deauthorize_node(request, project_guid)
 
     raise HttpResponse('Method Not Allowed', status=405)
+
 
 def _box_import_auth(request, project_guid):
     """
@@ -132,6 +133,7 @@ def _box_import_auth(request, project_guid):
         'message': 'Successfully imported access token from profile.',
     }
 
+
 def _box_deauthorize_node(request, project_guid):
     return {}
 
@@ -172,17 +174,19 @@ def box_account_list(request):
     if not auth.logged_in:
         return redirect(cas.get_login_url(request.url))
 
-    user_settings = auth.user.get_addon(addon_short_name)
+    user_settings = auth.user.get_addon('box')
     serializer = BoxSerializer(user_settings=user_settings)
-    return Boxserializer.serialized_user_settings
+    return serializer.serialized_user_settings
+
 
 def get_project_settings_for_box(request, project_guid):
     if request.method == 'GET':
         _box_get_config(request, project_guid)
-    elif request.method = 'PUT':
+    elif request.method == 'PUT':
         _box_set_config(request, project_guid)
 
     raise HttpResponse('Method Not Allowed', status=405)
+
 
 def _box_get_config(request, project_guid):
     """
@@ -207,6 +211,7 @@ def _box_get_config(request, project_guid):
         )
     }
 
+
 def _box_set_config(request, project_guid):
     """
     from addons.views.generic_views.set_config
@@ -228,7 +233,7 @@ def _box_set_config(request, project_guid):
         node_addon.save()
 
     node_addon = None  # TODO: where this come from?
-    user_addon = None  # TODO: where this come from?
+    user_addon = None  # TODO: where this come from? got it, but dont use it?
     auth = None  # TODO: injected by must_be_logged_in
 
     folder = request.json.get('selected')  # TODO: flask syntax?
@@ -252,6 +257,7 @@ def _box_set_config(request, project_guid):
         },
         'message': 'Successfully updated settings.',
     }
+
 
 def get_project_addons(request, project_guid):
     return {}

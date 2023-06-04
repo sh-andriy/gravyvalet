@@ -219,7 +219,9 @@ def _box_get_config(request, project_guid):
     """
     node_addon = None  # TODO: where this come from?
     auth = None  # TODO: injected bu must_be_logged_in
-    return {'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)}
+    return {
+        'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
+    }
 
 
 def _box_set_config(request, project_guid):
@@ -264,7 +266,9 @@ def _box_set_config(request, project_guid):
                 'name': folder_name,
                 'path': path,
             },
-            'urls': serializer.BoxSerializer(node_settings=node_addon).addon_serialized_urls,
+            'urls': serializer.BoxSerializer(
+                node_settings=node_addon
+            ).addon_serialized_urls,
         },
         'message': 'Successfully updated settings.',
     }

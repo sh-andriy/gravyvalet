@@ -7,13 +7,16 @@ urlpatterns = [
     path('box/connect', views.connect_box, name='connect_box'),
     path('box/callback', views.callback_box, name='callback_box'),
     # path('box/import_auth', views.import_auth_box, name='import_auth_box'),
-    # path('box/get_root_folder', views.get_root_folder_box, name='get_root_folder_box'),
+    # path(
+    #     'box/get_root_folder',
+    #     views.get_root_folder_box,
+    #     name='get_root_folder_box',
+    # ),
     # path(
     #     'box/get_folder_listing',
     #     views.get_folder_listing_box,
     #     name='get_folder_listing_box',
     # ),
-
     # GET is $addon_account_list
     path(
         'settings/box/accounts/',

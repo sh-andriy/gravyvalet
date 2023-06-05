@@ -24,8 +24,8 @@ urlpatterns = [
     # PUT is $addon_set_config
     path(
         'projects/<str:project_guid>/box/settings/',
-        views.get_project_settings_for_box,
-        name='get_project_settings_for_box',
+        views.box_project_config,
+        name='box_project_config',
     ),
     # PUT is $addon_import_auth
     # DELETE is $addon_deauthorize_node

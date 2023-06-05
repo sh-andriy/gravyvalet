@@ -45,6 +45,34 @@ def callback_box(request):
     )
 
 
+def box_account_list(request):
+    """
+    from addons.views.generic_views.account_list
+    box versions currys above with args ('box', BoxSerializer)
+
+    impl based off of addons.base.generic_views._account_list
+    @must_be_logged_in decorator injects `auth` into call
+    """
+
+    # must_be_logged_in impl inlined
+    auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    if not auth.logged_in:
+        return redirect(utils.cas_get_login_url(request.url))
+
+    user_settings = auth.user.get_addon('box')
+    our_serializer = serializer.BoxSerializer(user_settings=user_settings)
+    return our_serializer.serialized_user_settings
+
+
+def box_project_config(request, project_guid):
+    if request.method == 'GET':
+        _box_get_config(request, project_guid)
+    elif request.method == 'PUT':
+        _box_set_config(request, project_guid)
+
+    raise HttpResponse('Method Not Allowed', status=405)
+
+
 def box_user_auth(request, project_guid):
     if request.method == 'PUT':
         _box_import_auth(request, project_guid)
@@ -52,6 +80,122 @@ def box_user_auth(request, project_guid):
         _box_deauthorize_node(request, project_guid)
 
     raise HttpResponse('Method Not Allowed', status=405)
+
+
+def box_folder_list(request, project_guid):
+    """
+    based off of addons.box.views.box_folder_list
+
+    *DOESN'T impl or curry generic_views.folder_list or _folder_list*
+
+    impl based off of addons.box.views.box_folder_list
+
+    inlined decorators from website.project.decorators:
+    @must_have_addon('box', 'node')  decorator does ???
+    @must_be_addon_authorizer('box') decorator does ???
+
+    Returns all the subsequent folders under the folder id passed.
+    """
+    # TODO: how exactly is this different from generic_views.folder_list curried method?
+    node_addon = None  # TODO: where this come from?
+    folder_id = request.args.get('folder_id')
+    return node_addon.get_folders(folder_id=folder_id)
+
+
+# from website.routes, view is website.project.views.node.node_choose_addons
+#   which calls .config_addons() on node model object
+#   .config_addons() is defined in AddonModelMixin
+def get_project_addons(request, project_guid):
+    return {}
+
+
+def get_credentials(request):
+    logger.error('@@@ got request for get_credentials')
+
+    user = utils._get_user(request)
+    # check_access(node, auth, action, cas_resp)
+    # provider_settings = None
+    # if hasattr(node, 'get_addon'):
+    #     provider_settings = node.get_addon(provider_name)
+    #     if not provider_settings:
+    #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+    node_id = None
+    node_props = utils._get_node_properties(node_id)
+    creds_and_settings = utils._lookup_creds_and_settings_for(user['id'], node_props)
+    callback_url = utils._make_osf_callback_url(node_props)
+    return utils._make_wb_auth_payload(user, creds_and_settings, callback_url)
+
+
+def _box_get_config(request, project_guid):
+    """
+    from addons.views.generic_views.get_config
+    box versions currys above with args ('box', BoxSerializer)
+
+    impl based off of addons.base.generic_views._get_config
+    @must_be_logged_in             decorator injects `auth` into call
+    @must_have_addon('node')       decorator does ???
+    @must_be_valid_project         decorator does ???
+    @must_have_permission('WRITE') decorator does ???
+
+    _get_config docstring
+    API that returns the serialized node settings.
+    """
+    node_addon = None  # TODO: where this come from?
+    auth = None  # TODO: injected bu must_be_logged_in
+    return {
+        'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
+    }
+
+
+def _box_set_config(request, project_guid):
+    """
+    from addons.views.generic_views.set_config
+    box versions currys above with args ('box', 'Box', BoxSerializer, _set_folder())
+
+    impl based off of addons.base.generic_views._set_config
+    @must_not_be_registration
+    @must_have_addon('user')     decorator does ???
+    @must_have_addon('node')     decorator does ???
+    @must_be_addon_authorizer    decorator does ???
+    @must_have_permission(WRITE) decorator does ???
+
+    _set_config docstring
+    View for changing a node's linked folder.
+    """
+
+    def set_folder(node_addon, folder, auth):
+        uid = folder['id']
+        node_addon.set_folder(uid, auth=auth)
+        node_addon.save()
+
+    node_addon = None  # TODO: where this come from?
+    user_addon = None  # TODO: where this come from? got it, but dont use it?
+    auth = None  # TODO: injected by must_be_logged_in
+
+    folder = request.json.get('selected')  # TODO: flask syntax?
+    set_folder(node_addon, folder, auth)
+
+    path = node_addon.folder_path
+
+    folder_name = None
+    if path != '/':
+        folder_name = path.replace('All Files', '')
+    else:
+        folder_name = '/ (Full {0})'.format('Box')
+
+    return {
+        'result': {
+            'folder': {
+                'name': folder_name,
+                'path': path,
+            },
+            'urls': serializer.BoxSerializer(
+                node_settings=node_addon
+            ).addon_serialized_urls,
+        },
+        'message': 'Successfully updated settings.',
+    }
 
 
 def _box_import_auth(request, project_guid):
@@ -151,144 +295,3 @@ def _box_deauthorize_node(request, project_guid):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
     return None
-
-
-def box_folder_list(request, project_guid):
-    """
-    based off of addons.box.views.box_folder_list
-
-    *DOESN'T impl or curry generic_views.folder_list or _folder_list*
-
-    impl based off of addons.box.views.box_folder_list
-
-    inlined decorators from website.project.decorators:
-    @must_have_addon('box', 'node')  decorator does ???
-    @must_be_addon_authorizer('box') decorator does ???
-
-    Returns all the subsequent folders under the folder id passed.
-    """
-    # TODO: how exactly is this different from generic_views.folder_list curried method?
-    node_addon = None  # TODO: where this come from?
-    folder_id = request.args.get('folder_id')
-    return node_addon.get_folders(folder_id=folder_id)
-
-
-def get_credentials(request):
-    logger.error('@@@ got request for get_credentials')
-
-    user = utils._get_user(request)
-    # check_access(node, auth, action, cas_resp)
-    # provider_settings = None
-    # if hasattr(node, 'get_addon'):
-    #     provider_settings = node.get_addon(provider_name)
-    #     if not provider_settings:
-    #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-    node_id = None
-    node_props = utils._get_node_properties(node_id)
-    creds_and_settings = utils._lookup_creds_and_settings_for(user['id'], node_props)
-    callback_url = utils._make_osf_callback_url(node_props)
-    return utils._make_wb_auth_payload(user, creds_and_settings, callback_url)
-
-
-def box_account_list(request):
-    """
-    from addons.views.generic_views.account_list
-    box versions currys above with args ('box', BoxSerializer)
-
-    impl based off of addons.base.generic_views._account_list
-    @must_be_logged_in decorator injects `auth` into call
-    """
-
-    # must_be_logged_in impl inlined
-    auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
-    if not auth.logged_in:
-        return redirect(utils.cas_get_login_url(request.url))
-
-    user_settings = auth.user.get_addon('box')
-    our_serializer = serializer.BoxSerializer(user_settings=user_settings)
-    return our_serializer.serialized_user_settings
-
-
-def get_project_settings_for_box(request, project_guid):
-    if request.method == 'GET':
-        _box_get_config(request, project_guid)
-    elif request.method == 'PUT':
-        _box_set_config(request, project_guid)
-
-    raise HttpResponse('Method Not Allowed', status=405)
-
-
-def _box_get_config(request, project_guid):
-    """
-    from addons.views.generic_views.get_config
-    box versions currys above with args ('box', BoxSerializer)
-
-    impl based off of addons.base.generic_views._get_config
-    @must_be_logged_in             decorator injects `auth` into call
-    @must_have_addon('node')       decorator does ???
-    @must_be_valid_project         decorator does ???
-    @must_have_permission('WRITE') decorator does ???
-
-    _get_config docstring
-    API that returns the serialized node settings.
-    """
-    node_addon = None  # TODO: where this come from?
-    auth = None  # TODO: injected bu must_be_logged_in
-    return {
-        'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
-    }
-
-
-def _box_set_config(request, project_guid):
-    """
-    from addons.views.generic_views.set_config
-    box versions currys above with args ('box', 'Box', BoxSerializer, _set_folder())
-
-    impl based off of addons.base.generic_views._set_config
-    @must_not_be_registration
-    @must_have_addon('user')     decorator does ???
-    @must_have_addon('node')     decorator does ???
-    @must_be_addon_authorizer    decorator does ???
-    @must_have_permission(WRITE) decorator does ???
-
-    _set_config docstring
-    View for changing a node's linked folder.
-    """
-
-    def set_folder(node_addon, folder, auth):
-        uid = folder['id']
-        node_addon.set_folder(uid, auth=auth)
-        node_addon.save()
-
-    node_addon = None  # TODO: where this come from?
-    user_addon = None  # TODO: where this come from? got it, but dont use it?
-    auth = None  # TODO: injected by must_be_logged_in
-
-    folder = request.json.get('selected')  # TODO: flask syntax?
-    set_folder(node_addon, folder, auth)
-
-    path = node_addon.folder_path
-
-    folder_name = None
-    if path != '/':
-        folder_name = path.replace('All Files', '')
-    else:
-        folder_name = '/ (Full {0})'.format('Box')
-
-    return {
-        'result': {
-            'folder': {
-                'name': folder_name,
-                'path': path,
-            },
-            'urls': serializer.BoxSerializer(
-                node_settings=node_addon
-            ).addon_serialized_urls,
-        },
-        'message': 'Successfully updated settings.',
-    }
-
-
-def get_project_addons(request, project_guid):
-    return {}

@@ -104,3 +104,8 @@ def _make_wb_auth_payload(user, creds_and_settings, callback_url):
 
 def _get_node_by_guid(project_guid):
     return getattr(Guid.load(project_guid), 'referent', None)
+
+
+def cas_get_login_url(url):
+    # TODO: implement this!
+    return url

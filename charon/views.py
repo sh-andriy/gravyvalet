@@ -153,8 +153,24 @@ def _box_deauthorize_node(request, project_guid):
     return None
 
 
-def box_folders_list(request, project_guid):
-    return {}
+def box_folder_list(request, project_guid):
+    """
+    based off of addons.box.views.box_folder_list
+
+    *DOESN'T impl or curry generic_views.folder_list or _folder_list*
+
+    impl based off of addons.box.views.box_folder_list
+
+    inlined decorators from website.project.decorators:
+    @must_have_addon('box', 'node')  decorator does ???
+    @must_be_addon_authorizer('box') decorator does ???
+
+    Returns all the subsequent folders under the folder id passed.
+    """
+    # TODO: how exactly is this different from generic_views.folder_list curried method?
+    node_addon = None  # TODO: where this come from?
+    folder_id = request.args.get('folder_id')
+    return node_addon.get_folders(folder_id=folder_id)
 
 
 def get_credentials(request):
@@ -187,7 +203,7 @@ def box_account_list(request):
     # must_be_logged_in impl inlined
     auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
     if not auth.logged_in:
-        return redirect(cas.get_login_url(request.url))
+        return redirect(utils.cas_get_login_url(request.url))
 
     user_settings = auth.user.get_addon('box')
     our_serializer = serializer.BoxSerializer(user_settings=user_settings)

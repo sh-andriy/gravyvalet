@@ -36,8 +36,8 @@ urlpatterns = [
     # GET is $addon_folders_list
     path(
         'projects/<str:project_guid>/box/folders/',
-        views.box_folders_list,
-        name='box_folders_list',
+        views.box_folder_list,
+        name='box_folder_list',
     ),
     # not specified in addons.base.views
     # from website.routes, view is website.project.views.node.node_choose_addons

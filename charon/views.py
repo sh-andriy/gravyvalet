@@ -1,6 +1,11 @@
 import logging
 
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    JsonResponse,
+)
 from django.shortcuts import redirect
 from django.template import loader
 
@@ -106,7 +111,7 @@ def box_folder_list(request, project_guid):
 #   which calls .config_addons() on node model object
 #   .config_addons() is defined in AddonModelMixin
 def get_project_addons(request, project_guid):
-    return {}
+    return JsonResponse(['box'])
 
 
 def get_credentials(request):

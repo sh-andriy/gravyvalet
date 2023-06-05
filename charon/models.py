@@ -3,17 +3,24 @@ import logging
 import os
 import time
 
-from boxsdk import Client, OAuth2
-from boxsdk.exception import BoxAPIException
 import bson
 import jwe
 import markupsafe
+import requests
+from boxsdk import Client, OAuth2
+from boxsdk.exception import BoxAPIException
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.postgres.fields import ArrayField  # replace with sqlite equiv?
 from django.core.exceptions import ValidationError
 from django.db import connections, models
 from django.db.models import DateTimeField, ForeignKey, TextField
 from django.db.models.query import QuerySet
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+)
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 
@@ -894,7 +901,7 @@ class BaseStorageAddon(object):
         res = requests.get(metadata_url)
 
         if res.status_code != 200:
-            raise HTTPError(res.status_code, data={'error': res.json()})
+            raise HttpResponse(res.content, status=res.status_code)
 
         # TODO: better throttling?
         time.sleep(1.0 / 5.0)
@@ -1221,14 +1228,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             )
             client = Client(oauth)
         except BoxAPIException:
-            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+            raise HttpResponseForbidden()
 
         try:
             metadata = client.folder(folder_id).get()
         except BoxAPIException:
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+            raise HttpResponseNotFound()
         except MaxRetryError:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+            raise HttpResponseBadRequest()
 
         folder_path = '/'.join(
             [x['name'] for x in metadata['path_collection']['entries']]
@@ -1316,7 +1323,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             Provider(self.external_account).refresh_oauth_key()
             return {'token': self.external_account.oauth_key}
         except BoxAPIException as error:
-            raise HTTPError(error.status_code, data={'message_long': error.message})
+            raise HttpResponse(error.message, status=error.status_code)
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:

@@ -14,6 +14,10 @@ def api_url_for():
     return ''
 
 
+def api_v2_url():
+    return ''
+
+
 class BoxSerializer(object):
     # explicit in addons.base.serializer.AddonSerializer
     __metaclass__ = abc.ABCMeta

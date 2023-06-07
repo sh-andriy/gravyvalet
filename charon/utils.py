@@ -113,6 +113,7 @@ def cas_get_login_url(url):
 
 class PermissionsError(Exception):
     """Raised if an action cannot be performed due to insufficient permissions"""
+
     pass
 
 
@@ -131,14 +132,13 @@ class InvalidAuthError(AddonError):
 # stub objects representing OSF models (mostly)
 # some are helper classes
 
-class Guid(object):
 
+class Guid(object):
     def __init__(self):
         return
 
 
 class Auth(object):
-
     def __init__(self):
         return
 
@@ -154,7 +154,6 @@ class Auth(object):
 
 
 class User(object):
-
     def __init__(self):
         return
 
@@ -164,7 +163,6 @@ class User(object):
 
 
 class Node(object):
-
     def __init__(self):
         return
 
@@ -178,7 +176,6 @@ class Node(object):
 
 
 class ExternalAccount(object):
-
     def __init__(self):
         return
 
@@ -188,7 +185,6 @@ class ExternalAccount(object):
 
 
 class UserAddon(object):
-
     def __init__(self):
         return
 
@@ -205,7 +201,6 @@ class UserAddon(object):
 
 
 class NodeAddon(object):
-
     def __init__(self):
         return
 

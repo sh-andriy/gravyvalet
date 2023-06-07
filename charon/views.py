@@ -9,7 +9,7 @@ from django.http import (
 from django.shortcuts import redirect
 from django.template import loader
 
-from . import serializer, utils
+from . import models, serializer, utils
 
 logger = logging.getLogger(__name__)
 
@@ -261,7 +261,7 @@ def _box_import_auth(request, project_guid):
     if node_addon is None:
         raise HttpResponseBadRequest('No node addon found')
 
-    external_account = utils.ExternalAccount.load(request.json['external_account_id'])
+    external_account = models.ExternalAccount.load(request.json['external_account_id'])
 
     if not user_addon.external_accounts.filter(id=external_account.id).exists():
         raise HttpResponseForbidden('User has no such account')
@@ -320,6 +320,10 @@ def _get_node_addon_for_node(node, addon_name):
 # broken out in case there is other validation to be incorporated from the decorator
 def _get_user_addon_for_user(user, addon_name):
     return user.get_addon(addon_name)
+
+
+def _get_node_by_guid(project_guid):
+    return getattr(models.Guid.load(project_guid), 'referent', None)
 
 
 # not currently being used

@@ -113,6 +113,7 @@ def cas_get_login_url(url):
 
 class PermissionsError(Exception):
     """Raised if an action cannot be performed due to insufficient permissions"""
+
     pass
 
 

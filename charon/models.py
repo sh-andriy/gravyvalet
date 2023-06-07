@@ -277,6 +277,7 @@ class ObjectIDMixin(BaseIDMixin):
     class Meta:
         abstract = True
 
+
 class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 
@@ -316,7 +317,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
     def __repr__(self):
         return '<{name}: {status}>'.format(
             name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
+            status=self.account.provider_id if self.account else 'anonymous',
         )
 
     @abc.abstractproperty
@@ -348,9 +349,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
                 redirect_uri = None
             else:
                 redirect_uri = web_url_for(
-                    'oauth_callback',
-                    service_name=self.short_name,
-                    _absolute=True
+                    'oauth_callback', service_name=self.short_name, _absolute=True
                 )
             # build the URL
             oauth = OAuth2Session(
@@ -458,9 +457,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
                     redirect_uri = None
                 else:
                     redirect_uri = web_url_for(
-                        'oauth_callback',
-                        service_name=self.short_name,
-                        _absolute=True
+                        'oauth_callback', service_name=self.short_name, _absolute=True
                     )
                 response = OAuth2Session(
                     self.client_id,
@@ -549,9 +546,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             if refresh_token:
                 values['refresh_token'] = refresh_token
             if expires_at:
-                values['expires_at'] = dt.datetime.fromtimestamp(
-                    float(expires_at)
-                )
+                values['expires_at'] = dt.datetime.fromtimestamp(float(expires_at))
 
             return values
 
@@ -571,8 +566,14 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         """
         pass
 
-    def refresh_oauth_key(self, force=False, extra=None, resp_auth_token_key='access_token',
-                          resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
+    def refresh_oauth_key(
+        self,
+        force=False,
+        extra=None,
+        resp_auth_token_key='access_token',
+        resp_refresh_token_key='refresh_token',
+        resp_expiry_fn=None,
+    ):
         """Handles the refreshing of an oauth_key for account associated with this provider.
            Not all addons need to use this, as some do not have oauth_keys that expire.
 
@@ -605,7 +606,8 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             return False
 
         resp_expiry_fn = resp_expiry_fn or (
-            lambda x: timezone.now() + timezone.timedelta(seconds=float(x['expires_in']))
+            lambda x: timezone.now()
+            + timezone.timedelta(seconds=float(x['expires_in']))
         )
 
         client = OAuth2Session(
@@ -615,19 +617,13 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
                 'refresh_token': self.account.refresh_token,
                 'token_type': 'Bearer',
                 'expires_in': '-30',
-            }
+            },
         )
 
-        extra.update({
-            'client_id': self.client_id,
-            'client_secret': self.client_secret
-        })
+        extra.update({'client_id': self.client_id, 'client_secret': self.client_secret})
 
         try:
-            token = client.refresh_token(
-                self.auto_refresh_url,
-                **extra
-            )
+            token = client.refresh_token(self.auto_refresh_url, **extra)
         except (AccessDeniedError, InvalidGrantError, TokenExpiredError):
             if not force:
                 return False
@@ -648,7 +644,9 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         return bool: True if needs_refresh
         """
         if self.refresh_time and self.account.expires_at:
-            return (self.account.expires_at - timezone.now()).total_seconds() < self.refresh_time
+            return (
+                self.account.expires_at - timezone.now()
+            ).total_seconds() < self.refresh_time
         return False
 
     @property
@@ -659,7 +657,9 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         return bool: True if cannot be refreshed
         """
         if self.expiry_time and self.account.expires_at:
-            return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
+            return (
+                timezone.now() - self.account.expires_at
+            ).total_seconds() > self.expiry_time
         return False
 
 
@@ -742,19 +742,21 @@ class Provider(ExternalProvider):
         record to the user and saves the user's access token and account info.
         """
 
-        client = Client(OAuth2(
-            access_token=response['access_token'],
-            refresh_token=response['refresh_token'],
-            client_id=settings.BOX_KEY,
-            client_secret=settings.BOX_SECRET,
-        ))
+        client = Client(
+            OAuth2(
+                access_token=response['access_token'],
+                refresh_token=response['refresh_token'],
+                client_id=settings.BOX_KEY,
+                client_secret=settings.BOX_SECRET,
+            )
+        )
 
         about = client.user().get()
 
         return {
             'provider_id': about['id'],
             'display_name': about['name'],
-            'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
+            'profile_url': 'https://app.box.com/profile/{0}'.format(about['id']),
         }
 
 

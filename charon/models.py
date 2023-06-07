@@ -348,7 +348,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
                 redirect_uri = None
             else:
-                redirect_uri = web_url_for(
+                redirect_uri = charon_utils.web_url_for(
                     'oauth_callback', service_name=self.short_name, _absolute=True
                 )
             # build the URL
@@ -456,7 +456,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
                 if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
                     redirect_uri = None
                 else:
-                    redirect_uri = web_url_for(
+                    redirect_uri = charon_utils.web_url_for(
                         'oauth_callback', service_name=self.short_name, _absolute=True
                     )
                 response = OAuth2Session(
@@ -746,8 +746,8 @@ class Provider(ExternalProvider):
             OAuth2(
                 access_token=response['access_token'],
                 refresh_token=response['refresh_token'],
-                client_id=settings.BOX_KEY,
-                client_secret=settings.BOX_SECRET,
+                client_id=charon_settings.BOX_KEY,
+                client_secret=charon_settings.BOX_SECRET,
             )
         )
 
@@ -1597,6 +1597,29 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             "BaseOAuthNodeSettings subclasses must implement a \
             'serialize_waterbutler_settings' method."
         )
+
+
+class UserSettings(BaseOAuthUserSettings):
+    """Stores user-specific box information
+    """
+
+    oauth_provider = Provider
+    serializer = charon_serializer.BoxSerializer
+
+    def revoke_remote_oauth_access(self, external_account):
+        try:
+            # TODO: write client for box, stop using third-party lib
+            requests.request(
+                'POST',
+                charon_settings.BOX_OAUTH_REVOKE_ENDPOINT,
+                params={
+                    'client_id': charon_settings.BOX_KEY,
+                    'client_secret': charon_settings.BOX_SECRET,
+                    'token': external_account.oauth_key,
+                }
+            )
+        except requests.HTTPError:
+            pass
 
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):

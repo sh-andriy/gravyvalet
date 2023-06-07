@@ -1600,8 +1600,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
 
 
 class UserSettings(BaseOAuthUserSettings):
-    """Stores user-specific box information
-    """
+    """Stores user-specific box information"""
 
     oauth_provider = Provider
     serializer = charon_serializer.BoxSerializer
@@ -1616,7 +1615,7 @@ class UserSettings(BaseOAuthUserSettings):
                     'client_id': charon_settings.BOX_KEY,
                     'client_secret': charon_settings.BOX_SECRET,
                     'token': external_account.oauth_key,
-                }
+                },
             )
         except requests.HTTPError:
             pass

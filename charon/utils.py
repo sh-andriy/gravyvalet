@@ -109,3 +109,20 @@ def _get_node_by_guid(project_guid):
 def cas_get_login_url(url):
     # TODO: implement this!
     return url
+
+
+class PermissionsError(Exception):
+    """Raised if an action cannot be performed due to insufficient permissions"""
+    pass
+
+
+class AddonError(Exception):
+    pass
+
+
+class InvalidFolderError(AddonError):
+    pass
+
+
+class InvalidAuthError(AddonError):
+    pass

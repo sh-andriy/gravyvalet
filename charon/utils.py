@@ -132,6 +132,7 @@ class InvalidAuthError(AddonError):
 # stub objects representing OSF models (mostly)
 # some are helper classes
 
+
 # called in: utils
 class Guid(object):
     def __init__(self):
@@ -167,7 +168,6 @@ class User(object):
 
 class Node(object):
     def __init__(self):
-
         # called in: serializer
         _id = None
         title = None
@@ -208,7 +208,6 @@ class Node(object):
 # called in: views
 class ExternalAccount(object):
     def __init__(self):
-
         # called in: serializer
         _id = None
         provider_id = None
@@ -227,7 +226,6 @@ class ExternalAccount(object):
 
 class UserAddon(object):
     def __init__(self):
-
         # called in: serializer
         # oauth_provider has subproperty short_name
         oauth_provider = None

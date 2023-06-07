@@ -6,14 +6,20 @@ from boxsdk.exception import BoxAPIException
 from . import settings
 
 
+# called in: serializer
+# there is also a separate web_url_for() method called on a node object
+# not sure what the context of this one is, need to look up
 def web_url_for():
     return ''
 
 
+# called in: serializer
+# return link to static osf endpoint, specifically oauth_endpoint+box
 def api_url_for():
     return ''
 
 
+# may have been added for models inline attempt
 def api_v2_url():
     return ''
 
@@ -144,8 +150,11 @@ class BoxSerializer(object):
         # request this deep into the serializer?
         # serialized_accounts property is called by serialized_user_settings property
         # serialized_user_settings is called by addons.views.generic_views.account_list
-        request = None  # this should be a flask request object, what is it doing here?
-        kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+        #
+        # i think this is bogus, and an auth object should be passed in from outside
+        #
+        # request = None  # this is a flask request object, what is it doing here?
+        # kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
 
         node_settings = node.get_addon(self.user_settings.oauth_provider.short_name)
         serializer = node_settings.serializer(node_settings=node_settings)

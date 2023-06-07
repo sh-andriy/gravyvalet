@@ -60,7 +60,8 @@ def box_account_list(request):
     """
 
     # must_be_logged_in impl inlined
-    auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    # auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    auth = _get_auth_from_request(request)
     if not auth.logged_in:
         return redirect(utils.cas_get_login_url(request.url))
 
@@ -96,13 +97,16 @@ def box_folder_list(request, project_guid):
     impl based off of addons.box.views.box_folder_list
 
     inlined decorators from website.project.decorators:
-    @must_have_addon('box', 'node')  decorator does ???
+    @must_have_addon('box', 'node')  decorator injects node_addon
     @must_be_addon_authorizer('box') decorator does ???
 
     Returns all the subsequent folders under the folder id passed.
     """
     # TODO: how exactly is this different from generic_views.folder_list curried method?
-    node_addon = None  # TODO: where this come from?
+    # inflate node
+    node = utils._get_node_by_guid(project_guid)
+    addon_name = 'box'
+    node_addon = _get_node_addon_for_node(node, addon_name)
     folder_id = request.args.get('folder_id')
     return node_addon.get_folders(folder_id=folder_id)
 
@@ -114,40 +118,26 @@ def get_project_addons(request, project_guid):
     return JsonResponse(['box'])
 
 
-def get_credentials(request):
-    logger.error('@@@ got request for get_credentials')
-
-    user = utils._get_user(request)
-    # check_access(node, auth, action, cas_resp)
-    # provider_settings = None
-    # if hasattr(node, 'get_addon'):
-    #     provider_settings = node.get_addon(provider_name)
-    #     if not provider_settings:
-    #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-    node_id = None
-    node_props = utils._get_node_properties(node_id)
-    creds_and_settings = utils._lookup_creds_and_settings_for(user['id'], node_props)
-    callback_url = utils._make_osf_callback_url(node_props)
-    return utils._make_wb_auth_payload(user, creds_and_settings, callback_url)
-
-
 def _box_get_config(request, project_guid):
     """
     from addons.views.generic_views.get_config
     box versions currys above with args ('box', BoxSerializer)
 
     impl based off of addons.base.generic_views._get_config
-    @must_be_logged_in             decorator injects `auth` into call
-    @must_have_addon('node')       decorator does ???
-    @must_be_valid_project         decorator does ???
-    @must_have_permission('WRITE') decorator does ???
+    @must_be_logged_in              decorator injects `auth` into call
+    @must_have_addon('box', 'node') decorator does ???
+    @must_be_valid_project          decorator does ???
+    @must_have_permission('WRITE')  decorator does ???
 
     _get_config docstring
     API that returns the serialized node settings.
     """
-    node_addon = None  # TODO: where this come from?
-    auth = None  # TODO: injected bu must_be_logged_in
+    # auth was injected by @must_be_logged_in
+    auth = _get_auth_from_request(request)
+    # node_addon injected by @must_have_addon('box', 'node')
+    node = utils._get_node_by_guid(project_guid)
+    addon_name = 'box'
+    node_addon = _get_node_addon_for_node(node, addon_name)
     return {
         'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
     }
@@ -170,13 +160,21 @@ def _box_set_config(request, project_guid):
     """
 
     def set_folder(node_addon, folder, auth):
-        uid = folder['id']
+        uid = folder['id']  # TODO: why called `uid`?
         node_addon.set_folder(uid, auth=auth)
         node_addon.save()
 
-    node_addon = None  # TODO: where this come from?
-    user_addon = None  # TODO: where this come from? got it, but dont use it?
-    auth = None  # TODO: injected by must_be_logged_in
+    # auth was injected by @must_be_logged_in
+    auth = _get_auth_from_request(request)
+    user = auth.user
+
+    # node_addon injected by @must_have_addon('box', 'node')
+    node = utils._get_node_by_guid(project_guid)
+    addon_name = 'box'
+    node_addon = _get_node_addon_for_node(node, addon_name)
+
+    # user_addon injected by @must_have_addon('box', 'user')
+    user_addon = _get_user_addon_for_user(user)  # TODO: we dont use it?
 
     folder = request.json.get('selected')  # TODO: flask syntax?
     set_folder(node_addon, folder, auth)
@@ -216,22 +214,12 @@ def _box_import_auth(request, project_guid):
     """
     logger.error('### in import_auth_box! request ib:({})'.format(request.json))
 
-    # kwargs ib:({'pid': 'dve82', 'parent': None,
+    # query_params = request.GET
+    # kwargs = {**query_params}
+    # kwargs['project_guid'] = project_guid
+    # kwargs['node'] = node
+    # kwargs in osf:({'pid': 'dve82', 'parent': None,
     #   'node': (title='Provider - S3', category='project') with guid 'dve82'})
-
-    # inflate node
-    node = utils._get_node_by_guid(project_guid)
-
-    # inflate user
-    user = utils._get_user_by_auth(request)
-    if user is None:
-        raise HttpResponse('Unauthorized', status=401)
-
-    addon_name = 'box'
-    query_params = request.GET
-    kwargs = {**query_params}
-    kwargs['project_guid'] = project_guid
-    kwargs['node'] = node
 
     # ===> utils._verify_permissions('WRITE', user, node, kwargs)
     # Auth defined in frameworks.auth.core.Auth
@@ -245,17 +233,26 @@ def _box_import_auth(request, project_guid):
     #     user = request_args.get('user') or kwargs.get('user') or _get_current_user()
     #     private_key = request_args.get('view_only')
     #     cls(user=user, private_key=private_key)
-    kwargs['auth_user'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
-    auth_user = kwargs['auth_user'].user
+    # kwargs['auth_user'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    # auth_user = kwargs['auth_user'].user
+    auth = _get_auth_from_request(request)
+    user = auth.user
+
+    # inflate node
+    node = utils._get_node_by_guid(project_guid)
+
+    addon_name = 'box'
+
     # User must be logged in
-    if auth_user is None:
+    if user is None:
         raise HttpResponse('Unauthorized', status=401)
+
     # User must have permissions
-    if not node.has_permission(auth_user, 'WRITE'):
+    if not node.has_permission(user, 'WRITE'):
         raise HttpResponseForbidden('User has not permissions on node')
 
     # ====> @must_have_addon('box', 'user')
-    user_addon = auth_user.get_addon(addon_name)
+    user_addon = user.get_addon(addon_name)
     if user_addon is None:
         raise HttpResponseBadRequest('No user addon found')
 
@@ -264,20 +261,20 @@ def _box_import_auth(request, project_guid):
     if node_addon is None:
         raise HttpResponseBadRequest('No node addon found')
 
-    external_account = ExternalAccount.load(request.json['external_account_id'])
+    external_account = utils.ExternalAccount.load(request.json['external_account_id'])
 
     if not user_addon.external_accounts.filter(id=external_account.id).exists():
         raise HttpResponseForbidden('User has no such account')
 
     try:
         node_addon.set_auth(external_account, user_addon.owner)
-    except PermissionsError:
+    except utils.PermissionsError:
         raise HttpResponseForbidden('Unable to apply users auth to node')
 
     node_addon.save()
 
     return {
-        'result': serializer.BoxSerializer().serialize_settings(node_addon, auth_user),
+        'result': serializer.BoxSerializer().serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
     }
 
@@ -294,9 +291,51 @@ def _box_deauthorize_node(request, project_guid):
     @must_have_addon('node')     decorator does ???
     @must_have_permission(WRITE) decorator does ???
     """
-    node_addon = None  # TODO: where this come from?
-    auth = None  # TODO: injected by ???
+    auth = _get_auth_from_request(request)
+
+    # inflate node
+    node = utils._get_node_by_guid(project_guid)
+    addon_name = 'box'
+    node_addon = node.get_addon(addon_name)
 
     node_addon.deauthorize(auth=auth)
     node_addon.save()
     return None
+
+
+def _get_auth_from_request(request):
+    # TODO: i think this basically inlines @must_be_logged_in
+    # did I start doing this with get_credentials?
+    # i think so
+    return {}
+
+
+# reimplementation of @must_have_addon('addon_name', 'node')
+# broken out in case there is other validation to be incorporated from the decorator
+def _get_node_addon_for_node(node, addon_name):
+    return node.get_addon(addon_name)
+
+
+# reimplementation of @must_have_addon('addon_name', 'node')
+# broken out in case there is other validation to be incorporated from the decorator
+def _get_user_addon_for_user(user, addon_name):
+    return user.get_addon(addon_name)
+
+
+# not currently being used
+def get_credentials(request):
+    logger.error('@@@ got request for get_credentials')
+
+    user = utils._get_user(request)
+    # check_access(node, auth, action, cas_resp)
+    # provider_settings = None
+    # if hasattr(node, 'get_addon'):
+    #     provider_settings = node.get_addon(provider_name)
+    #     if not provider_settings:
+    #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+    node_id = None
+    node_props = utils._get_node_properties(node_id)
+    creds_and_settings = utils._lookup_creds_and_settings_for(user['id'], node_props)
+    callback_url = utils._make_osf_callback_url(node_props)
+    return utils._make_wb_auth_payload(user, creds_and_settings, callback_url)

@@ -113,7 +113,6 @@ def cas_get_login_url(url):
 
 class PermissionsError(Exception):
     """Raised if an action cannot be performed due to insufficient permissions"""
-
     pass
 
 
@@ -127,3 +126,112 @@ class InvalidFolderError(AddonError):
 
 class InvalidAuthError(AddonError):
     pass
+
+
+# stub objects representing OSF models (mostly)
+# some are helper classes
+
+class Guid(object):
+
+    def __init__(self):
+        return
+
+
+class Auth(object):
+
+    def __init__(self):
+        return
+
+    # have valid credentials been passed and a proper user identified?
+    @property
+    def logged_in(self):
+        return False
+
+    # return User object representing the logged in user implied by the instatiation
+    # creds
+    def user(self):
+        return {}
+
+
+class User(object):
+
+    def __init__(self):
+        return
+
+    # returns a user_settings object for the addon
+    def get_addon(self, addon_name):
+        return {}
+
+
+class Node(object):
+
+    def __init__(self):
+        return
+
+    # returns a node_settings object for the addon
+    def get_addon(self, addon_name):
+        return {}
+
+    # returns boolean indicateing if User object has `perm` access to the node
+    def has_permission(self, user, perm):
+        return False
+
+
+class ExternalAccount(object):
+
+    def __init__(self):
+        return
+
+    @classmethod
+    def load(cls, external_account_id):
+        return cls(external_account_id)
+
+
+class UserAddon(object):
+
+    def __init__(self):
+        return
+
+    # TODO: should be a property?
+    # return a list or queryset like of external_accounts
+    # .filter() is called on this
+    def external_accounts(self):
+        return []
+
+    # return User object related to this UserAddon, i think
+    # TODO: property?
+    def owner(self):
+        return {}
+
+
+class NodeAddon(object):
+
+    def __init__(self):
+        return
+
+    # set root folder id for nodeAddon
+    def set_folder(self, folder_id, auth):
+        return
+
+    # return list of folders under folder with id=folder_id
+    def get_folders(self, folder_id):
+        return []
+
+    # return string representing path of root folder
+    # TODO: should be a property?
+    def folder_path(self):
+        return ''
+
+    # ???
+    # external_account should be an ExternalAccount object
+    # owner is a User object, i think
+    def set_auth(external_account, owner):
+        return {}
+
+    # save to store
+    def save(self):
+        return {}
+
+    # auth is an Auth object
+    def deauthorize(self, auth):
+        return

@@ -52,4 +52,7 @@ urlpatterns = [
         views.get_project_addons,
         name='get_project_addons',
     ),
+    # TODO: osf.addons.box.serializer also refers to `collect_file_trees` endpoint, but
+    # it is not box-specific. Do we need to add that? Gut feeling is it might be later
+    # files addon work
 ]

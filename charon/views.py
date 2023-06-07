@@ -13,7 +13,6 @@ from . import models, serializer, utils
 
 logger = logging.getLogger(__name__)
 
-
 # ========== VIEWS ==========
 
 
@@ -23,6 +22,7 @@ def index(request):
     )
 
 
+# pretend to connect to box, but we lie
 def connect_box(request):
     logger.error('@@@ got request for connect_box')
     logger.error('@@@   request ib:({})'.format(request))
@@ -37,6 +37,7 @@ def connect_box(request):
     return response
 
 
+# pretend like we were called back from box, but we lie
 def callback_box(request):
     logger.error('@@@ got request for callback_box')
     logger.error('@@@   request ib:({})'.format(request))
@@ -76,7 +77,7 @@ def box_project_config(request, project_guid):
     elif request.method == 'PUT':
         _box_set_config(request, project_guid)
 
-    raise HttpResponse('Method Not Allowed', status=405)
+    return HttpResponse('Method Not Allowed', status=405)
 
 
 def box_user_auth(request, project_guid):
@@ -85,7 +86,7 @@ def box_user_auth(request, project_guid):
     elif request.method == 'DELETE':
         _box_deauthorize_node(request, project_guid)
 
-    raise HttpResponse('Method Not Allowed', status=405)
+    return HttpResponse('Method Not Allowed', status=405)
 
 
 def box_folder_list(request, project_guid):
@@ -322,6 +323,7 @@ def _get_user_addon_for_user(user, addon_name):
     return user.get_addon(addon_name)
 
 
+# take a project guid and inflate it into a node object
 def _get_node_by_guid(project_guid):
     return getattr(models.Guid.load(project_guid), 'referent', None)
 

@@ -110,15 +110,17 @@ def box_folder_list(request, project_guid):
     node = utils._get_node_by_guid(project_guid)
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
-    folder_id = request.args.get('folder_id')
-    return node_addon.get_folders(folder_id=folder_id)
+    folder_id = request.GET.get('folder_id', None)
+    blef = node_addon.get_folders(folder_id=folder_id)
+    logger.error('%%%% gonkus: blef ib:({})'.format(blef))
+    return JsonResponse(blef, safe=False)
 
 
 # from website.routes, view is website.project.views.node.node_choose_addons
 #   which calls .config_addons() on node model object
 #   .config_addons() is defined in AddonModelMixin
 def get_project_addons(request, project_guid):
-    return JsonResponse(['box'])
+    return JsonResponse(['box'], safe=False)
 
 
 def _box_get_config(request, project_guid):
@@ -135,12 +137,15 @@ def _box_get_config(request, project_guid):
     _get_config docstring
     API that returns the serialized node settings.
     """
+    logger.error('€€€ get_config: beef alpha:({})'.format(None))
     # auth was injected by @must_be_logged_in
     auth = _get_auth_from_request(request)
     # node_addon injected by @must_have_addon('box', 'node')
     node = utils._get_node_by_guid(project_guid)
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
+    logger.error('€€€ get_config: beef beta - node_addon:({})'.format(node_addon))
+    logger.error('€€€ get_config: beef beta - auth.user:({})'.format(auth.user))
     return {
         'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
     }
@@ -322,7 +327,7 @@ def _box_deauthorize_node(request, project_guid):
 
     node_addon.deauthorize(auth=auth)
     node_addon.save()
-    return None
+    return HttpResponse(status=204)
 
 
 def _get_auth_from_request(request):

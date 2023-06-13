@@ -64,11 +64,12 @@ class User(object):
         },
     }
 
-
     def __init__(self, user_id):
         self.user_id = user_id
         self._props = self.OTHER_PROPERTIES.get(user_id, None)
-        self._our_external_accounts = [ExternalAccount(props=x) for x in self._props['external_accounts']]
+        self._our_external_accounts = [
+            ExternalAccount(props=x) for x in self._props['external_accounts']
+        ]
         return
 
     # called in: views
@@ -189,7 +190,6 @@ class UserAddon(object):
         'woof': {},
     }
 
-
     def __init__(self, parent, props):
         logger.error('$$$ qwa?? parent:({})  props:({})'.format(parent, props))
 
@@ -245,7 +245,6 @@ class NodeAddon(object):
         self.parent = parent
         self.fake_name = props.get('fake_name', None)
         return
-
 
     # called in: views
     # set root folder id for nodeAddon

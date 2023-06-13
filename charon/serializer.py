@@ -174,16 +174,36 @@ class BoxSerializer(object):
     def serialize_settings(self, node_settings, current_user, client=None):
         logger.error('¢¢¢¢ BoxSerializer.serialize_settings: alpha:({})'.format(None))
 
-        logger.error('¢¢¢¢ BoxSerializer.serialize_settings: node_settings:({})'.format(node_settings))
-        logger.error('¢¢¢¢ BoxSerializer.serialize_settings: current_user:({})'.format(current_user))
-        logger.error('¢¢¢¢ BoxSerializer.serialize_settings: client:({})'.format(client))
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: node_settings:({})'.format(
+                node_settings
+            )
+        )
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: current_user:({})'.format(
+                current_user
+            )
+        )
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: client:({})'.format(client)
+        )
 
         user_settings = node_settings.user_settings
-        logger.error('¢¢¢¢ BoxSerializer.serialize_settings: user_settings-from_node:({})'.format(user_settings))
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: '
+            'user_settings-from_node:({})'.format(
+                user_settings
+            )
+        )
         self.node_settings = node_settings
 
         current_user_settings = current_user.get_addon(self.addon_short_name)
-        logger.error('¢¢¢¢ BoxSerializer.serialize_settings: current_user_settings-from_user:({})'.format(current_user_settings))
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: '
+            'current_user_settings-from_user:({})'.format(
+                current_user_settings
+            )
+        )
 
         user_is_owner = (
             user_settings is not None and user_settings.owner() == current_user

@@ -6,7 +6,7 @@ import jwt
 import requests
 from django.utils import timezone
 
-from . import settings
+from . import models, settings
 
 logger = logging.getLogger(__name__)
 WATERBUTLER_JWE_KEY = jwe.kdf(
@@ -37,14 +37,26 @@ def _get_user(request):
     else:
         logger.error(
             '@@@ got bad response data from osf: code:({}) '
-            'content:({})'.format(resp.status_code, resp.content)
+            'content:({})'.format(resp.status_code, resp.content[0:500])
         )
+        logger.error('@@@ DONT EVER DO THIS!, back this out')
+        user_id = 'p4r65'
 
     return {'id': user_id}
 
 
-def _get_node_properties(node_id):
-    return {}
+def _get_node_by_guid(node_id):
+    NODE_PROPERTIES = {
+        'dve82': {
+            '_id': 'dve82',
+            'title': 'Provider - S3',
+        },
+    }
+    props = NODE_PROPERTIES.get(node_id, None)
+    if props is None:
+        return None
+    node = models.Node(props['_id'], props['title'])
+    return node
 
 
 def _lookup_creds_and_settings_for(user_id, node_props):

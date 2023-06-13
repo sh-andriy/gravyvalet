@@ -173,7 +173,7 @@ class BoxSerializer(object):
         self.node_settings = node_settings
         current_user_settings = current_user.get_addon(self.addon_short_name)
         user_is_owner = (
-            user_settings is not None and user_settings.owner == current_user
+            user_settings is not None and user_settings.owner() == current_user
         )
 
         valid_credentials = self.credentials_are_valid(user_settings, client)

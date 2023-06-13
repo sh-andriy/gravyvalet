@@ -1,3 +1,4 @@
+import json
 import logging
 
 from django.http import (
@@ -12,6 +13,7 @@ from django.template import loader
 from . import models, serializer, utils
 
 logger = logging.getLogger(__name__)
+
 
 # ========== VIEWS ==========
 
@@ -73,18 +75,18 @@ def box_account_list(request):
 
 def box_project_config(request, project_guid):
     if request.method == 'GET':
-        _box_get_config(request, project_guid)
+        return _box_get_config(request, project_guid)
     elif request.method == 'PUT':
-        _box_set_config(request, project_guid)
+        return _box_set_config(request, project_guid)
 
     return HttpResponse('Method Not Allowed', status=405)
 
 
 def box_user_auth(request, project_guid):
     if request.method == 'PUT':
-        _box_import_auth(request, project_guid)
+        return _box_import_auth(request, project_guid)
     elif request.method == 'DELETE':
-        _box_deauthorize_node(request, project_guid)
+        return _box_deauthorize_node(request, project_guid)
 
     return HttpResponse('Method Not Allowed', status=405)
 
@@ -213,7 +215,7 @@ def _box_import_auth(request, project_guid):
     must_have_permission
     must_have_addon
     """
-    logger.error('### in import_auth_box! request ib:({})'.format(request.json))
+    logger.error('### in import_auth_box! request ib:({})'.format(request))
 
     # query_params = request.GET
     # kwargs = {**query_params}
@@ -244,35 +246,54 @@ def _box_import_auth(request, project_guid):
 
     addon_name = 'box'
 
+    logger.error('### import_auth_box! alpha null:({})'.format(None))
+
     # User must be logged in
     if user is None:
         raise HttpResponse('Unauthorized', status=401)
 
+    logger.error('### import_auth_box! beta null:({})'.format(None))
+
     # User must have permissions
     if not node.has_permission(user, 'WRITE'):
-        raise HttpResponseForbidden('User has not permissions on node')
+        return HttpResponseForbidden('User has not permissions on node')
+
+    logger.error('### import_auth_box! gamma null:({})'.format(None))
 
     # ====> @must_have_addon('box', 'user')
     user_addon = user.get_addon(addon_name)
     if user_addon is None:
-        raise HttpResponseBadRequest('No user addon found')
+        return HttpResponseBadRequest('No user addon found')
+
+    logger.error('### import_auth_box! delta null:({})'.format(None))
 
     # ====> @must_have_addon('box', 'node')
     node_addon = node.get_addon(addon_name)
     if node_addon is None:
-        raise HttpResponseBadRequest('No node addon found')
+        return HttpResponseBadRequest('No node addon found')
 
-    external_account = models.ExternalAccount.load(request.json['external_account_id'])
+    logger.error('### import_auth_box! epsilon null:({})'.format(None))
 
-    if not user_addon.external_accounts.filter(id=external_account.id).exists():
-        raise HttpResponseForbidden('User has no such account')
+    req_data = json.loads(request.body)
+    external_account = models.ExternalAccount.load(req_data['external_account_id'])
+
+    logger.error('### import_auth_box! zeta null:({})'.format(None))
+
+    if not user_addon.external_accounts.filter(_id=external_account._id).exists():
+        return HttpResponseForbidden('User has no such account')
+
+    logger.error('### import_auth_box! eta null:({})'.format(None))
 
     try:
-        node_addon.set_auth(external_account, user_addon.owner)
+        node_addon.set_auth(external_account, user_addon.owner())
     except utils.PermissionsError:
         raise HttpResponseForbidden('Unable to apply users auth to node')
 
+    logger.error('### import_auth_box! theta null:({})'.format(None))
+
     node_addon.save()
+
+    logger.error('### import_auth_box! iota null:({})'.format(None))
 
     return {
         'result': serializer.BoxSerializer().serialize_settings(node_addon, user),
@@ -308,7 +329,9 @@ def _get_auth_from_request(request):
     # TODO: i think this basically inlines @must_be_logged_in
     # did I start doing this with get_credentials?
     # i think so
-    return {}
+    user_params = utils._get_user(request)
+    user = models.User(user_params['id'])
+    return models.Auth(user=user)
 
 
 # reimplementation of @must_have_addon('addon_name', 'node')
@@ -341,7 +364,7 @@ def get_credentials(request):
     #         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     node_id = None
-    node_props = utils._get_node_properties(node_id)
+    node_props = utils._get_node_by_guid(node_id)
     creds_and_settings = utils._lookup_creds_and_settings_for(user['id'], node_props)
     callback_url = utils._make_osf_callback_url(node_props)
     return utils._make_wb_auth_payload(user, creds_and_settings, callback_url)

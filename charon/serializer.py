@@ -191,18 +191,14 @@ class BoxSerializer(object):
         user_settings = node_settings.user_settings
         logger.error(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
-            'user_settings-from_node:({})'.format(
-                user_settings
-            )
+            'user_settings-from_node:({})'.format(user_settings)
         )
         self.node_settings = node_settings
 
         current_user_settings = current_user.get_addon(self.addon_short_name)
         logger.error(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
-            'current_user_settings-from_user:({})'.format(
-                current_user_settings
-            )
+            'current_user_settings-from_user:({})'.format(current_user_settings)
         )
 
         user_is_owner = (

@@ -114,7 +114,19 @@ def box_folder_list(request, project_guid):
     blef = node_addon.get_folders(folder_id=folder_id)
 
     # TODO: fixture removal!
-    blef.append({"id": "0", "path": "/", "addon": "box", "kind": "folder", "name": "/ (Full Box)", "urls": {"folders": "http://localhost:8000/v2/nodes/dve82/addons/box/folders/?id=0"}})
+    blef.append(
+        {
+            "id": "0",
+            "path": "/",
+            "addon": "box",
+            "kind": "folder",
+            "name": "/ (Full Box)",
+            "urls": {
+                # "folders": "http://localhost:8000/v2/nodes/dve82/addons/box/folders/?id=0"
+                "folders": "http://localhost:8011/charon/projects/dve82/box/folders/?id=0"
+            },
+        }
+    )
     logger.error('%%%% gonkus: blef ib:({})'.format(blef))
     return JsonResponse(blef, safe=False)
 

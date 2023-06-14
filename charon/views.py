@@ -112,6 +112,9 @@ def box_folder_list(request, project_guid):
     node_addon = _get_node_addon_for_node(node, addon_name)
     folder_id = request.GET.get('folder_id', None)
     blef = node_addon.get_folders(folder_id=folder_id)
+
+    # TODO: fixture removal!
+    blef.append({"id": "0", "path": "/", "addon": "box", "kind": "folder", "name": "/ (Full Box)", "urls": {"folders": "http://localhost:8000/v2/nodes/dve82/addons/box/folders/?id=0"}})
     logger.error('%%%% gonkus: blef ib:({})'.format(blef))
     return JsonResponse(blef, safe=False)
 

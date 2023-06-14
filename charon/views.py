@@ -162,9 +162,9 @@ def _box_get_config(request, project_guid):
     node_addon = _get_node_addon_for_node(node, addon_name)
     logger.error('€€€ get_config: beef beta - node_addon:({})'.format(node_addon))
     logger.error('€€€ get_config: beef beta - auth.user:({})'.format(auth.user))
-    return JsonResponse({
-        'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
-    })
+    return JsonResponse(
+        {'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)}
+    )
 
 
 def _box_set_config(request, project_guid):
@@ -211,18 +211,20 @@ def _box_set_config(request, project_guid):
     else:
         folder_name = '/ (Full {0})'.format('Box')
 
-    return JsonResponse({
-        'result': {
-            'folder': {
-                'name': folder_name,
-                'path': path,
+    return JsonResponse(
+        {
+            'result': {
+                'folder': {
+                    'name': folder_name,
+                    'path': path,
+                },
+                'urls': serializer.BoxSerializer(
+                    node_settings=node_addon
+                ).addon_serialized_urls,
             },
-            'urls': serializer.BoxSerializer(
-                node_settings=node_addon
-            ).addon_serialized_urls,
-        },
-        'message': 'Successfully updated settings.',
-    })
+            'message': 'Successfully updated settings.',
+        }
+    )
 
 
 def _box_import_auth(request, project_guid):
@@ -316,10 +318,12 @@ def _box_import_auth(request, project_guid):
 
     logger.error('### import_auth_box! iota null:({})'.format(None))
 
-    return JsonResponse({
-        'result': serializer.BoxSerializer().serialize_settings(node_addon, user),
-        'message': 'Successfully imported access token from profile.',
-    })
+    return JsonResponse(
+        {
+            'result': serializer.BoxSerializer().serialize_settings(node_addon, user),
+            'message': 'Successfully imported access token from profile.',
+        }
+    )
 
 
 def _box_deauthorize_node(request, project_guid):

@@ -109,7 +109,9 @@ class Node(object):
     # returns a node_settings object for the addon
     def get_addon(self, addon_name):
         if self._props is not None:
-            node_addon = NodeAddon(self, self._props['node_addon'][addon_name], addon_name)
+            node_addon = NodeAddon(
+                self, self._props['node_addon'][addon_name], addon_name
+            )
             return node_addon
         return None
 

@@ -50,7 +50,6 @@ def _get_user(request):
 
 
 def _get_node_by_guid(node_id):
-    
     NODE_PROPERTIES = {
         'dve82': {
             '_id': 'dve82',

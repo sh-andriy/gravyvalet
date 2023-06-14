@@ -222,12 +222,13 @@ class BoxSerializer(object):
             'valid_credentials:({})'.format(valid_credentials)
         )
 
-        user_has_auth = current_user_settings is not None and current_user_settings.has_auth
+        user_has_auth = (
+            current_user_settings is not None and current_user_settings.has_auth
+        )
         logger.error(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
             'user_has_auth:({})'.format(user_has_auth)
         )
-
 
         # result = {
         #     'userIsOwner': user_is_owner,
@@ -250,7 +251,7 @@ class BoxSerializer(object):
             # result['urls']['owner'] = web_url_for(
             #     'profile_view_id', uid=user_settings.owner._id
             # )
-            result['urls']['owner'] = 'https://localhost:5000/profile/p4r65',
+            result['urls']['owner'] = ('https://localhost:5000/profile/p4r65',)
 
             # result['ownerName'] = user_settings.owner.fullname
             result['ownerName'] = user_settings.owner().fullname
@@ -285,7 +286,6 @@ class BoxSerializer(object):
 
     # from addons.box.serializer.BoxSerializer
     def serialized_folder(self, node_settings):
-
         # path = node_settings.fetch_full_folder_path()
         path = '/'
         return {
@@ -297,7 +297,11 @@ class BoxSerializer(object):
     # explicit in addons.box.serializer.BoxSerializer
     @property
     def addon_serialized_urls(self):
-        logger.error('§§§§ addon_serialized_urls self.node_settings:({})'.format(self.node_settings))
+        logger.error(
+            '§§§§ addon_serialized_urls self.node_settings:({})'.format(
+                self.node_settings
+            )
+        )
         node = self.node_settings.parent
         logger.error('§§§§ addon_serialized_urls node:({})'.format(node))
         # guid = node.guids.first()._id
@@ -305,25 +309,28 @@ class BoxSerializer(object):
         return {
             # 'auth': api_url_for('oauth_connect', service_name='box'),
             'auth': 'http://localhost:8011/charon/box/connect',
-
             # 'importAuth': node.api_url_for('box_import_auth'),
-            'importAuth': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(guid),
-
+            'importAuth': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(
+                guid
+            ),
             # 'files': node.web_url_for('collect_file_trees'),
             'files': 'https://localhost:5000/project/dve82/files/',
-
             # 'folders': node.api_url_for('box_folder_list'),
-            'folders': 'http://localhost:8011/charon/projects/{}/box/folders/'.format(guid),
-
+            'folders': 'http://localhost:8011/charon/projects/{}/box/folders/'.format(
+                guid
+            ),
             # 'config': node.api_url_for('box_set_config'),
-            'config': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(guid),
-
+            'config': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(
+                guid
+            ),
             # 'configPUT': node.api_url_for('box_set_config'),
-            'configPUT': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(guid),
-
+            'configPUT': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(
+                guid
+            ),
             # 'deauthorize': node.api_url_for('box_deauthorize_node'),
-            'deauthorize': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(guid),
-
+            'deauthorize': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(
+                guid
+            ),
             # 'accounts': node.api_url_for('box_account_list'),
             'accounts': 'http://localhost:8011/charon/settings/box/accounts/',
         }

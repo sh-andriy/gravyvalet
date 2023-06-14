@@ -80,7 +80,10 @@ class BoxSerializer(object):
         for url in self.REQUIRED_URLS:
             msg = "addon_serialized_urls must include key '{0}'".format(url)
             assert url in ret, msg
-        ret.update({'settings': web_url_for('user_addons')})
+
+        # ret.update({'settings': web_url_for('user_addons')})
+        ret.update({'settings': 'https://localhost:5000/settings/addons/'})
+
         return ret
 
     # from addons.base.serializer.OAuthAddonSerializer
@@ -174,6 +177,10 @@ class BoxSerializer(object):
     def serialize_settings(self, node_settings, current_user, client=None):
         logger.error('¢¢¢¢ BoxSerializer.serialize_settings: alpha:({})'.format(None))
 
+        # TODO: is this legit? Original code doesn't make sense
+        self.node_settings = node_settings
+        self.user_settings = current_user.get_addon('box')
+
         logger.error(
             '¢¢¢¢ BoxSerializer.serialize_settings: node_settings:({})'.format(
                 node_settings
@@ -188,7 +195,7 @@ class BoxSerializer(object):
             '¢¢¢¢ BoxSerializer.serialize_settings: client:({})'.format(client)
         )
 
-        user_settings = node_settings.user_settings
+        user_settings = node_settings.user_settings()
         logger.error(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
             'user_settings-from_node:({})'.format(user_settings)
@@ -204,24 +211,50 @@ class BoxSerializer(object):
         user_is_owner = (
             user_settings is not None and user_settings.owner() == current_user
         )
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: '
+            'user_is_owner:({})'.format(user_is_owner)
+        )
 
         valid_credentials = self.credentials_are_valid(user_settings, client)
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: '
+            'valid_credentials:({})'.format(valid_credentials)
+        )
 
+        user_has_auth = current_user_settings is not None and current_user_settings.has_auth
+        logger.error(
+            '¢¢¢¢ BoxSerializer.serialize_settings: '
+            'user_has_auth:({})'.format(user_has_auth)
+        )
+
+
+        # result = {
+        #     'userIsOwner': user_is_owner,
+        #     'nodeHasAuth': node_settings.has_auth,
+        #     'urls': self.serialized_urls,
+        #     'validCredentials': valid_credentials,
+        #     'userHasAuth': current_user_settings is not None
+        #     and current_user_settings.has_auth,
+        # }
         result = {
-            'userIsOwner': user_is_owner,
-            'nodeHasAuth': node_settings.has_auth,
+            'userIsOwner': True,
+            'nodeHasAuth': True,
             'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
-            'userHasAuth': current_user_settings is not None
-            and current_user_settings.has_auth,
+            'userHasAuth': True,
         }
 
         if node_settings.has_auth:
             # Add owner's profile URL
-            result['urls']['owner'] = web_url_for(
-                'profile_view_id', uid=user_settings.owner._id
-            )
-            result['ownerName'] = user_settings.owner.fullname
+            # result['urls']['owner'] = web_url_for(
+            #     'profile_view_id', uid=user_settings.owner._id
+            # )
+            result['urls']['owner'] = 'https://localhost:5000/profile/p4r65',
+
+            # result['ownerName'] = user_settings.owner.fullname
+            result['ownerName'] = user_settings.owner().fullname
+
             # Show available folders
             if node_settings.folder_id is None:
                 result['folder'] = {'name': None, 'path': None}
@@ -231,28 +264,30 @@ class BoxSerializer(object):
 
     # from addons.box.serializer.BoxSerializer
     def credentials_are_valid(self, user_settings, client):
-        from addons.box.models import Provider as Box  # Avoid circular import
+        # from addons.box.models import Provider as Box  # Avoid circular import
 
-        if self.node_settings.has_auth:
-            if Box(self.node_settings.external_account).refresh_oauth_key():
-                return True
+        # if self.node_settings.has_auth:
+        #     if Box(self.node_settings.external_account).refresh_oauth_key():
+        #         return True
 
-        if user_settings:
-            oauth = OAuth2(
-                client_id=settings.BOX_KEY,
-                client_secret=settings.BOX_SECRET,
-                access_token=user_settings.external_accounts[0].oauth_key,
-            )
-            client = client or Client(oauth)
-            try:
-                client.user()
-            except (BoxAPIException, IndexError):
-                return False
+        # if user_settings:
+        #     oauth = OAuth2(
+        #         client_id=settings.BOX_KEY,
+        #         client_secret=settings.BOX_SECRET,
+        #         access_token=user_settings.external_accounts[0].oauth_key,
+        #     )
+        #     client = client or Client(oauth)
+        #     try:
+        #         client.user()
+        #     except (BoxAPIException, IndexError):
+        #         return False
         return True
 
     # from addons.box.serializer.BoxSerializer
     def serialized_folder(self, node_settings):
-        path = node_settings.fetch_full_folder_path()
+
+        # path = node_settings.fetch_full_folder_path()
+        path = '/'
         return {
             'path': path,
             'name': path.replace('All Files', '', 1) if path != '/' else '/ (Full Box)',
@@ -262,14 +297,33 @@ class BoxSerializer(object):
     # explicit in addons.box.serializer.BoxSerializer
     @property
     def addon_serialized_urls(self):
-        node = self.node_settings.owner
-
+        logger.error('§§§§ addon_serialized_urls self.node_settings:({})'.format(self.node_settings))
+        node = self.node_settings.parent
+        logger.error('§§§§ addon_serialized_urls node:({})'.format(node))
+        # guid = node.guids.first()._id
+        guid = node._id
         return {
-            'auth': api_url_for('oauth_connect', service_name='box'),
-            'importAuth': node.api_url_for('box_import_auth'),
-            'files': node.web_url_for('collect_file_trees'),
-            'folders': node.api_url_for('box_folder_list'),
-            'config': node.api_url_for('box_set_config'),
-            'deauthorize': node.api_url_for('box_deauthorize_node'),
-            'accounts': node.api_url_for('box_account_list'),
+            # 'auth': api_url_for('oauth_connect', service_name='box'),
+            'auth': 'http://localhost:8011/charon/box/connect',
+
+            # 'importAuth': node.api_url_for('box_import_auth'),
+            'importAuth': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(guid),
+
+            # 'files': node.web_url_for('collect_file_trees'),
+            'files': 'https://localhost:5000/project/dve82/files/',
+
+            # 'folders': node.api_url_for('box_folder_list'),
+            'folders': 'http://localhost:8011/charon/projects/{}/box/folders/'.format(guid),
+
+            # 'config': node.api_url_for('box_set_config'),
+            'config': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(guid),
+
+            # 'configPUT': node.api_url_for('box_set_config'),
+            'configPUT': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(guid),
+
+            # 'deauthorize': node.api_url_for('box_deauthorize_node'),
+            'deauthorize': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(guid),
+
+            # 'accounts': node.api_url_for('box_account_list'),
+            'accounts': 'http://localhost:8011/charon/settings/box/accounts/',
         }

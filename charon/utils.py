@@ -17,15 +17,19 @@ WATERBUTLER_JWE_KEY = jwe.kdf(
 
 # TODO: not sure i love accessing request outside of views
 def _get_user(request):
+    logger.error('¶¶¶¶ in utils._get_user alpha:({})'.format(None))
     headers = {'Content-type': 'application/json'}
     if "Authorization" in request.headers:
         headers['Authorization'] = request.headers['Authorization']
     cookies = request.COOKIES
+    logger.error('¶¶¶¶ in utils._get_user cookies:({})'.format(cookies))
+    logger.error('¶¶¶¶ in utils._get_user headers:({})'.format(headers))
     resp = requests.get(
         'http://localhost:5000/api/v1/user/auth/',
         headers=headers,
         cookies=cookies,
     )
+    logger.error('¶¶¶¶ in utils._get_user resp:({})'.format(resp))
 
     user_id = None
     if resp.status_code == 200:
@@ -46,6 +50,7 @@ def _get_user(request):
 
 
 def _get_node_by_guid(node_id):
+    
     NODE_PROPERTIES = {
         'dve82': {
             '_id': 'dve82',

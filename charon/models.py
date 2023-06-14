@@ -40,6 +40,7 @@ class User(object):
         'mst3k': {},
         'fbi4u': {},
         'p4r65': {
+            'fullname': 'Fitz Elliott',
             'user_addon': {
                 'box': {'fake_name': 'meow'},
             },
@@ -67,6 +68,7 @@ class User(object):
     def __init__(self, user_id):
         self.user_id = user_id
         self._props = self.OTHER_PROPERTIES.get(user_id, None)
+        self.fullname = self._props['fullname']
         self._our_external_accounts = [
             ExternalAccount(props=x) for x in self._props['external_accounts']
         ]
@@ -107,7 +109,7 @@ class Node(object):
     # returns a node_settings object for the addon
     def get_addon(self, addon_name):
         if self._props is not None:
-            node_addon = NodeAddon(self, self._props['node_addon'][addon_name])
+            node_addon = NodeAddon(self, self._props['node_addon'][addon_name], addon_name)
             return node_addon
         return None
 
@@ -239,16 +241,19 @@ class UserAddon(object):
 
 
 class NodeAddon(object):
-    def __init__(self, parent, props):
+    def __init__(self, parent, props, addon_name):
         logger.error('$$$ NodeAddon parent:({})  props:({})'.format(parent, props))
 
         self.parent = parent
         self.fake_name = props.get('fake_name', None)
+        self.addon_name = addon_name
+        self.folder_id = 0
         return
 
     # called in: views
     # set root folder id for nodeAddon
     def set_folder(self, folder_id, auth):
+        self.folder_id = folder_id
         return
 
     # called in: views
@@ -267,7 +272,9 @@ class NodeAddon(object):
     # external_account should be an ExternalAccount object
     # owner is a User object, i think
     def set_auth(self, external_account, owner):
-        return {}
+        # user_settings = owner.get_addon(self.addon_name)
+        # self.user_settings = user_settings
+        return
 
     # called in: views
     # save to store
@@ -294,7 +301,7 @@ class NodeAddon(object):
     # either a property or attribute
     # returns UserAddon object related to this NodeAddon
     def user_settings(self):
-        return {}
+        return User('p4r65').get_addon(self.addon_name)
 
     # called in: serializer
     # returns "full" path for folder
@@ -306,4 +313,4 @@ class NodeAddon(object):
     # property or attribute
     # i'm guessing this just proxies to self.user_settings.owner
     def owner(self):
-        return {}
+        return self.user_settings().owner

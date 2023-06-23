@@ -157,11 +157,11 @@ def _box_get_config(request, project_guid):
     auth = _get_auth_from_request(request)
     # node_addon injected by @must_have_addon('box', 'node')
     node = utils._get_node_by_guid(project_guid)
-    logger.error('€€€ get_config: beef alpha - node:({})'.format(node))
+    # logger.error('€€€ get_config: beef alpha - node:({})'.format(node))
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
-    logger.error('€€€ get_config: beef beta - node_addon:({})'.format(node_addon))
-    logger.error('€€€ get_config: beef beta - auth.user:({})'.format(auth.user))
+    # logger.error('€€€ get_config: beef beta - node_addon:({})'.format(node_addon))
+    # logger.error('€€€ get_config: beef beta - auth.user:({})'.format(auth.user))
     return JsonResponse(
         {'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)}
     )
@@ -275,48 +275,48 @@ def _box_import_auth(request, project_guid):
     if user is None:
         raise HttpResponse('Unauthorized', status=401)
 
-    logger.error('### import_auth_box! beta null:({})'.format(None))
+    # logger.error('### import_auth_box! beta null:({})'.format(None))
 
     # User must have permissions
     if not node.has_permission(user, 'WRITE'):
         return HttpResponseForbidden('User has not permissions on node')
 
-    logger.error('### import_auth_box! gamma null:({})'.format(None))
+    # logger.error('### import_auth_box! gamma null:({})'.format(None))
 
     # ====> @must_have_addon('box', 'user')
     user_addon = user.get_addon(addon_name)
     if user_addon is None:
         return HttpResponseBadRequest('No user addon found')
 
-    logger.error('### import_auth_box! delta null:({})'.format(None))
+    # logger.error('### import_auth_box! delta null:({})'.format(None))
 
     # ====> @must_have_addon('box', 'node')
     node_addon = node.get_addon(addon_name)
     if node_addon is None:
         return HttpResponseBadRequest('No node addon found')
 
-    logger.error('### import_auth_box! epsilon null:({})'.format(None))
+    # logger.error('### import_auth_box! epsilon null:({})'.format(None))
 
     req_data = json.loads(request.body)
     external_account = models.ExternalAccount.load(req_data['external_account_id'])
 
-    logger.error('### import_auth_box! zeta null:({})'.format(None))
+    # logger.error('### import_auth_box! zeta null:({})'.format(None))
 
     if not user_addon.external_accounts.filter(_id=external_account._id).exists():
         return HttpResponseForbidden('User has no such account')
 
-    logger.error('### import_auth_box! eta null:({})'.format(None))
+    # logger.error('### import_auth_box! eta null:({})'.format(None))
 
     try:
         node_addon.set_auth(external_account, user_addon.owner())
     except utils.PermissionsError:
         raise HttpResponseForbidden('Unable to apply users auth to node')
 
-    logger.error('### import_auth_box! theta null:({})'.format(None))
+    # logger.error('### import_auth_box! theta null:({})'.format(None))
 
     node_addon.save()
 
-    logger.error('### import_auth_box! iota null:({})'.format(None))
+    # logger.error('### import_auth_box! iota null:({})'.format(None))
 
     return JsonResponse(
         {

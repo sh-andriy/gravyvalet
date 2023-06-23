@@ -6,20 +6,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# called in: utils
-class Guid(object):
-    def __init__(self):
-        # called in views
-        referent = None
-
-        return
-
-    # called in views
-    @classmethod
-    def load(cls, project_guid):
-        return cls(project_guid)
-
-
 class Auth(object):
     def __init__(self, user):
         # called in: views

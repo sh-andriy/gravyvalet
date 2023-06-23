@@ -175,16 +175,13 @@ class BoxSerializer(object):
 
     # from addons.base.serializer.StorageAddonSerializer
     def serialize_settings(self, node_settings, current_user, client=None):
-
         # TODO: is this legit? Original code doesn't make sense
         self.node_settings = node_settings
         self.user_settings = current_user.get_addon('box')
 
         logger.info(
             '¢¢¢¢ BoxSerializer.serialize_settings: node_settings:({}) '
-            'current_user:({}) client:({})'.format(
-                node_settings, current_user, client
-            )
+            'current_user:({}) client:({})'.format(node_settings, current_user, client)
         )
 
         self.node_settings = node_settings

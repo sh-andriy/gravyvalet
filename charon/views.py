@@ -358,12 +358,12 @@ def _get_auth_from_request(request):
     user = models.User(user_params['id'])
     return models.Auth(user=user)
 
+
 # take a project guid and inflate it into a node object
 def _get_node_by_guid(request, project_guid):
     node_props = utils._get_node_by_guid(request, project_guid)
     node = models.Node(node_props['_id'], node_props['title'])
     return node
-
 
 
 # reimplementation of @must_have_addon('addon_name', 'node')
@@ -376,7 +376,6 @@ def _get_node_addon_for_node(node, addon_name):
 # broken out in case there is other validation to be incorporated from the decorator
 def _get_user_addon_for_user(user, addon_name):
     return user.get_addon(addon_name)
-
 
 
 # not currently being used

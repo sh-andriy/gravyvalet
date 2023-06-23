@@ -6,7 +6,7 @@ import jwt
 import requests
 from django.utils import timezone
 
-from . import models, settings
+from . import settings
 
 logger = logging.getLogger(__name__)
 WATERBUTLER_JWE_KEY = jwe.kdf(
@@ -24,7 +24,11 @@ def _get_user(request):
     if "Authorization" in request.headers:
         headers['Authorization'] = request.headers['Authorization']
     cookies = request.COOKIES
-    logger.error('¶¶¶¶ in utils._get_user headers:({}) cookies:({})'.format(dict(request.headers), cookies))
+    logger.error(
+        '¶¶¶¶ in utils._get_user headers:({}) cookies:({})'.format(
+            dict(request.headers), cookies
+        )
+    )
     resp = requests.get(
         'http://localhost:5000/api/v1/user/auth/',
         headers=headers,
@@ -46,13 +50,14 @@ def _get_user(request):
 
 
 def _get_node_by_guid(request, node_id):
-    """Take django request object, extract auth properties, and using these auth propertiesget user identified
-    by these properties
+    """Take django request object, extract auth properties, and using these auth
+    properties get user identified by these properties
     """
-    logger.info('¶¶¶¶ in utils._get_node_by_guid headers:({}) cookies:({})'.format(
-        dict(request.headers),
-        request.COOKIES
-    ))
+    logger.info(
+        '¶¶¶¶ in utils._get_node_by_guid headers:({}) cookies:({})'.format(
+            dict(request.headers), request.COOKIES
+        )
+    )
     headers = {'Content-type': 'application/json'}
     if "Authorization" in request.headers:
         headers['Authorization'] = request.headers['Authorization']
@@ -71,7 +76,9 @@ def _get_node_by_guid(request, node_id):
             '¶¶¶¶ in utils._get_node_by_guid@ got bad response data from osf: '
             'code:({}) content:({})'.format(resp.status_code, resp.content[0:500])
         )
-        raise Exception('Couldnt get node properties for node:({}) for current user'.format(node_id))
+        raise Exception(
+            'Couldnt get node properties for node:({}) for current user'.format(node_id)
+        )
 
     resp_data = resp.json()
     logger.info('¶¶¶¶ in utils._get_node_by_guid resp-data:({})'.format(resp_data))

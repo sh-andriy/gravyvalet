@@ -17,13 +17,14 @@ WATERBUTLER_JWE_KEY = jwe.kdf(
 
 # TODO: not sure i love accessing request outside of views
 def _get_user(request):
-    logger.error('¶¶¶¶ in utils._get_user alpha:({})'.format(None))
+    """Take django request object, extract auth properties, and get user identified
+    by these properties
+    """
     headers = {'Content-type': 'application/json'}
     if "Authorization" in request.headers:
         headers['Authorization'] = request.headers['Authorization']
     cookies = request.COOKIES
-    logger.error('¶¶¶¶ in utils._get_user cookies:({})'.format(cookies))
-    logger.error('¶¶¶¶ in utils._get_user headers:({})'.format(headers))
+    logger.error('¶¶¶¶ in utils._get_user headers:({}) cookies:({})'.format(dict(request.headers), cookies))
     resp = requests.get(
         'http://localhost:5000/api/v1/user/auth/',
         headers=headers,
@@ -31,36 +32,55 @@ def _get_user(request):
     )
     logger.error('¶¶¶¶ in utils._get_user resp:({})'.format(resp))
 
-    user_id = None
-    if resp.status_code == 200:
-        # raw_data = resp.json
-        # logger.error('@@@ got raw response data from osf: {}'.format(raw_data))
-        resp_data = resp.json()
-        logger.error('@@@ got response data from osf: {}'.format(resp_data))
-        user_id = resp_data['data']['user_id']
-    else:
+    if resp.status_code != 200:
         logger.error(
-            '@@@ got bad response data from osf: code:({}) '
+            '¶¶¶¶ in utils._get_user got bad response data from osf: code:({}) '
             'content:({})'.format(resp.status_code, resp.content[0:500])
         )
-        logger.error('@@@ DONT EVER DO THIS!, back this out')
-        user_id = 'p4r65'
+        raise Exception('Couldnt get user properties for current user')
 
+    resp_data = resp.json()
+    logger.info('¶¶¶¶ in utils._get_user resp-data:({})'.format(resp_data))
+    user_id = resp_data['data']['user_id']
     return {'id': user_id}
 
 
-def _get_node_by_guid(node_id):
-    NODE_PROPERTIES = {
-        'dve82': {
-            '_id': 'dve82',
-            'title': 'Provider - S3',
-        },
+def _get_node_by_guid(request, node_id):
+    """Take django request object, extract auth properties, and using these auth propertiesget user identified
+    by these properties
+    """
+    logger.info('¶¶¶¶ in utils._get_node_by_guid headers:({}) cookies:({})'.format(
+        dict(request.headers),
+        request.COOKIES
+    ))
+    headers = {'Content-type': 'application/json'}
+    if "Authorization" in request.headers:
+        headers['Authorization'] = request.headers['Authorization']
+    cookies = request.COOKIES
+    url = 'http://localhost:8000/v2/nodes/{}/'.format(node_id)
+    logger.info('¶¶¶¶ in utils._get_node_by_guid url:({})'.format(url))
+    resp = requests.get(
+        url,
+        headers=headers,
+        cookies=cookies,
+    )
+    logger.info('¶¶¶¶ in utils._get_node_by_guid resp:({})'.format(resp))
+
+    if resp.status_code != 200:
+        logger.error(
+            '¶¶¶¶ in utils._get_node_by_guid@ got bad response data from osf: '
+            'code:({}) content:({})'.format(resp.status_code, resp.content[0:500])
+        )
+        raise Exception('Couldnt get node properties for node:({}) for current user'.format(node_id))
+
+    resp_data = resp.json()
+    logger.info('¶¶¶¶ in utils._get_node_by_guid resp-data:({})'.format(resp_data))
+
+    props = {
+        '_id': node_id,
+        'title': resp_data['data']['attributes']['title'],
     }
-    props = NODE_PROPERTIES.get(node_id, None)
-    if props is None:
-        return None
-    node = models.Node(props['_id'], props['title'])
-    return node
+    return props
 
 
 def _lookup_creds_and_settings_for(user_id, node_props):

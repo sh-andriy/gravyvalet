@@ -107,7 +107,7 @@ def box_folder_list(request, project_guid):
     """
     # TODO: how exactly is this different from generic_views.folder_list curried method?
     # inflate node
-    node = utils._get_node_by_guid(project_guid)
+    node = _get_node_by_guid(request, project_guid)
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
     folder_id = request.GET.get('folder_id', None)
@@ -156,7 +156,7 @@ def _box_get_config(request, project_guid):
     # auth was injected by @must_be_logged_in
     auth = _get_auth_from_request(request)
     # node_addon injected by @must_have_addon('box', 'node')
-    node = utils._get_node_by_guid(project_guid)
+    node = _get_node_by_guid(request, project_guid)
     # logger.error('€€€ get_config: beef alpha - node:({})'.format(node))
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
@@ -193,7 +193,7 @@ def _box_set_config(request, project_guid):
     user = auth.user
 
     # node_addon injected by @must_have_addon('box', 'node')
-    node = utils._get_node_by_guid(project_guid)
+    node = _get_node_by_guid(request, project_guid)
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
 
@@ -265,7 +265,7 @@ def _box_import_auth(request, project_guid):
     user = auth.user
 
     # inflate node
-    node = utils._get_node_by_guid(project_guid)
+    node = _get_node_by_guid(request, project_guid)
 
     addon_name = 'box'
 
@@ -341,7 +341,7 @@ def _box_deauthorize_node(request, project_guid):
     auth = _get_auth_from_request(request)
 
     # inflate node
-    node = utils._get_node_by_guid(project_guid)
+    node = _get_node_by_guid(request, project_guid)
     addon_name = 'box'
     node_addon = node.get_addon(addon_name)
 
@@ -358,6 +358,13 @@ def _get_auth_from_request(request):
     user = models.User(user_params['id'])
     return models.Auth(user=user)
 
+# take a project guid and inflate it into a node object
+def _get_node_by_guid(request, project_guid):
+    node_props = utils._get_node_by_guid(request, project_guid)
+    node = models.Node(node_props['_id'], node_props['title'])
+    return node
+
+
 
 # reimplementation of @must_have_addon('addon_name', 'node')
 # broken out in case there is other validation to be incorporated from the decorator
@@ -370,10 +377,6 @@ def _get_node_addon_for_node(node, addon_name):
 def _get_user_addon_for_user(user, addon_name):
     return user.get_addon(addon_name)
 
-
-# take a project guid and inflate it into a node object
-def _get_node_by_guid(project_guid):
-    return getattr(models.Guid.load(project_guid), 'referent', None)
 
 
 # not currently being used

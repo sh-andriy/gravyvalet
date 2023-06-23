@@ -175,49 +175,38 @@ class BoxSerializer(object):
 
     # from addons.base.serializer.StorageAddonSerializer
     def serialize_settings(self, node_settings, current_user, client=None):
-        logger.error('¢¢¢¢ BoxSerializer.serialize_settings: alpha:({})'.format(None))
 
         # TODO: is this legit? Original code doesn't make sense
         self.node_settings = node_settings
         self.user_settings = current_user.get_addon('box')
 
-        logger.error(
-            '¢¢¢¢ BoxSerializer.serialize_settings: node_settings:({})'.format(
-                node_settings
+        logger.info(
+            '¢¢¢¢ BoxSerializer.serialize_settings: node_settings:({}) '
+            'current_user:({}) client:({})'.format(
+                node_settings, current_user, client
             )
-        )
-        logger.error(
-            '¢¢¢¢ BoxSerializer.serialize_settings: current_user:({})'.format(
-                current_user
-            )
-        )
-        logger.error(
-            '¢¢¢¢ BoxSerializer.serialize_settings: client:({})'.format(client)
         )
 
-        user_settings = node_settings.user_settings()
-        logger.error(
-            '¢¢¢¢ BoxSerializer.serialize_settings: '
-            'user_settings-from_node:({})'.format(user_settings)
-        )
         self.node_settings = node_settings
-
+        user_settings = node_settings.user_settings()
         current_user_settings = current_user.get_addon(self.addon_short_name)
-        logger.error(
-            '¢¢¢¢ BoxSerializer.serialize_settings: '
-            'current_user_settings-from_user:({})'.format(current_user_settings)
+        logger.info(
+            '¢¢¢¢ BoxSerializer.serialize_settings: user_settings-from_node:({}) '
+            'current_user_settings-from_user:({})'.format(
+                user_settings, current_user_settings
+            )
         )
 
         user_is_owner = (
             user_settings is not None and user_settings.owner() == current_user
         )
-        logger.error(
+        logger.info(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
             'user_is_owner:({})'.format(user_is_owner)
         )
 
         valid_credentials = self.credentials_are_valid(user_settings, client)
-        logger.error(
+        logger.info(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
             'valid_credentials:({})'.format(valid_credentials)
         )
@@ -225,7 +214,7 @@ class BoxSerializer(object):
         user_has_auth = (
             current_user_settings is not None and current_user_settings.has_auth
         )
-        logger.error(
+        logger.info(
             '¢¢¢¢ BoxSerializer.serialize_settings: '
             'user_has_auth:({})'.format(user_has_auth)
         )

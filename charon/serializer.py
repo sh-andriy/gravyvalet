@@ -1,10 +1,10 @@
 import abc
 import logging
 
-from boxsdk import Client, OAuth2
-from boxsdk.exception import BoxAPIException
+# from boxsdk import Client, OAuth2
+# from boxsdk.exception import BoxAPIException
 
-from . import settings
+# from . import settings
 
 logger = logging.getLogger(__name__)
 
@@ -292,31 +292,22 @@ class BoxSerializer(object):
         logger.error('§§§§ addon_serialized_urls node:({})'.format(node))
         # guid = node.guids.first()._id
         guid = node._id
+        CHARON_ROOT = 'http://localhost:8011/charon'
         return {
             # 'auth': api_url_for('oauth_connect', service_name='box'),
-            'auth': 'http://localhost:8011/charon/box/connect',
+            'auth': '{}/box/connect'.format(CHARON_ROOT),
             # 'importAuth': node.api_url_for('box_import_auth'),
-            'importAuth': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(
-                guid
-            ),
+            'importAuth': '{}/projects/{}/box/user_auth/'.format(CHARON_ROOT, guid),
             # 'files': node.web_url_for('collect_file_trees'),
             'files': 'https://localhost:5000/project/dve82/files/',
             # 'folders': node.api_url_for('box_folder_list'),
-            'folders': 'http://localhost:8011/charon/projects/{}/box/folders/'.format(
-                guid
-            ),
+            'folders': '{}/projects/{}/box/folders/'.format(CHARON_ROOT, guid),
             # 'config': node.api_url_for('box_set_config'),
-            'config': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(
-                guid
-            ),
+            'config': '{}/projects/{}/box/settings/'.format(CHARON_ROOT, guid),
             # 'configPUT': node.api_url_for('box_set_config'),
-            'configPUT': 'http://localhost:8011/charon/projects/{}/box/settings/'.format(
-                guid
-            ),
+            'configPUT': '{}/projects/{}/box/settings/'.format(CHARON_ROOT, guid),
             # 'deauthorize': node.api_url_for('box_deauthorize_node'),
-            'deauthorize': 'http://localhost:8011/charon/projects/{}/box/user_auth/'.format(
-                guid
-            ),
+            'deauthorize': '{}/projects/{}/box/user_auth/'.format(CHARON_ROOT, guid),
             # 'accounts': node.api_url_for('box_account_list'),
-            'accounts': 'http://localhost:8011/charon/settings/box/accounts/',
+            'accounts': '{}/settings/box/accounts/'.format(CHARON_ROOT),
         }

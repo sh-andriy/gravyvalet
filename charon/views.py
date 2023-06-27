@@ -14,6 +14,8 @@ from . import models, serializer, utils
 
 logger = logging.getLogger(__name__)
 
+CHARON_ROOT = 'http://localhost:8011/charon'
+API_ROOT = 'http://localhost:8000/v2'
 
 # ========== VIEWS ==========
 
@@ -66,7 +68,7 @@ def box_account_list(request):
     # auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
     auth = _get_auth_from_request(request)
     if not auth.logged_in:
-        return redirect(utils.cas_get_login_url(request.url))
+        return redirect(cas_get_login_url(request.url))
 
     user_settings = auth.user.get_addon('box')
     our_serializer = serializer.BoxSerializer(user_settings=user_settings)
@@ -113,6 +115,7 @@ def box_folder_list(request, project_guid):
     folder_id = request.GET.get('folder_id', None)
     blef = node_addon.get_folders(folder_id=folder_id)
 
+    # TODO: fixture removal - after secrets are stored
     # TODO: fixture removal!
     blef.append(
         {
@@ -122,8 +125,12 @@ def box_folder_list(request, project_guid):
             "kind": "folder",
             "name": "/ (Full Box)",
             "urls": {
-                # "folders": "http://localhost:8000/v2/nodes/dve82/addons/box/folders/?id=0"
-                "folders": "http://localhost:8011/charon/projects/dve82/box/folders/?id=0"
+                # "folders": '{}/nodes/{}/addons/box/folders/?id=0'.format(
+                #     API_ROOT, project_guid
+                # ),
+                "folders": '{}/projects/{}/box/folders/?id=0'.format(
+                    CHARON_ROOT, project_guid
+                ),
             },
         }
     )
@@ -152,16 +159,18 @@ def _box_get_config(request, project_guid):
     _get_config docstring
     API that returns the serialized node settings.
     """
-    logger.error('€€€ get_config: beef alpha:({})'.format(None))
+
+    logger.info('>>> _box_get_config - alpha:({})'.format(None))
+
     # auth was injected by @must_be_logged_in
     auth = _get_auth_from_request(request)
+
     # node_addon injected by @must_have_addon('box', 'node')
     node = _get_node_by_guid(request, project_guid)
-    # logger.error('€€€ get_config: beef alpha - node:({})'.format(node))
+
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
-    # logger.error('€€€ get_config: beef beta - node_addon:({})'.format(node_addon))
-    # logger.error('€€€ get_config: beef beta - auth.user:({})'.format(auth.user))
+
     return JsonResponse(
         {'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)}
     )
@@ -190,7 +199,7 @@ def _box_set_config(request, project_guid):
 
     # auth was injected by @must_be_logged_in
     auth = _get_auth_from_request(request)
-    user = auth.user
+    # user = auth.user
 
     # node_addon injected by @must_have_addon('box', 'node')
     node = _get_node_by_guid(request, project_guid)
@@ -198,7 +207,7 @@ def _box_set_config(request, project_guid):
     node_addon = _get_node_addon_for_node(node, addon_name)
 
     # user_addon injected by @must_have_addon('box', 'user')
-    user_addon = _get_user_addon_for_user(user)  # TODO: we dont use it?
+    # user_addon = _get_user_addon_for_user(user)  # TODO: we dont use it?
 
     folder = request.json.get('selected')  # TODO: flask syntax?
     set_folder(node_addon, folder, auth)
@@ -238,6 +247,7 @@ def _box_import_auth(request, project_guid):
     must_have_permission
     must_have_addon
     """
+
     logger.error('### in import_auth_box! request ib:({})'.format(request))
 
     # query_params = request.GET
@@ -376,6 +386,11 @@ def _get_node_addon_for_node(node, addon_name):
 # broken out in case there is other validation to be incorporated from the decorator
 def _get_user_addon_for_user(user, addon_name):
     return user.get_addon(addon_name)
+
+
+def cas_get_login_url(url):
+    # TODO: implement this!
+    return url
 
 
 # not currently being used

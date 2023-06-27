@@ -146,11 +146,6 @@ def _make_wb_auth_payload(user, creds_and_settings, callback_url):
     }
 
 
-def cas_get_login_url(url):
-    # TODO: implement this!
-    return url
-
-
 class PermissionsError(Exception):
     """Raised if an action cannot be performed due to insufficient permissions"""
 

@@ -1,0 +1,57 @@
+{
+   "nodes" : {
+      "dve82" : {
+         "node_addon" : {
+            "box" : {
+               "fake_name" : "meow"
+            }
+         }
+      },
+      "fbi4u" : {},
+      "mst3k" : {}
+   },
+   "permissions" : {
+      "dve82" : {
+         "p4r65" : true
+      }
+   },
+   "user_addons" : {
+      "meow" : {
+         "oauth_provider" : {
+            "short_name" : "box"
+         }
+      },
+      "quack" : {},
+      "woof" : {}
+   },
+   "users" : {
+      "fbi4u" : {},
+      "mst3k" : {},
+      "p4r65" : {
+         "external_accounts" : [
+            {
+               "_id" : "alpha",
+               "display_name" : "dumpfust-alpha",
+               "profile_url" : "enchhort-alpha",
+               "provider" : "crechdolg-alpha",
+               "provider_id" : "plopsome-alpha",
+               "provider_name" : "borfhome-alpha"
+            },
+            {
+               "_id" : "beta",
+               "display_name" : "dumpfust-beta",
+               "profile_url" : "enchhort-beta",
+               "provider" : "crechdolg-beta",
+               "provider_id" : "plopsome-beta",
+               "provider_name" : "borfhome-beta"
+            }
+         ],
+         "fullname" : "Fitz Elliott",
+         "user_addon" : {
+            "box" : {
+               "fake_name" : "meow"
+            }
+         }
+      }
+   }
+}

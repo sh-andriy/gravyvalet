@@ -28,9 +28,9 @@ class Auth(object):
 
 
 class User(object):
-    def __init__(self, user_id):
-        self.user_id = user_id
-        self._props = DB['users'].get(user_id, None)
+    def __init__(self, _id):
+        self._id = _id
+        self._props = DB['users'].get(_id, None)
         if self._props is not None:
             self.fullname = self._props['fullname']
             self._our_external_accounts = [
@@ -65,7 +65,7 @@ class Node(object):
     # returns boolean indicateing if User object has `perm` access to the node
     def has_permission(self, user, perm):
         if DB['permissions'].get(self._id, False):
-            return DB['permissions'][self._id].get(user.user_id, False)
+            return DB['permissions'][self._id].get(user._id, False)
 
         return False
 
@@ -136,7 +136,7 @@ class UserAddon(object):
         self.addon_name = addon_name
 
         if self.parent is not None:
-            user_addons_props = DB['user_addons'].get(parent.user_id, None)
+            user_addons_props = DB['user_addons'].get(parent._id, None)
             self._props = user_addons_props.get(addon_name, None)
             self.fake_name = self._props.get('fake_name', None)
             self.external_accounts = self.parent.external_accounts

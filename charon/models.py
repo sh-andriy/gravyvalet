@@ -28,7 +28,6 @@ class Auth(object):
 
 
 class User(object):
-
     def __init__(self, user_id):
         self.user_id = user_id
         self._props = DB['users'].get(user_id, None)
@@ -50,7 +49,6 @@ class User(object):
 
 
 class Node(object):
-
     def __init__(self, _id, title):
         # called in: serializer
         self._id = _id
@@ -127,7 +125,6 @@ class ExternalAccountProxy(object):
 
 
 class UserAddon(object):
-
     def __init__(self, parent, addon_name):
         logger.error(
             '$$$ UserAddon.__init__ -- parent:({})  addon_name:({})'.format(

@@ -1,4 +1,14 @@
 {
+   "node_addons" : {
+      "dve82" : {
+         "box" : {
+            "fake_name" : "squishybits",
+            "folder_id" : "0",
+            "folder_name" : "/",
+            "folder_path" : "/"
+         }
+      }
+   },
    "nodes" : {
       "dve82" : {
          "node_addon" : {
@@ -16,18 +26,18 @@
       }
    },
    "user_addons" : {
-      "p4r65" : {
-          "box" : {
-              "is_deleted" : false,
-              "oauth_grants" : {
-                  "dve82": {}
-              },
-              "owner_id" : "p4r65"
-          }
-      },
       "meow?" : {
          "oauth_provider" : {
             "short_name" : "box"
+         }
+      },
+      "p4r65" : {
+         "box" : {
+            "is_deleted" : false,
+            "oauth_grants" : {
+               "dve82" : {}
+            },
+            "owner_id" : "p4r65"
          }
       },
       "quack?" : {},
@@ -62,15 +72,5 @@
             }
          }
       }
-   },
-    "node_addons" : {
-        "dve82" : {
-            "box" : {
-                "fake_name" : "squishybits",
-                "folder_id" : "0",
-                "folder_name" : "/",
-                "folder_path" : "/"
-            }
-        }
-    }
+   }
 }

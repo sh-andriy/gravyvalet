@@ -26,22 +26,18 @@
       }
    },
    "user_addons" : {
-      "meow?" : {
-         "oauth_provider" : {
-            "short_name" : "box"
-         }
-      },
       "p4r65" : {
          "box" : {
             "is_deleted" : false,
             "oauth_grants" : {
                "dve82" : {}
             },
+            "oauth_provider" : {
+               "short_name" : "box"
+            },
             "owner_id" : "p4r65"
          }
-      },
-      "quack?" : {},
-      "woof?" : {}
+      }
    },
    "users" : {
       "fbi4u" : {},

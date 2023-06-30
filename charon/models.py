@@ -136,7 +136,7 @@ class UserAddon(object):
         self.addon_name = addon_name
 
         if self.parent is not None:
-            user_addons_props = DB['user_addons'].get(parent._id, None)
+            user_addons_props = DB['user_addons'].get(parent.user_id, None)
             self._props = user_addons_props.get(addon_name, None)
             self.fake_name = self._props.get('fake_name', None)
             self.external_accounts = self.parent.external_accounts

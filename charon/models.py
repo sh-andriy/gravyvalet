@@ -28,38 +28,9 @@ class Auth(object):
 
 
 class User(object):
-    # OTHER_PROPERTIES = {
-    #     'mst3k': {},
-    #     'fbi4u': {},
-    #     'p4r65': {
-    #         'fullname': 'Fitz Elliott',
-    #         'user_addon': {
-    #             'box': {'fake_name': 'meow'},
-    #         },
-    #         'external_accounts': [
-    #             {
-    #                 '_id': 'alpha',
-    #                 'provider_id': 'plopsome-alpha',
-    #                 'provider_name': 'borfhome-alpha',
-    #                 'provider': 'crechdolg-alpha',
-    #                 'display_name': 'dumpfust-alpha',
-    #                 'profile_url': 'enchhort-alpha',
-    #             },
-    #             {
-    #                 '_id': 'beta',
-    #                 'provider_id': 'plopsome-beta',
-    #                 'provider_name': 'borfhome-beta',
-    #                 'provider': 'crechdolg-beta',
-    #                 'display_name': 'dumpfust-beta',
-    #                 'profile_url': 'enchhort-beta',
-    #             },
-    #         ],
-    #     },
-    # }
 
     def __init__(self, user_id):
         self.user_id = user_id
-        # self._props = self.OTHER_PROPERTIES.get(user_id, None)
         self._props = DB['users'].get(user_id, None)
         if self._props is not None:
             self.fullname = self._props['fullname']
@@ -71,10 +42,6 @@ class User(object):
     # called in: views
     # returns a user_settings object for the addon
     def get_addon(self, addon_name):
-        # if self._props is not None:
-        #     user_addon = UserAddon(self, self._props['user_addon'][addon_name])
-        #     return user_addon
-        # return None
         return UserAddon(self, addon_name)
 
     @property
@@ -83,20 +50,10 @@ class User(object):
 
 
 class Node(object):
-    # OTHER_PROPERTIES = {
-    #     'mst3k': {},
-    #     'fbi4u': {},
-    #     'dve82': {
-    #         'node_addon': {
-    #             'box': {'fake_name': 'meow'},
-    #         },
-    #     },
-    # }
 
     def __init__(self, _id, title):
         # called in: serializer
         self._id = _id
-        # self._props = self.OTHER_PROPERTIES.get(_id, None)
         self._props = DB['nodes'].get(_id, None)
         self.title = title
         return
@@ -104,29 +61,13 @@ class Node(object):
     # called in: views
     # returns a node_settings object for the addon
     def get_addon(self, addon_name):
-        # if self._props is not None:
-        #     node_addon = NodeAddon(
-        #         self, self._props['node_addon'][addon_name], addon_name
-        #     )
-        #     return node_addon
-        # return None
         return NodeAddon(self, addon_name)
 
     # called in: views
     # returns boolean indicateing if User object has `perm` access to the node
     def has_permission(self, user, perm):
-        # PERMISSION_MAP = {
-        #     'dve82': {
-        #         'p4r65': True,
-        #     }
-        # }
-
-        # if PERMISSION_MAP.get(self._id, False):
-        #     if PERMISSION_MAP[self._id].get(user.user_id, False):
-        #         return PERMISSION_MAP[self._id][user.user_id]
         if DB['permissions'].get(self._id, False):
-            if DB['permissions'][self._id].get(user.user_id, False):
-                return DB['permissions'][self._id][user.user_id]
+            return DB['permissions'][self._id].get(user.user_id, False)
 
         return False
 
@@ -186,41 +127,23 @@ class ExternalAccountProxy(object):
 
 
 class UserAddon(object):
-    # OTHER_PROPERTIES = {
-    #     'meow': {
-    #         'oauth_provider': {'short_name': 'box'},
-    #     },
-    #     'quack': {},
-    #     'woof': {},
-    # }
-
-    # def __init__(self, parent, props):
-    #     logger.error('$$$ qwa?? parent:({})  props:({})'.format(parent, props))
 
     def __init__(self, parent, addon_name):
-        logger.error('$$$ UserAddon.__init__ -- parent:({})  addon_name:({})'.format(parent, addon_name))
+        logger.error(
+            '$$$ UserAddon.__init__ -- parent:({})  addon_name:({})'.format(
+                parent, addon_name
+            )
+        )
 
         self.parent = parent
         self.addon_name = addon_name
-
-        # self.fake_name = props.get('fake_name', None)
-        # if not self.fake_name:
-        #     raise Exception('Dunno how to incept this UserAddon wo a fake_name')
-
-        # our_props = self.OTHER_PROPERTIES.get(self.fake_name, None)
-        # our_props = DB['user_addons'].get(self.fake_name, None)
-        # if not our_props:
-        #     raise Exception('Dunno how to incept this UserAddon w/ a bad fake_name')
-
-        # called in: serializer
-        # oauth_provider has subproperty short_name
-        # self.oauth_provider = our_props['oauth_provider']
 
         if self.parent is not None:
             user_addons_props = DB['user_addons'].get(parent._id, None)
             self._props = user_addons_props.get(addon_name, None)
             self.fake_name = self._props.get('fake_name', None)
             self.external_accounts = self.parent.external_accounts
+
             # called in: serializer
             # oauth_provider has subproperty short_name
             self.oauth_provider = self._props['oauth_provider']
@@ -257,7 +180,11 @@ class UserAddon(object):
 
 class NodeAddon(object):
     def __init__(self, parent, addon_name):
-        logger.error('$$$ NodeAddon parent:({})  addon_name:({})'.format(parent, addon_name))
+        logger.error(
+            '$$$ NodeAddon.__init__ -- parent:({})  addon_name:({})'.format(
+                parent, addon_name
+            )
+        )
 
         self.parent = parent
         self.addon_name = addon_name

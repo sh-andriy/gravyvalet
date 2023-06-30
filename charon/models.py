@@ -71,10 +71,11 @@ class User(object):
     # called in: views
     # returns a user_settings object for the addon
     def get_addon(self, addon_name):
-        if self._props is not None:
-            user_addon = UserAddon(self, self._props['user_addon'][addon_name])
-            return user_addon
-        return None
+        # if self._props is not None:
+        #     user_addon = UserAddon(self, self._props['user_addon'][addon_name])
+        #     return user_addon
+        # return None
+        return UserAddon(self, addon_name)
 
     @property
     def external_accounts(self):
@@ -103,12 +104,13 @@ class Node(object):
     # called in: views
     # returns a node_settings object for the addon
     def get_addon(self, addon_name):
-        if self._props is not None:
-            node_addon = NodeAddon(
-                self, self._props['node_addon'][addon_name], addon_name
-            )
-            return node_addon
-        return None
+        # if self._props is not None:
+        #     node_addon = NodeAddon(
+        #         self, self._props['node_addon'][addon_name], addon_name
+        #     )
+        #     return node_addon
+        # return None
+        return NodeAddon(self, addon_name)
 
     # called in: views
     # returns boolean indicateing if User object has `perm` access to the node
@@ -192,24 +194,36 @@ class UserAddon(object):
     #     'woof': {},
     # }
 
-    def __init__(self, parent, props):
-        logger.error('$$$ qwa?? parent:({})  props:({})'.format(parent, props))
+    # def __init__(self, parent, props):
+    #     logger.error('$$$ qwa?? parent:({})  props:({})'.format(parent, props))
+
+    def __init__(self, parent, addon_name):
+        logger.error('$$$ UserAddon.__init__ -- parent:({})  addon_name:({})'.format(parent, addon_name))
 
         self.parent = parent
-        self.fake_name = props.get('fake_name', None)
-        self.external_accounts = self.parent.external_accounts
+        self.addon_name = addon_name
 
-        if not self.fake_name:
-            raise Exception('Dunno how to incept this UserAddon wo a fake_name')
+        # self.fake_name = props.get('fake_name', None)
+        # if not self.fake_name:
+        #     raise Exception('Dunno how to incept this UserAddon wo a fake_name')
 
         # our_props = self.OTHER_PROPERTIES.get(self.fake_name, None)
-        our_props = DB['user_addons'].get(self.fake_name, None)
-        if not our_props:
-            raise Exception('Dunno how to incept this UserAddon w/ a bad fake_name')
+        # our_props = DB['user_addons'].get(self.fake_name, None)
+        # if not our_props:
+        #     raise Exception('Dunno how to incept this UserAddon w/ a bad fake_name')
 
         # called in: serializer
         # oauth_provider has subproperty short_name
-        self.oauth_provider = our_props['oauth_provider']
+        # self.oauth_provider = our_props['oauth_provider']
+
+        if self.parent is not None:
+            user_addons_props = DB['user_addons'].get(parent._id, None)
+            self._props = user_addons_props.get(addon_name, None)
+            self.fake_name = self._props.get('fake_name', None)
+            self.external_accounts = self.parent.external_accounts
+            # called in: serializer
+            # oauth_provider has subproperty short_name
+            self.oauth_provider = self._props['oauth_provider']
 
         return
 
@@ -242,13 +256,18 @@ class UserAddon(object):
 
 
 class NodeAddon(object):
-    def __init__(self, parent, props, addon_name):
-        logger.error('$$$ NodeAddon parent:({})  props:({})'.format(parent, props))
+    def __init__(self, parent, addon_name):
+        logger.error('$$$ NodeAddon parent:({})  addon_name:({})'.format(parent, addon_name))
 
         self.parent = parent
-        self.fake_name = props.get('fake_name', None)
         self.addon_name = addon_name
-        self.folder_id = 0
+
+        if self.parent is not None:
+            node_addons_props = DB['node_addons'].get(parent._id, None)
+            self._props = node_addons_props.get(addon_name, None)
+            self.fake_name = self._props.get('fake_name', None)
+            self.folder_id = self._props.get('folder_id', None)
+
         return
 
     # called in: views
@@ -280,7 +299,10 @@ class NodeAddon(object):
     # called in: views
     # save to store
     def save(self):
-        return {}
+        # save current state of DB?
+        with open('{}/charon.json'.format(DB_ROOT), "w") as json_file:
+            json.dump(DB, json_file)
+        return
 
     # called in: views
     # auth is an Auth object

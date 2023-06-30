@@ -16,13 +16,22 @@
       }
    },
    "user_addons" : {
-      "meow" : {
+      "p4r65" : {
+          "box" : {
+              "is_deleted" : false,
+              "oauth_grants" : {
+                  "dve82": {}
+              },
+              "owner_id" : "p4r65"
+          }
+      },
+      "meow?" : {
          "oauth_provider" : {
             "short_name" : "box"
          }
       },
-      "quack" : {},
-      "woof" : {}
+      "quack?" : {},
+      "woof?" : {}
    },
    "users" : {
       "fbi4u" : {},
@@ -53,5 +62,15 @@
             }
          }
       }
-   }
+   },
+    "node_addons" : {
+        "dve82" : {
+            "box" : {
+                "fake_name" : "squishybits",
+                "folder_id" : "0",
+                "folder_name" : "/",
+                "folder_path" : "/"
+            }
+        }
+    }
 }

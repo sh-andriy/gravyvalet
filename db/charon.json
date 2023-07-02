@@ -2,10 +2,17 @@
    "node_addons" : {
       "dve82" : {
          "box" : {
+            "created" : "2018-02-27 16:59:43.887806+00",
+            "deleted" : null,
+            "external_account_id" : null,
             "fake_name" : "squishybits",
             "folder_id" : "0",
             "folder_name" : "/",
-            "folder_path" : "/"
+            "folder_path" : "/",
+            "is_deleted" : false,
+            "modified" : "2018-07-29 21:32:09.574112+00",
+            "owner_id" : "p4r65",
+            "user_settings_id" : null
          }
       }
    },
@@ -28,9 +35,15 @@
    "user_addons" : {
       "p4r65" : {
          "box" : {
+            "created" : "2017-12-19 20:31:31.907425+00",
+            "deleted" : null,
             "is_deleted" : false,
+            "modified" : "2023-06-13 00:48:59.891857+00",
             "oauth_grants" : {
-               "dve82" : {}
+               "csab4" : {},
+               "dve82" : {
+                  "5a397723ab83f70009839fc1" : {}
+               }
             },
             "oauth_provider" : {
                "short_name" : "box"

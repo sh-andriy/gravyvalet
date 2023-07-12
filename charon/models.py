@@ -34,7 +34,7 @@ class User(object):
         if self._props is not None:
             self.fullname = self._props['fullname']
             self._our_external_accounts = [
-                ExternalAccount(props=x) for x in self._props['external_accounts']
+                ExternalAccount(_id=x) for x in self._props['external_accounts']
             ]
         return
 
@@ -92,14 +92,17 @@ class Node(object):
 
 # called in: views
 class ExternalAccount(object):
-    def __init__(self, props):
+    def __init__(self, _id):
         # called in: serializer
-        self._id = None
-        self.provider_id = None
-        self.provider_name = None
-        self.provider = None
-        self.display_name = None
-        self.profile_url = None
+        self._id = _id
+        self._props = DB['external_accounts'].get(_id, None)
+
+        if self._props is not None:
+            self.provider_id = self._props['provider_id']
+            self.provider_name = self._props['provider_name']
+            self.provider = self._props['provider']
+            self.display_name = self._props['display_name']
+            self.profile_url = self._props['profile_url']
 
         return
 

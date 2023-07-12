@@ -1,4 +1,22 @@
 {
+   "external_accounts" : {
+      "alpha" : {
+         "_id" : "alpha",
+         "display_name" : "dumpfust-alpha",
+         "profile_url" : "enchhort-alpha",
+         "provider" : "crechdolg-alpha",
+         "provider_id" : "plopsome-alpha",
+         "provider_name" : "borfhome-alpha"
+      },
+      "beta" : {
+         "_id" : "beta",
+         "display_name" : "dumpfust-beta",
+         "profile_url" : "enchhort-beta",
+         "provider" : "crechdolg-beta",
+         "provider_id" : "plopsome-beta",
+         "provider_name" : "borfhome-beta"
+      }
+   },
    "node_addons" : {
       "dve82" : {
          "box" : {
@@ -57,22 +75,8 @@
       "mst3k" : {},
       "p4r65" : {
          "external_accounts" : [
-            {
-               "_id" : "alpha",
-               "display_name" : "dumpfust-alpha",
-               "profile_url" : "enchhort-alpha",
-               "provider" : "crechdolg-alpha",
-               "provider_id" : "plopsome-alpha",
-               "provider_name" : "borfhome-alpha"
-            },
-            {
-               "_id" : "beta",
-               "display_name" : "dumpfust-beta",
-               "profile_url" : "enchhort-beta",
-               "provider" : "crechdolg-beta",
-               "provider_id" : "plopsome-beta",
-               "provider_name" : "borfhome-beta"
-            }
+            "alpha",
+            "beta"
          ],
          "fullname" : "Fitz Elliott",
          "user_addon" : {

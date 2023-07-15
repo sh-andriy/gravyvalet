@@ -1813,3 +1813,117 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def on_delete(self):
         self.deauthorize(add_log=False)
         self.save()
+
+
+
+####
+            state = request.args.get('state')
+
+            # make sure this is the same user that started the flow
+            if cached_credentials.get('state') != state:
+                raise PermissionsError('Request token does not match')
+
+            try:
+                # Quirk: Similarly to the `oauth2/authorize` endpoint, the `oauth2/access_token`
+                #        endpoint of Bitbucket would fail if a not-none or non-empty `redirect_uri`
+                #        were provided in the body of the POST request.
+                if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
+                    redirect_uri = None
+                else:
+                    redirect_uri = web_url_for(
+                        'oauth_callback',
+                        service_name=self.short_name,
+                        _absolute=True
+                    )
+                response = OAuth2Session(
+                    self.client_id,
+                    redirect_uri=redirect_uri,
+                ).fetch_token(
+                    self.callback_url,
+                    client_secret=self.client_secret,
+                    code=request.args.get('code'),
+                )
+            except (MissingTokenError, RequestsHTTPError):
+                raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
+        # pre-set as many values as possible for the ``ExternalAccount``
+        info = self._default_handle_callback(response)
+        # call the hook for subclasses to parse values from the response
+        info.update(self.handle_callback(response))
+
+        return self._set_external_account(user, info)
+
+    def _set_external_account(self, user, info):
+        current_session = get_session()
+        self.account, created = ExternalAccount.objects.get_or_create(
+            provider=self.short_name,
+            provider_id=info['provider_id'],
+        )
+
+        # ensure that provider_name is correct
+        self.account.provider_name = self.name
+        # required
+        self.account.oauth_key = info['key']
+
+        # only for OAuth1
+        self.account.oauth_secret = info.get('secret')
+
+        # only for OAuth2
+        self.account.expires_at = info.get('expires_at')
+        self.account.refresh_token = info.get('refresh_token')
+        self.account.date_last_refreshed = timezone.now()
+
+        # additional information
+        self.account.display_name = info.get('display_name')
+        self.account.profile_url = info.get('profile_url')
+
+        self.account.save()
+
+        # add it to the user's list of ``ExternalAccounts``
+        if not user.external_accounts.filter(id=self.account.id).exists():
+            user.external_accounts.add(self.account)
+            user.save()
+
+        if self.short_name in current_session.get('oauth_states', {}):
+            del current_session['oauth_states'][self.short_name]
+            current_session.save()
+
+        return True
+
+    def _default_handle_callback(self, data):
+        """Parse as much out of the key exchange's response as possible.
+
+        This should not be over-ridden in subclasses.
+        """
+        if self._oauth_version == OAUTH1:
+            key = data.get('oauth_token')
+            secret = data.get('oauth_token_secret')
+
+            values = {}
+
+            if key:
+                values['key'] = key
+            if secret:
+                values['secret'] = secret
+
+            return values
+
+        elif self._oauth_version == OAUTH2:
+            key = data.get('access_token')
+            refresh_token = data.get('refresh_token')
+            expires_at = data.get('expires_at')
+            scopes = data.get('scope')
+
+            values = {}
+
+            if key:
+                values['key'] = key
+            if scopes:
+                values['scope'] = scopes
+            if refresh_token:
+                values['refresh_token'] = refresh_token
+            if expires_at:
+                values['expires_at'] = dt.datetime.fromtimestamp(
+                    float(expires_at)
+                )
+
+            return values

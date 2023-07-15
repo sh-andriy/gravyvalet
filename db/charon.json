@@ -42,7 +42,7 @@
    },
    "node_addons" : {
       "dve82" : {
-         "box" : {
+         "oldbox" : {
             "created" : "2018-02-27 16:59:43.887806+00",
             "deleted" : null,
             "external_account_id" : null,

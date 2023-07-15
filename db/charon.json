@@ -1,20 +1,43 @@
 {
    "external_accounts" : {
+      "5a397723ab83f70009839fc1" : {
+         "_id" : "5a397723ab83f70009839fc1",
+         "date_last_refreshed" : "",
+         "display_name" : "Fitcosz Elliott",
+         "expires_at" : "",
+         "oauth_key" : "",
+         "oauth_secret" : "",
+         "profile_url" : "https://app.box.com/profile/244672277",
+         "provider" : "box",
+         "provider_id" : "244672277",
+         "provider_name" : "Box",
+         "refresh_token" : ""
+      },
       "alpha" : {
          "_id" : "alpha",
+         "date_last_refreshed" : "",
          "display_name" : "dumpfust-alpha",
+         "expires_at" : "",
+         "oauth_key" : "",
+         "oauth_secret" : "",
          "profile_url" : "enchhort-alpha",
          "provider" : "crechdolg-alpha",
          "provider_id" : "plopsome-alpha",
-         "provider_name" : "borfhome-alpha"
+         "provider_name" : "borfhome-alpha",
+         "refresh_token" : ""
       },
       "beta" : {
          "_id" : "beta",
+         "date_last_refreshed" : "",
          "display_name" : "dumpfust-beta",
+         "expires_at" : "",
+         "oauth_key" : "",
+         "oauth_secret" : "",
          "profile_url" : "enchhort-beta",
          "provider" : "crechdolg-beta",
          "provider_id" : "plopsome-beta",
-         "provider_name" : "borfhome-beta"
+         "provider_name" : "borfhome-beta",
+         "refresh_token" : ""
       }
    },
    "node_addons" : {
@@ -76,7 +99,8 @@
       "p4r65" : {
          "external_accounts" : [
             "alpha",
-            "beta"
+            "beta",
+            "5a397723ab83f70009839fc1"
          ],
          "fullname" : "Fitz Elliott",
          "user_addon" : {

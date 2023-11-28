@@ -1,0 +1,3 @@
+-r ./requirements.txt
+
+# Requirements to be installed on server deployments

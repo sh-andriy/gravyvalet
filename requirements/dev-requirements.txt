@@ -1,0 +1,10 @@
+-r ./requirements.txt
+
+# Requirements that are used in the development environment only
+# Testing
+factory-boy
+responses
+
+# Syntax checking
+flake8
+pre-commit

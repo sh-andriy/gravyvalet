@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  addon_service:
+    build: .
+    restart: unless-stopped
+    command: python3 manage.py runserver 0.0.0.0:8004
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings
+      PYTHONUNBUFFERED: 1
+      DEBUG: 1
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      ALLOWED_HOSTS: 0.0.0.0
+    ports:
+      - 8004:8004
+    stdin_open: true
+    volumes:
+      - ./:/code:cached
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:latest
+    volumes:
+      - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+volumes:
+  postgres_data_vol:
+    external: false

@@ -23,6 +23,8 @@ class AuthorizedStorageAccountSerializer(serializers.ModelSerializer):
         fields = [
             'default_root_folder',
             'external_storage_service',
+            'account_owner',
+            'external_service',
         ]
 
     def _get_account_owner(self, instance: AuthorizedStorageAccount):

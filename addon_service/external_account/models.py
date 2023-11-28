@@ -1,6 +1,6 @@
 from django.db import models
 
-from addon_service.utils.base_model import AddonsServiceBaseModel
+from addon_service.common.base_model import AddonsServiceBaseModel
 
 
 class ExternalAccount(AddonsServiceBaseModel):

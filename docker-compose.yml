@@ -12,7 +12,8 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      ALLOWED_HOSTS: 0.0.0.0
+      ALLOWED_HOSTS: 0.0.0.0,localhost
+      SECRET_KEY: so-secret
     ports:
       - 8004:8004
     stdin_open: true

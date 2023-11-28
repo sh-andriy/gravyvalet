@@ -13,4 +13,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-urlpatterns = []
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from addon_service.authorized_storage_account.views import AuthorizedStorageAccountViewSet
+
+
+router = DefaultRouter()
+router.register('authorized_storage_accounts', AuthorizedStorageAccountViewSet)
+
+
+urlpatterns = [
+    path('v1/', include(router.urls)),
+]

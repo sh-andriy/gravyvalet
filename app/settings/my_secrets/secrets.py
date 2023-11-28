@@ -1,6 +1,0 @@
-SECRET_KEY = "nunya_beezwax"
-POSTGRES_PASSWORD = "postgres"
-POSTGRES_HOST = "192.168.168.167"
-POSTGRES_DB = "postgres"
-POSTGRES_PORT = "5432"
-POSTGRES_USER = "postgres"

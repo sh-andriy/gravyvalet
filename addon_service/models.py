@@ -6,7 +6,7 @@ from addon_service.external_credentials.models import ExternalCredentials
 from addon_service.external_service.models import ExternalService
 from addon_service.internal_resource.models import InternalResource
 from addon_service.internal_user.models import InternalUser
-from addon_service.storage_service_settings.models import StorageServiceSettings
+from addon_service.external_storage_service.models import ExternalStorageService
 
 __all__ = (
     'AuthorizedStorageAccount',
@@ -16,8 +16,8 @@ __all__ = (
     'ExternalAccount',
     'ExternalCredentials',
     'ExternalService',
+    'ExternalStorageService',
+    # 'ExternalComputeService',
     'InternalResource',
     'InternalUser',
-    'StorageServiceSettings',
-    # 'ComputeServiceSettings',
 )

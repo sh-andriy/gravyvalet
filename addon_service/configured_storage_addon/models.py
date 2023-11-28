@@ -7,8 +7,12 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     root_folder = models.CharField()
 
-    external_account = models.ForeignKey('addon_service.ExternalAccount', on_delete=models.CASCADE)
-    internal_resource = models.ForeignKey('addon_service.InternalResource', on_delete=models.CASCADE)
+    authorized_storage_account = models.ForeignKey('addon_service.AuthorizedStorageAccount', on_delete=models.CASCADE)
+    internal_resource = models.ForeignKey(
+        'addon_service.InternalResource',
+        on_delete=models.CASCADE,
+        related_name='configured_storage_addons',
+    )
 
     class Meta:
         verbose_name = "Configured Storage Addon"

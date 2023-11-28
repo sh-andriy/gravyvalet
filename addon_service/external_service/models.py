@@ -3,6 +3,7 @@ from django.db import models
 from addon_service.utils.base_model import AddonsServiceBaseModel
 
 
+# TODO: consider another name
 class ExternalService(AddonsServiceBaseModel):
 
     name = models.CharField(null=False)

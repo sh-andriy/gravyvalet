@@ -17,10 +17,20 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from addon_service.authorized_storage_account.views import AuthorizedStorageAccountViewSet
+from addon_service.configured_storage_addon.views import ConfiguredStorageAddonViewSet
+from addon_service.internal_resource.views import InternalResourceViewSet
 
 
 router = DefaultRouter()
-router.register('authorized_storage_accounts', AuthorizedStorageAccountViewSet)
+
+
+def _register_viewset(viewset):
+    router.register(viewset.resource_name, viewset)
+
+
+_register_viewset(AuthorizedStorageAccountViewSet)
+_register_viewset(ConfiguredStorageAddonViewSet)
+_register_viewset(InternalResourceViewSet)
 
 
 urlpatterns = [

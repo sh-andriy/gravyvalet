@@ -3,6 +3,7 @@ from rest_framework_json_api import serializers
 
 
 class InternalResourceSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = InternalResource
         fields = [

@@ -7,4 +7,6 @@ responses
 
 # Syntax checking
 flake8
+black
+isort
 pre-commit

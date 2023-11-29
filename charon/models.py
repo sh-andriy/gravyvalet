@@ -10,6 +10,9 @@ DB = None
 DB_ROOT = 'db'
 with open('{}/charon.json'.format(DB_ROOT)) as json_file:
     DB = json.load(json_file)
+with open('{}/ext-accts.json'.format(DB_ROOT)) as json_file:
+    EXT_ACCTS = json.load(json_file)
+DB['external_accounts'] = EXT_ACCTS
 
 
 class Auth(object):
@@ -46,6 +49,14 @@ class User(object):
     @property
     def external_accounts(self):
         return ExternalAccountProxy(self._our_external_accounts)
+
+    def save(self):
+        with open('{}/ext-accts.json'.format(DB_ROOT)) as json_file:
+            EXT_ACCTS = json.load(json_file)
+            for my_acct in self.external_accounts.all():
+                if my_acct._id not in EXT_ACCTS:
+                    EXT_ACCTS[my_acct._id] = my_acct.as_dict()
+            json.dump(EXT_ACCTS, json_file)
 
 
 class Node(object):
@@ -104,12 +115,33 @@ class ExternalAccount(object):
             self.display_name = self._props['display_name']
             self.profile_url = self._props['profile_url']
 
+            self.oauth_key = self._props['oauth_key']
+            self.oauth_secret = self._props['oauth_secret']  # oauth1
+            self.expires_at = self._props['expires_at']
+            self.refresh_token = self._props['refresh_token']
+            self.date_last_refreshed = self._props['date_last_refreshed']
+
         return
 
     # called in: views
     @classmethod
     def load(cls, external_account_id):
         return cls(external_account_id)
+
+    def as_dict(self):
+        return {
+            "_id" : self._id,
+            "display_name" : self.display_name,
+            "profile_url" : self.profile_url,
+            "provider" : self.provider,
+            "provider_id" : self.provider_id,
+            "provider_name" : self.provider_name,
+            "oauth_key" : self.oauth_key,
+            "oauth_secret" : self.oauth_secret,
+            "expires_at" : self.expires_at,
+            "refresh_token" : self.refresh_token,
+            "date_last_refreshed" : self.date_last_refreshed,
+        }
 
 
 class ExternalAccountProxy(object):
@@ -125,6 +157,10 @@ class ExternalAccountProxy(object):
 
     def exists(self):
         return len(self.external_accounts) > 0
+
+    def add(self, external_account):
+        self.external_accounts.append(external_account)
+        return
 
 
 class UserAddon(object):
@@ -188,12 +224,18 @@ class NodeAddon(object):
 
         self.parent = parent
         self.addon_name = addon_name
+        self.fake_name = None
+        self.folder_id = None
+        self.is_init = False
 
         if self.parent is not None:
             node_addons_props = DB['node_addons'].get(parent._id, None)
             self._props = node_addons_props.get(addon_name, None)
+            if self._props is None:
+                return
             self.fake_name = self._props.get('fake_name', None)
             self.folder_id = self._props.get('folder_id', None)
+            self.is_init = True
 
         return
 
@@ -234,6 +276,8 @@ class NodeAddon(object):
     # called in: views
     # auth is an Auth object
     def deauthorize(self, auth):
+        old_props = DB['node_addons'][self.parent._id].pop('box')
+        DB['node_addons'][self.parent._id]['oldbox'] = old_props
         return
 
     # called in: serializer

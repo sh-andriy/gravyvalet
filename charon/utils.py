@@ -146,6 +146,32 @@ def _make_wb_auth_payload(user, creds_and_settings, callback_url):
     }
 
 
+def _default_handle_callback(self, data):
+    """Parse as much out of the key exchange's response as possible.
+
+    This should not be over-ridden in subclasses.
+    """
+    key = data.get('access_token')
+    refresh_token = data.get('refresh_token')
+    expires_at = data.get('expires_at')
+    scopes = data.get('scope')
+
+    values = {}
+
+    if key:
+        values['key'] = key
+    if scopes:
+        values['scope'] = scopes
+    if refresh_token:
+        values['refresh_token'] = refresh_token
+    if expires_at:
+        values['expires_at'] = datetime.datetime.fromtimestamp(
+            float(expires_at)
+        )
+
+    return values
+
+
 class PermissionsError(Exception):
     """Raised if an action cannot be performed due to insufficient permissions"""
 

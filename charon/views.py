@@ -1,6 +1,7 @@
 import json
 import logging
 
+from boxsdk import Client, OAuth2
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -9,8 +10,10 @@ from django.http import (
 )
 from django.shortcuts import redirect
 from django.template import loader
+from django.utils import timezone
+from requests_oauthlib import OAuth2Session
 
-from . import models, serializer, utils
+from . import models, serializer, settings, utils
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +34,24 @@ def connect_box(request):
     logger.error('@@@ got request for connect_box')
     logger.error('@@@   request ib:({})'.format(request))
 
-    # user = utils._get_user(request)
-    # auth_url_base = 'https://www.box.com/api/oauth2/authorize'
-    # callback_url = 'https://www.box.com/api/oauth2/token'
+    user = utils._get_user(request)
+    # https://account.box.com/api/oauth2/authorize
+    #  ?response_type=code
+    #  &client_id=$BOX_KEY
+    #  &redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Foauth%2Fcallback%2Fbox%2F
+    #  &scope=root_readwrite
+    #  &state=$STATE_FROM_BOX
+
+    auth_url = settings.BOX_AUTH_URL
+    auth_url += '?response_type=code'
+    auth_url += '&client_id={}'.format(settings.BOX_KEY)
+    auth_url += '&redirect_uri=http%3A%2F%2Flocalhost%3A8011%2Fcharon%2Fbox%2Fcallback'
+    auth_url += '&scope={}'.format(settings.BOX_SCOPES)
+    auth_url += '&state={}'.format('')
 
     # return HttpResponse("You tried to box, but box we didn't.")
-    response = redirect(callback_box)
+    # response = redirect(callback_box)
+    response = redirect(auth_url)
     response['Cross-Origin-Opener-Policy'] = 'unsafe-none'
     return response
 
@@ -46,9 +61,81 @@ def callback_box(request):
     logger.error('@@@ got request for callback_box')
     logger.error('@@@   request ib:({})'.format(request))
     logger.error('@@@   headers are:({})'.format(request.headers))
-    template = loader.get_template('charon/callback.html')
+
+    state = request.GET.get('state', None)
+    code = request.GET.get('code', None)
+    redirect_uri = 'http://localhost:8011/charon/box/callback'
+    logger.error('@@@   state:({}) code:({})'.format(state, code))
+
+    response = OAuth2Session(
+        settings.BOX_KEY,
+        redirect_uri=redirect_uri
+    ).fetch_token(
+        settings.BOX_CALLBACK_URL,
+        client_secret=settings.BOX_SECRET,
+        code=code
+    )
+
+    # above breaks on fetch token!  not sure why?  url? secret? code?
+
+    # pre-set as many values as possible for the ``ExternalAccount``
+    info = utils._default_handle_callback(response)
+    # call the hook for subclasses to parse values from the response
+    # info.update(self.handle_callback(response))
+    # following from addons.box.models.Provider.handle_callback
+    client = Client(OAuth2(
+        access_token=response['access_token'],
+        refresh_token=response['refresh_token'],
+        client_id=settings.BOX_KEY,
+        client_secret=settings.BOX_SECRET,
+    ))
+
+    about = client.user().get()
+
+    info.update({
+        'provider_id': about['id'],
+        'display_name': about['name'],
+        'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
+    })
+
+    # osf.models.external.ExternalProvider._set_external_account
+    account, created = models.ExternalAccount.objects.get_or_create(
+        # provider=self.short_name,
+        provider='box',
+        provider_id=info['provider_id'],  # yes!
+    )
+
+    # ensure that provider_name is correct
+    account.provider_name = 'Box'  # yes!
+    # required
+    account.oauth_key = info['key']  # not yet?
+
+    # only for OAuth1
+    account.oauth_secret = info.get('secret')  # not yet?
+
+    # only for OAuth2
+    account.expires_at = info.get('expires_at')  # not yet?
+    account.refresh_token = info.get('refresh_token')  # not yet?
+    account.date_last_refreshed = timezone.now()  # not yet?
+
+    # additional information
+    account.display_name = info.get('display_name')  # yes!
+    account.profile_url = info.get('profile_url')  # yes!
+
+    account.save()
+
     user = utils._get_user(request)
-    context = {'user_id': user['id'] if user else '*no user id*'}
+
+    # add it to the user's list of ``ExternalAccounts``
+    if not user.external_accounts.filter(id=account._id).exists():
+        user.external_accounts.add(account)
+        user.save()
+
+    template = loader.get_template('charon/callback.html')
+    context = {
+        'user_id': user['id'] if user else '*no user id*',
+        'info': json.dumps(info),
+    }
     return HttpResponse(
         template.render(context, request),
         headers={'Cross-Origin-Opener-Policy': 'unsafe-none'},
@@ -142,7 +229,13 @@ def box_folder_list(request, project_guid):
 #   which calls .config_addons() on node model object
 #   .config_addons() is defined in AddonModelMixin
 def get_project_addons(request, project_guid):
-    return JsonResponse(['box'], safe=False)
+    node = _get_node_by_guid(request, project_guid)
+    node_addon = node.get_addon('box')
+    active = []
+    if node_addon.is_init:
+        active.append('box')
+    logger.error('BEFEFHORSE: active:({})'.format(active))
+    return JsonResponse(active, safe=False)
 
 
 def _box_get_config(request, project_guid):
@@ -170,9 +263,12 @@ def _box_get_config(request, project_guid):
 
     addon_name = 'box'
     node_addon = _get_node_addon_for_node(node, addon_name)
+    retval = {}
+    if node_addon.is_init:
+        retval = serializer.BoxSerializer().serialize_settings(node_addon, auth.user)
 
     return JsonResponse(
-        {'result': serializer.BoxSerializer().serialize_settings(node_addon, auth.user)}
+        {'result': retval}
     )
 
 

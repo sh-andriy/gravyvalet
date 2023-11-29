@@ -226,7 +226,7 @@ class BoxSerializer(object):
         # }
         result = {
             'userIsOwner': True,
-            'nodeHasAuth': True,
+            'nodeHasAuth': node_settings.is_init,
             'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
             'userHasAuth': True,

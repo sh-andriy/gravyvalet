@@ -8,8 +8,11 @@ WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
 
-BOX_KEY = ''
-BOX_SECRET = ''
+BOX_AUTH_URL = 'https://www.box.com/api/oauth2/authorize'
+BOX_CALLBACK_URL = 'https://www.box.com/api/oauth2/token'
+BOX_KEY = 'replaceme'
+BOX_SECRET = 'replaceme'
+BOX_SCOPES = 'root_readwrite'
 
 ADDONS_AVAILABLE_DICT = []
 

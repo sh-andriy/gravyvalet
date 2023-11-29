@@ -1,16 +1,15 @@
 ![Center for Open Science Logo](https://mfr.osf.io/export?url=https://osf.io/download/24697/?direct=%26mode=render&format=2400x2400.jpeg)
 
-# OSF Addon Service (Milkmaid) - WaterButler Mk2
+# OSF Addon Service (GravyValet)
 
 Welcome to the Open Science Framework's base server for addon integration with our RESTful API (osf.io). This server acts as a gateway between the OSF and external APIs. Authenticated users or machines can access various resources through common file storage and citation management APIs via the OSF. Institutional members can also add their own integrations, tailoring addon usage to their specific communities.
 
-## Setting up Milkmaid Locally
+## Setting up GravyValet Locally
 
-1. Add your secrets to `app/settings/my_secrets/secrets.py`.
-2. Start your PostgreSQL and Django containers with `docker-compose up -d`.
-3. Enter the Django container: `docker exec addon_service /bin/bash`.
-4. Migrate the existing models: `python3 manage.py migrate`.
-5. Visit [http://0.0.0.0:8000/](http://0.0.0.0:8000/).
+1. Start your PostgreSQL and Django containers with `docker-compose up -d`.
+2. Enter the Django container: `docker exec addon_service /bin/bash`.
+3. Migrate the existing models: `python3 manage.py migrate`.
+4. Visit [http://0.0.0.0:8004/](http://0.0.0.0:8004/).
 
 ## Running Tests
 

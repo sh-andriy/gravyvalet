@@ -52,6 +52,6 @@ jobs:
         env:
           DEBUG: 1
           POSTGRES_HOST: localhost
-          POSTGRES_DB: test
+          POSTGRES_DB: gravyvalettest
           POSTGRES_USER: postgres
           SECRET_KEY: oh-so-secret

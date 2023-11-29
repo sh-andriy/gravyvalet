@@ -29,9 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install non-py dependencies
-        run: sudo apt-get update && sudo apt-get install -y libpq-dev
-
       - name: set up python${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -44,8 +41,14 @@ jobs:
       - name: install py dependencies
         run: pip install -r requirements/dev-requirements.txt
 
-      - name: does it plac8 flake8?
-        run: flake8 .
+      - name: set up pre-commit cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ matrix.python-version }}|${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: run pre-commit checks
+        run: pre-commit run --all-files
 
       - name: run tests
         run: python3 manage.py test

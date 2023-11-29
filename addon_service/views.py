@@ -10,11 +10,8 @@ from addon_service.internal_user.views import InternalUserViewSet
 
 __all__ = (
     "AuthorizedStorageAccountViewSet",
-    # 'AuthorizedComputeAccountViewSet',
     "ConfiguredStorageAddonViewSet",
-    # 'ConfiguredComputeAddonViewSet',
     "ExternalStorageServiceViewSet",
-    # 'ExternalComputeServiceViewSet',
     "InternalResourceViewSet",
     "InternalUserViewSet",
 )

@@ -12,5 +12,11 @@ class AddonsServiceBaseModel(models.Model):
         self.modified = timezone.now()
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"<{self.__class__.__qualname__}(pk={self.pk})>"
+
+    def __repr__(self):
+        return self.__str__()
+
     class Meta:
         abstract = True

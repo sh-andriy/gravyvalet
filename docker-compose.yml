@@ -27,6 +27,7 @@ services:
       - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: gravyvalet
 
 volumes:
   postgres_data_vol:

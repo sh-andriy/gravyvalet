@@ -17,26 +17,25 @@ from django.urls import (
     include,
     path,
 )
-from rest_framework.routers import DefaultRouter
 
-from addon_service import views
-
-
-router = DefaultRouter()
-
-
-def _register_viewset(viewset):
-    """convenience for viewsets with `resource_name`"""
-    router.register(viewset.resource_name, viewset)
-
-
-_register_viewset(views.AuthorizedStorageAccountViewSet)
-_register_viewset(views.ConfiguredStorageAddonViewSet)
-_register_viewset(views.ExternalStorageServiceViewSet)
-_register_viewset(views.InternalResourceViewSet)
-_register_viewset(views.InternalUserViewSet)
+from addon_service.authorized_storage_account import urls as asa_urls
+from addon_service.configured_storage_addon import urls as csa_urls
+from addon_service.external_storage_service import urls as ess_urls
+from addon_service.internal_resource import urls as ir_urls
+from addon_service.internal_user import urls as iu_urls
 
 
 urlpatterns = [
-    path("v1/", include(router.urls)),
+    path(
+        "v1/",
+        include(
+            [
+                *asa_urls.urlpatterns,
+                *csa_urls.urlpatterns,
+                *ess_urls.urlpatterns,
+                *ir_urls.urlpatterns,
+                *iu_urls.urlpatterns,
+            ]
+        ),
+    ),
 ]

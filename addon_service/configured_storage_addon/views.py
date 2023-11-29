@@ -1,11 +1,17 @@
-from addon_service.common.base_viewset import CRUDViewSet
+from rest_framework_json_api.views import (
+    ModelViewSet,
+    RelationshipView,
+)
 
 from .models import ConfiguredStorageAddon
 from .serializers import ConfiguredStorageAddonSerializer
 
 
-class ConfiguredStorageAddonViewSet(CRUDViewSet):
-    queryset = ConfiguredStorageAddon.objects
+class ConfiguredStorageAddonViewSet(ModelViewSet):
+    queryset = ConfiguredStorageAddon.objects.all()
     serializer_class = ConfiguredStorageAddonSerializer
-    resource_name = "configured-storage-addons"
     # TODO: permissions_classes
+
+
+class ConfiguredStorageAddonRelationshipView(RelationshipView):
+    queryset = ConfiguredStorageAddon.objects.all()

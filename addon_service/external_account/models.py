@@ -9,11 +9,19 @@ class ExternalAccount(AddonsServiceBaseModel):
     remote_account_display_name = models.CharField()
 
     external_service = models.ForeignKey(
-        "addon_service.ExternalService", on_delete=models.CASCADE
+        "addon_service.ExternalService",
+        on_delete=models.CASCADE,
+        related_name="external_accounts",
     )
-    owner = models.ForeignKey("addon_service.InternalUser", on_delete=models.CASCADE)
+    owner = models.ForeignKey(
+        "addon_service.InternalUser",
+        on_delete=models.CASCADE,
+        related_name="external_accounts",
+    )
     credentials = models.ForeignKey(
-        "addon_service.ExternalCredentials", on_delete=models.CASCADE
+        "addon_service.ExternalCredentials",
+        on_delete=models.CASCADE,
+        related_name="external_accounts",
     )
 
     class Meta:

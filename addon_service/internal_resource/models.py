@@ -10,3 +10,6 @@ class InternalResource(AddonsServiceBaseModel):
         verbose_name = "Internal Resource"
         verbose_name_plural = "Internal Resources"
         app_label = "addon_service"
+
+    class JSONAPIMeta:
+        resource_name = "internal-resources"

@@ -20,26 +20,28 @@ class Command(LabelCommand):
             auth_uri=f"http://foo.example/{label}",
             external_service=_es,
         )
-        _iu = db.InternalUser.objects.create(
-            user_uri=f"http://osf.example/u{label}",
-        )
-        _ec = db.ExternalCredentials.objects.create()
-        _ea = db.ExternalAccount.objects.create(
-            remote_account_id=label,
-            remote_account_display_name=label,
-            external_service=_es,
-            owner=_iu,
-            credentials=_ec,
-        )
-        _asa = db.AuthorizedStorageAccount.objects.create(
-            external_storage_service=_ess,
-            external_account=_ea,
-        )
-        _ir = db.InternalResource.objects.create(
-            resource_uri=f"http://osf.example/r{label}",
-        )
-        _csa = db.ConfiguredStorageAddon.objects.create(
-            authorized_storage_account=_asa,
-            internal_resource=_ir,
-        )
+        for _i in range(3):
+            _iu = db.InternalUser.objects.create(
+                user_uri=f"http://osf.example/u{label}",
+            )
+            _ec = db.ExternalCredentials.objects.create()
+            _ea = db.ExternalAccount.objects.create(
+                remote_account_id=label,
+                remote_account_display_name=label,
+                external_service=_es,
+                owner=_iu,
+                credentials=_ec,
+            )
+            _asa = db.AuthorizedStorageAccount.objects.create(
+                external_storage_service=_ess,
+                external_account=_ea,
+            )
+            for _i in range(5):
+                _ir = db.InternalResource.objects.create(
+                    resource_uri=f"http://osf.example/r{label}",
+                )
+                _csa = db.ConfiguredStorageAddon.objects.create(
+                    authorized_storage_account=_asa,
+                    internal_resource=_ir,
+                )
         return str(_csa)

@@ -1,18 +1,18 @@
-from rest_framework_json_api.views import RelationshipView
-
-from addon_service.common.base_viewset import CRUDViewSet
-from addon_service.models import ConfiguredStorageAddon
+from rest_framework_json_api.views import (
+    ModelViewSet,
+    RelationshipView,
+)
 
 from .models import InternalResource
 from .serializers import InternalResourceSerializer
 
 
-class InternalResourceViewSet(CRUDViewSet):  # TODO: read-only
-    queryset = InternalResource.objects
+class InternalResourceViewSet(ModelViewSet):  # TODO: read-only
+    queryset = InternalResource.objects.all()
     serializer_class = InternalResourceSerializer
-    resource_name = "internal-resources"
     # TODO: permissions_classes
 
 
-class ConfiguredStorageAddonsView(RelationshipView):
-    queryset = ConfiguredStorageAddon.objects
+class InternalResourceRelationshipView(RelationshipView):
+    queryset = InternalResource.objects.all()
+    resource_name = InternalResourceSerializer.Meta.resource_name

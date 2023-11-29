@@ -9,6 +9,7 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     authorized_storage_account = models.ForeignKey(
         "addon_service.AuthorizedStorageAccount",
         on_delete=models.CASCADE,
+        related_name="configured_storage_addons",
     )
     internal_resource = models.ForeignKey(
         "addon_service.InternalResource",
@@ -20,3 +21,6 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
         verbose_name = "Configured Storage Addon"
         verbose_name_plural = "Configured Storage Addons"
         app_label = "addon_service"
+
+    class JSONAPIMeta:
+        resource_name = "configured-storage-addons"

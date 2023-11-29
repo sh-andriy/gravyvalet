@@ -10,3 +10,6 @@ class InternalUser(AddonsServiceBaseModel):
         verbose_name = "Internal User"
         verbose_name_plural = "Internal Users"
         app_label = "addon_service"
+
+    class JSONAPIMeta:
+        resource_name = "internal-users"

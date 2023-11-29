@@ -13,7 +13,10 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import include, path
+from django.urls import (
+    include,
+    path,
+)
 from rest_framework.routers import DefaultRouter
 
 from addon_service import views
@@ -23,7 +26,7 @@ router = DefaultRouter()
 
 
 def _register_viewset(viewset):
-    '''convenience for viewsets with `resource_name`'''
+    """convenience for viewsets with `resource_name`"""
     router.register(viewset.resource_name, viewset)
 
 
@@ -33,5 +36,5 @@ _register_viewset(views.InternalResourceViewSet)
 
 
 urlpatterns = [
-    path('v1/', include(router.urls)),
+    path("v1/", include(router.urls)),
 ]

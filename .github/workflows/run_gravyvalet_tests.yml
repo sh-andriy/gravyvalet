@@ -48,7 +48,7 @@ jobs:
           key: pre-commit|${{ matrix.python-version }}|${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: run pre-commit checks
-        run: pre-commit run --all-files
+        run: pre-commit run --all-files --show-diff-on-failure
 
       - name: run tests
         run: python3 manage.py test

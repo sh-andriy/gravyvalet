@@ -3,7 +3,6 @@ from django.utils import timezone
 
 
 class AddonsServiceBaseModel(models.Model):
-
     created = models.DateTimeField(editable=False)
     modified = models.DateTimeField()
 

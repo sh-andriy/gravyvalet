@@ -4,7 +4,6 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 
 class ExternalCredentials(AddonsServiceBaseModel):
-
     # TODO: Settle on encryption solution
     oauth_key = models.CharField(blank=True, null=True)
 

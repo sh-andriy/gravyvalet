@@ -10,7 +10,7 @@ from .serializers import InternalResourceSerializer
 class InternalResourceViewSet(CRUDViewSet):  # TODO: read-only
     queryset = InternalResource.objects
     serializer_class = InternalResourceSerializer
-    resource_name = 'internal-resources'
+    resource_name = "internal-resources"
     # TODO: permissions_classes
 
 

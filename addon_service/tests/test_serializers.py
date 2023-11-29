@@ -1,11 +1,12 @@
 import json
-from addon_service.tests.factories import InternalUserFactory
-from django.test import TestCase
-from addon_service.internal_user.serializers import InternalUserSerializer
-from addon_service.internal_user.models import InternalUser
 
+from django.test import TestCase
 from rest_framework import viewsets
 from rest_framework_json_api.renderers import JSONRenderer
+
+from addon_service.internal_user.models import InternalUser
+from addon_service.internal_user.serializers import InternalUserSerializer
+from addon_service.tests.factories import InternalUserFactory
 
 
 class TestViewSet(viewsets.ModelViewSet):

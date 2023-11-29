@@ -1,0 +1,57 @@
+name: run_gravyvalet_tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run_gravyvalet_tests:
+    strategy:
+      fail-fast: false
+      matrix:  # use to test upgrades before upgrading
+        python-version: ['3.12']
+        postgres-version: ['15']
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install non-py dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - name: set up python${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements/requirements.txt
+            requirements/dev-requirements.txt
+
+      - name: install py dependencies
+        run: pip install -r requirements/dev-requirements.txt
+
+      - name: does it plac8 flake8?
+        run: flake8 .
+
+      - name: run tests
+        run: python3 manage.py test
+        env:
+          DEBUG: 1
+          POSTGRES_HOST: localhost
+          POSTGRES_DB: test
+          POSTGRES_USER: postgres
+          SECRET_KEY: oh-so-secret

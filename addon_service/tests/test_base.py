@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .factories import UserFactory
+from .factories import InternalUserFactory
 
 
 class TestTestCase(TestCase):
@@ -9,6 +9,6 @@ class TestTestCase(TestCase):
 
     def test_model(self):
         """Simple base test to test test models"""
-        user = UserFactory(user_guid="hurts")
+        user = InternalUserFactory(user_uri='http://osf.example/hurts')
         user.save()
-        assert user.user_guid == "hurts"
+        assert user.user_uri == 'http://osf.example/hurts'

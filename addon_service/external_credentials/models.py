@@ -2,9 +2,10 @@ from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
 
+
 class ExternalCredentials(AddonsServiceBaseModel):
 
-    #TODO: Settle on encryption solution
+    # TODO: Settle on encryption solution
     oauth_key = models.CharField(blank=True, null=True)
 
     # For OAuth1, this is usually the "oauth_token_secret"

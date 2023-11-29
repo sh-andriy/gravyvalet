@@ -1,12 +1,13 @@
-from addon_service.models import ConfiguredStorageAddon
 from rest_framework_json_api import serializers
+
+from addon_service.models import ConfiguredStorageAddon
 
 
 class ConfiguredStorageAddonSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguredStorageAddon
         fields = [
-            'root_folder',
-            'authorized_storage_account',
-            'internal_resource',
+            "root_folder",
+            "authorized_storage_account",
+            "internal_resource",
         ]

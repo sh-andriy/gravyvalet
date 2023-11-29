@@ -7,5 +7,5 @@ from .serializers import ConfiguredStorageAddonSerializer
 class ConfiguredStorageAddonViewSet(CRUDViewSet):
     queryset = ConfiguredStorageAddon.objects
     serializer_class = ConfiguredStorageAddonSerializer
-    resource_name = 'configured-storage-addons'
+    resource_name = "configured-storage-addons"
     # TODO: permissions_classes

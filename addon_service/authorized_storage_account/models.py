@@ -5,15 +5,17 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 
 class AuthorizedStorageAccount(AddonsServiceBaseModel):
-
-    # TODO: capability_set = ArrayField(models.CharField(max_length=128), default=list, blank=True)
+    # TODO: capabilities = ArrayField(...)
     default_root_folder = models.CharField(blank=True)
 
     external_storage_service = models.ForeignKey(
-        'addon_service.ExternalStorageService',
+        "addon_service.ExternalStorageService",
         on_delete=models.CASCADE,
     )
-    external_account = models.ForeignKey('addon_service.ExternalAccount', on_delete=models.CASCADE)
+    external_account = models.ForeignKey(
+        "addon_service.ExternalAccount",
+        on_delete=models.CASCADE,
+    )
 
     class Meta:
         verbose_name = "Authorized Storage Account"

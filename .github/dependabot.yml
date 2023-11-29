@@ -1,0 +1,31 @@
+# config for Dependabot updates -- see docs:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # python dependencies
+  - package-ecosystem: "pip"
+    directory: "/requirements/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "update"
+    target-branch: "develop"
+
+  # Dockerfile dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "update"
+    target-branch: "develop"
+
+  # github actions used in .github/workflows/
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "update"
+    target-branch: "develop"

@@ -18,7 +18,6 @@ class InternalUserSerializer(serializers.HyperlinkedModelSerializer):
         many=True,
         queryset=AuthorizedStorageAccount.objects.all(),
         related_link_view_name=f"{RESOURCE_NAME}-related",
-        self_link_view_name=f"{RESOURCE_NAME}-relationships",
     )
 
     included_serializers = {

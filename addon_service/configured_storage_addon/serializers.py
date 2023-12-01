@@ -17,13 +17,11 @@ class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
         queryset=ConfiguredStorageAddon.objects.all(),
         many=False,
         related_link_view_name=f"{RESOURCE_NAME}-related",
-        self_link_view_name=f"{RESOURCE_NAME}-relationships",
     )
     internal_resource = ResourceRelatedField(
         queryset=InternalResource.objects.all(),
         many=False,
         related_link_view_name=f"{RESOURCE_NAME}-related",
-        self_link_view_name=f"{RESOURCE_NAME}-relationships",
     )
 
     included_serializers = {

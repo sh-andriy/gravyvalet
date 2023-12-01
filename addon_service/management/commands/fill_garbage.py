@@ -21,8 +21,8 @@ class Command(LabelCommand):
             external_service=_es,
         )
         for _i in range(3):
-            _iu = db.InternalUser.objects.create(
-                user_uri=f"http://osf.example/u{label}",
+            _iu, _ = db.InternalUser.objects.get_or_create(
+                user_uri=f"http://osf.example/u{label}{_i}",
             )
             _ec = db.ExternalCredentials.objects.create()
             _ea = db.ExternalAccount.objects.create(
@@ -36,9 +36,9 @@ class Command(LabelCommand):
                 external_storage_service=_ess,
                 external_account=_ea,
             )
-            for _i in range(5):
-                _ir = db.InternalResource.objects.create(
-                    resource_uri=f"http://osf.example/r{label}",
+            for _j in range(5):
+                _ir, _ = db.InternalResource.objects.get_or_create(
+                    resource_uri=f"http://osf.example/r{label}{_j}",
                 )
                 _csa = db.ConfiguredStorageAddon.objects.create(
                     authorized_storage_account=_asa,

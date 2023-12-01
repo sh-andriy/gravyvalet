@@ -6,7 +6,7 @@ from addon_service import views
 
 
 def _urls_for_viewsets(*viewsets):
-    """returns urlpatterns for a viewset that corresponds to a resource type
+    """returns urlpatterns for viewsets that each correspond to a resource type
 
     includes patterns for jsonapi-style relationships
     """

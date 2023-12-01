@@ -26,3 +26,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     class JSONAPIMeta:
         resource_name = "authorized-storage-accounts"
+
+    @property
+    def account_owner(self):
+        return self.external_account.owner  # TODO: prefetch/select_related

@@ -15,4 +15,3 @@ class InternalResourceViewSet(ModelViewSet):  # TODO: read-only
 
 class InternalResourceRelationshipView(RelationshipView):
     queryset = InternalResource.objects.all()
-    resource_name = InternalResourceSerializer.Meta.resource_name

@@ -1,5 +1,6 @@
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import HyperlinkedRelatedField
+from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.models import (
     ConfiguredStorageAddon,
@@ -7,7 +8,7 @@ from addon_service.models import (
 )
 
 
-RESOURCE_NAME = "internal-resources"
+RESOURCE_NAME = get_resource_type_from_model(InternalResource)
 
 
 class InternalResourceSerializer(serializers.HyperlinkedModelSerializer):
@@ -27,7 +28,6 @@ class InternalResourceSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = InternalResource
-        resource_name = RESOURCE_NAME
         fields = [
             "url",
             "resource_uri",

@@ -1,5 +1,6 @@
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
+from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.models import (
     ConfiguredStorageAddon,
@@ -7,7 +8,7 @@ from addon_service.models import (
 )
 
 
-RESOURCE_NAME = ConfiguredStorageAddon.JSONAPIMeta.resource_name
+RESOURCE_NAME = get_resource_type_from_model(ConfiguredStorageAddon)
 
 
 class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):

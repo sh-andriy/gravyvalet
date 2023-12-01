@@ -4,6 +4,7 @@ from rest_framework_json_api.relations import (
     ResourceRelatedField,
     SerializerMethodResourceRelatedField,
 )
+from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.models import (
     AuthorizedStorageAccount,
@@ -13,7 +14,7 @@ from addon_service.models import (
 )
 
 
-RESOURCE_NAME = "authorized-storage-accounts"
+RESOURCE_NAME = get_resource_type_from_model(AuthorizedStorageAccount)
 
 
 class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer):
@@ -48,7 +49,6 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
 
     class Meta:
         model = AuthorizedStorageAccount
-        resource_name = RESOURCE_NAME
         fields = [
             "url",
             "account_owner",

@@ -1,5 +1,6 @@
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import HyperlinkedRelatedField
+from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.models import (
     AuthorizedStorageAccount,
@@ -7,7 +8,7 @@ from addon_service.models import (
 )
 
 
-RESOURCE_NAME = ExternalStorageService.JSONAPIMeta.resource_name
+RESOURCE_NAME = get_resource_type_from_model(ExternalStorageService)
 
 
 class ExternalStorageServiceSerializer(serializers.HyperlinkedModelSerializer):

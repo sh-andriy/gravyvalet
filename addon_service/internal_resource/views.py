@@ -1,10 +1,10 @@
-from rest_framework_json_api.views import ModelViewSet
+from rest_framework_json_api.views import ReadOnlyModelViewSet
 
 from .models import InternalResource
 from .serializers import InternalResourceSerializer
 
 
-class InternalResourceViewSet(ModelViewSet):  # TODO: read-only
+class InternalResourceViewSet(ReadOnlyModelViewSet):
     queryset = InternalResource.objects.all()
     serializer_class = InternalResourceSerializer
     # TODO: permissions_classes

@@ -8,8 +8,8 @@ class ExternalAccount(AddonsServiceBaseModel):
     remote_account_id = models.CharField()
     remote_account_display_name = models.CharField()
 
-    external_service = models.ForeignKey(
-        "addon_service.ExternalService",
+    credentials_issuer = models.ForeignKey(
+        "addon_service.CredentialsIssuer",
         on_delete=models.CASCADE,
         related_name="external_accounts",
     )

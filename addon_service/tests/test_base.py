@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from .factories import InternalUserFactory
+from ._factories import InternalUserFactory
 
 
 class TestTestCase(TestCase):
@@ -12,4 +12,4 @@ class TestTestCase(TestCase):
         """Simple base test to test test models"""
         user = InternalUserFactory(user_uri="http://osf.example/hurts")
         user.save()
-        assert user.user_uri == "http://osf.example/hurts"
+        self.assertEqual(user.user_uri, "http://osf.example/hurts")

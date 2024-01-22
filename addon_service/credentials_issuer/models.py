@@ -4,7 +4,7 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 
 # TODO: consider another name
-class ExternalService(AddonsServiceBaseModel):
+class CredentialsIssuer(AddonsServiceBaseModel):
     name = models.CharField(null=False)
 
     class Meta:

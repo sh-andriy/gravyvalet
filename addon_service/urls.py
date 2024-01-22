@@ -1,44 +1,61 @@
-from django.urls import path
-from rest_framework.routers import SimpleRouter
+from rest_framework.routers import (
+    Route,
+    SimpleRouter,
+)
 from rest_framework_json_api.utils import get_resource_type_from_serializer
 
 from addon_service import views
 
 
-def _urls_for_viewsets(*viewsets):
-    """returns urlpatterns for viewsets that each correspond to a resource type
+###
+# routing helpers
 
-    includes patterns for jsonapi-style relationships
-    """
-    _router = SimpleRouter()
-    _additional_urlpatterns = []
-    for _viewset in viewsets:
-        # NOTE: assumes each viewset corresponds to a distinct resource_name
-        _resource_name = get_resource_type_from_serializer(_viewset.serializer_class)
-        _router.register(
-            prefix=_resource_name,
-            viewset=_viewset,
-            basename=_resource_name,
-        )
+
+class _AddonServiceRouter(SimpleRouter):
+    routes = [
+        *SimpleRouter.routes,
         # add route for all relationship "related" links
         # https://django-rest-framework-json-api.readthedocs.io/en/stable/usage.html#related-urls
-        _additional_urlpatterns.append(
-            path(
-                f"{_resource_name}/<pk>/<related_field>/",
-                _viewset.as_view({"get": "retrieve_related"}),
-                name=f"{_resource_name}-related",
-            ),
-        )
-    return [
-        *_router.urls,
-        *_additional_urlpatterns,
+        Route(
+            url=r"^{prefix}/{lookup}/(?P<related_field>[^/]+){trailing_slash}",
+            mapping={"get": "retrieve_related"},
+            name="{basename}-related",
+            detail=False,
+            initkwargs={"suffix": "Related"},
+        ),
+        # note: omitting relationship "self" links because we don't expect to need them
+        # (our frontend is fine PATCHing a top-level resource to update a relationship)
+        # and rest_framework_json_api's RelationshipView exposes all relationships from
+        # the model instead of going through the serializer (unlike `retrieve_related`)
     ]
 
 
-urlpatterns = _urls_for_viewsets(
-    views.AuthorizedStorageAccountViewSet,
-    views.ConfiguredStorageAddonViewSet,
-    views.ExternalStorageServiceViewSet,
-    views.InternalResourceViewSet,
-    views.InternalUserViewSet,
-)
+_router = _AddonServiceRouter()
+
+
+def _register_viewset(viewset):
+    # NOTE: assumes each viewset corresponds to a distinct resource_name
+    _resource_name = get_resource_type_from_serializer(viewset.serializer_class)
+    _router.register(
+        prefix=_resource_name,
+        viewset=viewset,
+        basename=_resource_name,
+    )
+
+
+###
+# register viewsets with _router
+
+_register_viewset(views.AuthorizedStorageAccountViewSet)
+_register_viewset(views.ConfiguredStorageAddonViewSet)
+_register_viewset(views.ExternalStorageServiceViewSet)
+_register_viewset(views.InternalResourceViewSet)
+_register_viewset(views.InternalUserViewSet)
+
+
+###
+# the only public part of this module
+
+__all__ = ("urlpatterns",)
+
+urlpatterns = _router.urls

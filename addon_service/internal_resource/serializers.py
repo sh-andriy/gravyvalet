@@ -18,7 +18,6 @@ class InternalResourceSerializer(serializers.HyperlinkedModelSerializer):
         queryset=ConfiguredStorageAddon.objects.all(),
         related_link_view_name=f"{RESOURCE_NAME}-related",
     )
-
     included_serializers = {
         "configured_storage_addons": (
             "addon_service.serializers.ConfiguredStorageAddonSerializer"

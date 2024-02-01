@@ -169,3 +169,44 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
             {_datum["id"] for _datum in _content["data"]},
             {str(_addon.pk) for _addon in _addons},
         )
+
+
+class TestAuthorizedStorageAccountPOSTAPI(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls._ess = _factories.ExternalStorageServiceFactory()
+        cls._ea = _factories.ExternalAccountFactory()
+        cls._csa = _factories.ConfiguredStorageAddonFactory()
+
+    def test_post(self):
+        assert not self._ess.authorized_storage_accounts.all()  # sanity/factory check
+
+        payload = {
+            "data": {
+                "type": "authorized-storage-accounts",
+                "attributes": {
+                    "username": "<placeholder-username>",
+                    "password": "<placeholder-password>",
+                },
+                "relationships": {
+                    "external_storage_service": {
+                        "data": {
+                            "type": "external-storage-services",
+                            "id": self._ess.auth_uri,
+                        }
+                    },
+                    "account_owner": {
+                        "data": {
+                            "type": "internal-users",
+                            "id": self._csa.base_account.external_account.owner.user_uri,
+                        }
+                    },
+                },
+            }
+        }
+
+        response = self.client.post(
+            reverse("authorized-storage-accounts-list"), payload, format="vnd.api+json"
+        )
+        self.assertEqual(response.status_code, 201)
+        assert self._ess.authorized_storage_accounts.all()

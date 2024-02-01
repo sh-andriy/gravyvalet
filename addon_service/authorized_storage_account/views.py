@@ -7,4 +7,3 @@ from .serializers import AuthorizedStorageAccountSerializer
 class AuthorizedStorageAccountViewSet(ModelViewSet):
     queryset = AuthorizedStorageAccount.objects.all()
     serializer_class = AuthorizedStorageAccountSerializer
-    # TODO: permissions_classes

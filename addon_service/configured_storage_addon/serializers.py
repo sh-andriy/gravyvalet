@@ -8,18 +8,26 @@ from addon_service.models import (
     InternalResource,
 )
 
-
 RESOURCE_NAME = get_resource_type_from_model(ConfiguredStorageAddon)
 
 
+class AuthorizedResourceField(ResourceRelatedField):
+    def to_internal_value(self, data):
+        internal_resource, _ = InternalResource.objects.get_or_create(
+            resource_uri=data["id"]
+        )
+        return internal_resource
+
+
 class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
+    root_folder = serializers.CharField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name=f"{RESOURCE_NAME}-detail")
     base_account = ResourceRelatedField(
         queryset=AuthorizedStorageAccount.objects.all(),
         many=False,
         related_link_view_name=f"{RESOURCE_NAME}-related",
     )
-    authorized_resource = ResourceRelatedField(
+    authorized_resource = AuthorizedResourceField(
         queryset=InternalResource.objects.all(),
         many=False,
         related_link_view_name=f"{RESOURCE_NAME}-related",

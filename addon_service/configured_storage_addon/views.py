@@ -7,4 +7,3 @@ from .serializers import ConfiguredStorageAddonSerializer
 class ConfiguredStorageAddonViewSet(ModelViewSet):
     queryset = ConfiguredStorageAddon.objects.all()
     serializer_class = ConfiguredStorageAddonSerializer
-    # TODO: permissions_classes

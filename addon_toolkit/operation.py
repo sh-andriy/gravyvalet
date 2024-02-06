@@ -1,93 +1,83 @@
 import dataclasses
 import inspect
-import logging
+import weakref
 from typing import Callable
 
-from addon_toolkit.namespaces import GRAVY
+from addon_toolkit.base_addon_interface import BaseAddonInterface
 
 
-__all__ = (  # public module attrs:
-    "immediate_operation",
-    "proxy_read_operation",
-    "proxy_act_operation",
+__all__ = (
+    "AddonOperation",
+    "redirect_operation",
+    "proxy_operation",
 )
 
-_logger = logging.getLogger(__name__)
+
+@dataclasses.dataclass
+class AddonOperation:
+    operation_iri: str
+    interface_cls: type[BaseAddonInterface]
+    interface_method_name: str
 
 
-###
-# decorators to declare operations on interface classes
+class _DecoratedOperation:
+    """a wrapper object for decorated operation methods"""
+
+    def __init__(self, operation_fn: Callable):
+        self.operation_fn = operation_fn
+
+    def __call__(self, *args, **kwargs):
+        return self.operation_fn(*args, **kwargs)
+
+    def __set_name__(self, cls, name):
+        # register the operation (the whole point of _DecoratedOperation)
+        # TODO: reconsider
+        self.__get_interface_operations(cls).add(name)
+
+    @classmethod
+    def __get_operation_registry(cls):
+        try:
+            return cls.__operation_registry
+        except AttributeError:
+            _new_registry = cls.__operation_registry = weakref.WeakKeyDictionary()
+            return _new_registry
+
+    @classmethod
+    def __get_interface_operations(cls, interface_cls):
+        _operation_registry = cls.__get_operation_registry()
+        try:
+            return _operation_registry[interface_cls]
+        except KeyError:
+            _interface_operations = _operation_registry[interface_cls] = set()
+            return _interface_operations
+
+    @classmethod
+    def __add_interface_operation(
+        cls,
+        interface_cls,
+    ):
+        _operation_registry = cls.__get_operation_registry()
+        try:
+            return _operation_registry[interface_cls]
+        except KeyError:
+            _interface_operations = _operation_registry[interface_cls] = set()
+            return _interface_operations
 
 
-def immediate_operation(fn):
-    # decorator for operations that can be computed immediately,
-    # without sending any requests or waiting on external resources
-    # (e.g. build a url in a known pattern or return declared static metadata)
-    assert inspect.isfunction(fn)
+def redirect_operation(fn: Callable) -> _DecoratedOperation:
+    # decorator for operations that may be performed by a client request
+    # (e.g. redirect to waterbutler)
+    assert inspect.isfunction(fn)  # TODO: inspect function params
     assert not inspect.isawaitable(fn)
-    # TODO: assert based on `inspect.signature(fn).parameters`
     # TODO: helpful error messaging for implementers
     return _DecoratedOperation(fn)
 
 
-def proxy_read_operation(fn):
+def proxy_operation(fn):
     # decorator for operations that require fetching data from elsewhere,
     # but make no changes (e.g. get a metadata description of an item,
     # list items in a given folder)
-    assert inspect.isasyncgenfunction(fn)
+    assert inspect.isasyncgenfunction(fn)  # generate rdf triples?
     # TODO: assert based on `inspect.signature(fn).parameters`
     # TODO: assert based on return value?
     return _DecoratedOperation(fn)
-
-
-def proxy_act_operation(fn):
-    # decorator for operations that initiate change, may take some time,
-    # and may fail in strange ways (e.g. delete an item, copy a file tree)
-    assert inspect.iscoroutine(fn)
-    # TODO: assert based on `inspect.signature(fn).parameters`
-    # TODO: assert based on return value?
-    return _DecoratedOperation(fn)
-
-
-###
-# module-private helpers
-
-
-@dataclasses.dataclass
-class _DecoratedOperation:
-    """a temporary object for decorated operation methods"""
-
-    operation_fn: Callable
-
-    def __set_name__(self, cls, name):
-        # called for each decorated class method
-        _operation_method_map = _get_operation_method_map(cls)
-        assert name not in _operation_method_map
-        _operation_method_map[name]
-        # overwrite this _DecoratedOperation with the operation_fn
-        # now that operation record-keeping has completed
-        setattr(cls, name, self.operation_fn)
-
-
-def _get_operation_iri(fn):
-    # may raise AttributeError
-    return getattr(fn, GRAVY.operation)
-
-
-def _set_operation_iri(operation_fn, operation_iri):
-    try:
-        _prior_value = _get_operation_iri(operation_fn)
-    except AttributeError:
-        _prior_value = None
-    if _prior_value is not None:
-        raise ValueError("cannot call _set_operation_iri twice (on %r)", operation_fn)
-    setattr(operation_fn, GRAVY.operation, operation_iri)
-
-
-def _get_operation_method_map(obj):
-    try:
-        return getattr(obj, GRAVY.operation_map)
-    except AttributeError:
-        _operation_method_map = {}
-        setattr(obj, GRAVY.operation_map, _operation_method_map)
-        return _operation_method_map

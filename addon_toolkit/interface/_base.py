@@ -2,8 +2,7 @@ import dataclasses
 import inspect
 import logging
 from http import HTTPMethod
-
-import httpx  # TODO: reconsider new dependency
+from typing import Callable
 
 from addon_service.models import (
     AuthorizedStorageAccount,
@@ -50,26 +49,19 @@ class BaseAddonInterface:
     # private api for operation book-keeping
 
     @classmethod
-    def __declared_operations(cls):
+    def __get_declared_operations(cls) -> dict:
+        assert cls is not BaseAddonInterface
         try:
             return cls.__declared_operations
         except AttributeError:
-            _declared_operations = cls.__declared_operations = dict(
-                cls.__iter_declared_operations()
-            )
+            _declared_operations = {}
+            cls.__declared_operations = _declared_operations
             return _declared_operations
 
     @classmethod
-    def __iter_declared_operations(cls):
-        for _methodname, _fn in inspect.getmembers(cls, inspect.ismethod):
-            try:
-                _operation_iri = _get_operation_iri(_fn)
-            except AttributeError:
-                pass
-            else:  # is operation
-                yield (_operation_iri, (_methodname, _fn))
-
-        raise NotImplementedError  # TODO
+    def _register_operation(cls, method_name, operation_fn):
+        _operations = cls.__get_declared_operations()
+        _operations[method_name] = operation_fn
 
     def __get_operation_method(self, operation_iri: str):
         _declared_operations = self.__declared_operations()
@@ -78,8 +70,3 @@ class BaseAddonInterface:
         except AttributeError:
             return NotImplemented
         # TODO: _method = getattr(...
-
-
-immediate_operation = BaseAddonInterface._immediate_operation
-proxy_read_operation = BaseAddonInterface._proxy_read_operation
-proxy_act_operation = BaseAddonInterface._proxy_act_operation

@@ -1,10 +1,16 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
+from addon_toolkit import IntAddonCapability
 
 
 class ConfiguredStorageAddon(AddonsServiceBaseModel):
     root_folder = models.CharField()
+
+    connected_capabilities = ArrayField(
+        models.IntegerField(choices=IntAddonCapability.as_django_choices()),
+    )
 
     base_account = models.ForeignKey(
         "addon_service.AuthorizedStorageAccount",

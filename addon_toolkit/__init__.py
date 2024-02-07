@@ -1,16 +1,28 @@
-from .addon_capability import AddonCapability
-from .base_addon_interface import BaseAddonInterface
-from .operation_decoration import (
+from .capability import (
+    AddonCapabilities,
+    AddonCapability,
+)
+from .category import AddonCategory
+from .interface import (
+    AddonInterface,
+    PagedResult,
+)
+from .operation import (
+    AddonOperation,
+    AddonOperationType,
     proxy_operation,
     redirect_operation,
 )
-from .storage import StorageInterface
 
 
 __all__ = (
+    "AddonCapabilities",
     "AddonCapability",
-    "BaseAddonInterface",
-    "StorageInterface",
+    "AddonCategory",
+    "AddonInterface",
+    "AddonOperation",
+    "AddonOperationType",
+    "PagedResult",
     "proxy_operation",
     "redirect_operation",
 )

@@ -110,7 +110,12 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
             set(_content["data"]["attributes"].keys()),
             {
                 "default_root_folder",
+                "authorized_capabilities",
             },
+        )
+        self.assertEqual(
+            _content["data"]["attributes"]["authorized_capabilities"],
+            ["access"],
         )
         self.assertEqual(
             set(_content["data"]["relationships"].keys()),

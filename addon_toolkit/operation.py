@@ -137,7 +137,7 @@ class _DecoratedOperation:
         AddonOperation.register(
             AddonOperation(
                 operation_type=self.operation_type,
-                capability_id=self.capability_id,
+                capability_id=str(self.capability_id),
                 declaration_cls=cls,
                 method_name=name,
             ),

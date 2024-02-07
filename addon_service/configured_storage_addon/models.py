@@ -1,8 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+from addon_service.capability.models import IntStorageCapability
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.int_capability import IntStorageCapability
 
 
 class ConfiguredStorageAddon(AddonsServiceBaseModel):

@@ -97,7 +97,12 @@ class TestConfiguredStorageAddonViewSet(TestCase):
             set(_content["data"]["attributes"].keys()),
             {
                 "root_folder",
+                "connected_capabilities",
             },
+        )
+        self.assertEqual(
+            _content["data"]["attributes"]["connected_capabilities"],
+            ["access"],
         )
         self.assertEqual(
             set(_content["data"]["relationships"].keys()),

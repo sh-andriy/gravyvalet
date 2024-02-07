@@ -2,6 +2,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from addon_service import models as db
+from addon_service.capability.models import IntStorageCapability
 
 
 class UserReferenceFactory(DjangoModelFactory):
@@ -59,6 +60,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         model = db.AuthorizedStorageAccount
 
     default_root_folder = "/"
+    authorized_capabilities = factory.List([IntStorageCapability.ACCESS])
     external_storage_service = factory.SubFactory(ExternalStorageServiceFactory)
     external_account = factory.SubFactory(ExternalAccountFactory)
     # TODO: external_account.credentials_issuer same as
@@ -70,5 +72,6 @@ class ConfiguredStorageAddonFactory(DjangoModelFactory):
         model = db.ConfiguredStorageAddon
 
     root_folder = "/"
+    connected_capabilities = factory.List([IntStorageCapability.ACCESS])
     base_account = factory.SubFactory(AuthorizedStorageAccountFactory)
     authorized_resource = factory.SubFactory(ResourceReferenceFactory)

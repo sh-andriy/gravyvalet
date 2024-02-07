@@ -13,6 +13,7 @@ class _IntEnumForEnum(enum.IntEnum):
     def __init_subclass__(cls, /, base_enum: type[enum.Enum], **kwargs):
         super().__init_subclass__(**kwargs)
         cls.__base_enum = base_enum
+        # ensure enums have same names
         _base_names = {_item.name for _item in base_enum}
         _int_names = {_item.name for _item in cls}
         assert _base_names == _int_names

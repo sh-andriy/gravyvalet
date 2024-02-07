@@ -2,6 +2,7 @@ from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.utils import get_resource_type_from_model
 
+from addon_service.capability.serializers import StorageCapabilityField
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
@@ -23,6 +24,7 @@ class AuthorizedResourceField(ResourceRelatedField):
 class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
     root_folder = serializers.CharField(required=False)
     url = serializers.HyperlinkedIdentityField(view_name=f"{RESOURCE_NAME}-detail")
+    connected_capabilities = StorageCapabilityField()
     base_account = ResourceRelatedField(
         queryset=AuthorizedStorageAccount.objects.all(),
         many=False,
@@ -48,4 +50,5 @@ class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
             "root_folder",
             "base_account",
             "authorized_resource",
+            "connected_capabilities",
         ]

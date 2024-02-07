@@ -14,9 +14,7 @@ __all__ = ("StorageAddonCategory",)
 
 class StorageCapability(enum.StrEnum):
     ACCESS = "access"
-    BROWSE = "browse"
     UPDATE = "update"
-    COMMIT = "commit"
 
 
 # what a base StorageInterface could be like (incomplete)
@@ -46,19 +44,19 @@ class StorageInterface(AddonInterface):
     ##
     # "tree-read" operations:
 
-    @proxy_operation(capability=StorageCapability.BROWSE)
+    @proxy_operation(capability=StorageCapability.ACCESS)
     async def get_root_item_ids(self) -> PagedResult:
         raise NotImplementedError
 
-    @proxy_operation(capability=StorageCapability.BROWSE)
+    @proxy_operation(capability=StorageCapability.ACCESS)
     async def get_parent_item_id(self, item_id: str) -> str | None:
         raise NotImplementedError
 
-    @proxy_operation(capability=StorageCapability.BROWSE)
+    @proxy_operation(capability=StorageCapability.ACCESS)
     async def get_item_path(self, item_id: str) -> str:
         raise NotImplementedError
 
-    @proxy_operation(capability=StorageCapability.BROWSE)
+    @proxy_operation(capability=StorageCapability.ACCESS)
     async def get_child_item_ids(self, item_id: str) -> PagedResult:
         raise NotImplementedError
 

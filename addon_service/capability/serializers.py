@@ -20,7 +20,7 @@ class EnumsMultipleChoiceField(serializers.MultipleChoiceField):
 
     def to_internal_value(self, data):
         _names = super().to_internal_value(data)
-        return {self._to_internal_enum_member(_name) for _name in _names}
+        return [self._to_internal_enum_member(_name) for _name in _names]
 
     def to_representation(self, value):
         _member_list = super().to_representation(value)

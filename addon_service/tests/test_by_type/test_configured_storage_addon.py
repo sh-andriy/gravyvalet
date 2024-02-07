@@ -160,6 +160,9 @@ class TestConfiguredStorageAddonPOSTAPI(APITestCase):
         cls.default_payload = {
             "data": {
                 "type": "configured-storage-addons",
+                "attributes": {
+                    "connected_capabilities": ["access"],
+                },
                 "relationships": {
                     "base_account": {
                         "data": {

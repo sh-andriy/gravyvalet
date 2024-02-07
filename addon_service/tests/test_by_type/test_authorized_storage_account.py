@@ -192,6 +192,7 @@ class TestAuthorizedStorageAccountPOSTAPI(APITestCase):
                 "attributes": {
                     "username": "<placeholder-username>",
                     "password": "<placeholder-password>",
+                    "authorized_capabilities": ["access", "update"],
                 },
                 "relationships": {
                     "external_storage_service": {

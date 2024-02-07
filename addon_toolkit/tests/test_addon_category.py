@@ -47,10 +47,6 @@ class TestAddonCategory(unittest.TestCase):
             def url_for_get(self, checksum_iri) -> str:
                 return f"https://myarchive.example///{checksum_iri}"
 
-            async def query_relations(self, checksum_iri, query=None):
-                # maybe yield rdf triples (or twoples with implicit subject)
-                yield ("http://purl.org/dc/terms/references", "checksum:foo:bar")
-
             def url_for_put(self, checksum_iri):
                 # TODO: how to represent "send a PUT request here"?
                 # return RedirectLadle(
@@ -94,5 +90,40 @@ class TestAddonCategory(unittest.TestCase):
         )
         self.assertEqual(
             set(self.my_addon_category.operations_declared(capability_id="nothing")),
+            set(),
+        )
+        self.assertEqual(
+            set(
+                self.my_addon_category.operations_implemented(
+                    self._MyChecksumArchiveImplementation,
+                )
+            ),
+            {_get_operation, _put_operation},
+        )
+        self.assertEqual(
+            set(
+                self.my_addon_category.operations_implemented(
+                    self._MyChecksumArchiveImplementation,
+                    capability_id="get-it",
+                )
+            ),
+            {_get_operation},
+        )
+        self.assertEqual(
+            set(
+                self.my_addon_category.operations_implemented(
+                    self._MyChecksumArchiveImplementation,
+                    capability_id="put-it",
+                )
+            ),
+            {_put_operation},
+        )
+        self.assertEqual(
+            set(
+                self.my_addon_category.operations_implemented(
+                    self._MyChecksumArchiveImplementation,
+                    capability_id="nothing",
+                )
+            ),
             set(),
         )

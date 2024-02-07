@@ -32,6 +32,4 @@ class _IntEnumForEnum(enum.IntEnum):
 
 class IntStorageCapability(_IntEnumForEnum, base_enum=StorageCapability):
     ACCESS = 1
-    BROWSE = 2
-    UPDATE = 3
-    COMMIT = 4
+    UPDATE = 2

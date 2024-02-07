@@ -76,6 +76,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
 
     def create(self, validate_data):
         account_owner = validate_data["account_owner"]
+        authorized_capabilities = validate_data["authorized_capabilities"]
         external_storage_service = validate_data["external_storage_service"]
         # TODO(ENG-5189): Update this once credentials format is finalized
         credentials, created = ExternalCredentials.objects.get_or_create(
@@ -92,6 +93,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         return AuthorizedStorageAccount.objects.create(
             external_storage_service=external_storage_service,
             external_account=external_account,
+            authorized_capabilities=authorized_capabilities,
         )
 
     class Meta:

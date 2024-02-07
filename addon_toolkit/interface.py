@@ -2,11 +2,6 @@ import dataclasses
 import logging
 from http import HTTPMethod
 
-from addon_service.models import (
-    AuthorizedStorageAccount,
-    ConfiguredStorageAddon,
-)
-
 
 __all__ = ("AddonInterface", "PagedResult")
 
@@ -30,8 +25,8 @@ class AddonInterface:
     # public api for use on `self` when implementing operations
 
     # TODO: consider intermediate dataclasses to limit direct use of data models
-    authorized_account: AuthorizedStorageAccount
-    configured_addon: ConfiguredStorageAddon | None
+    # authorized_account: AuthorizedStorageAccount
+    # configured_addon: ConfiguredStorageAddon | None
 
     async def send_request(self, http_method: HTTPMethod, url: str, **kwargs):
         """helper for external requests in addon implementations

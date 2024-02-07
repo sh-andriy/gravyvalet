@@ -1,7 +1,3 @@
-from .capability import (
-    AddonCapabilities,
-    AddonCapability,
-)
 from .category import AddonCategory
 from .interface import (
     AddonInterface,
@@ -16,8 +12,6 @@ from .operation import (
 
 
 __all__ = (
-    "AddonCapabilities",
-    "AddonCapability",
     "AddonCategory",
     "AddonInterface",
     "AddonOperation",

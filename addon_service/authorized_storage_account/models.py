@@ -2,12 +2,12 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_toolkit import IntAddonCapability
+from addon_service.common.int_capability import IntStorageCapability
 
 
 class AuthorizedStorageAccount(AddonsServiceBaseModel):
     authorized_capabilities = ArrayField(
-        models.IntegerField(choices=IntAddonCapability.as_django_choices()),
+        models.IntegerField(choices=IntStorageCapability.as_django_choices()),
     )
 
     default_root_folder = models.CharField(blank=True)

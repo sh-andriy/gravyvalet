@@ -1,10 +1,7 @@
+import enum
 import unittest
 
-from primitive_metadata import primitive_rdf as rdf
-
 from addon_toolkit import (
-    AddonCapabilities,
-    AddonCapability,
     AddonCategory,
     AddonInterface,
     AddonOperation,
@@ -16,19 +13,9 @@ from addon_toolkit import (
 
 class TestAddonCategory(unittest.TestCase):
     def setUp(self):
-        self.namespace = rdf.IriNamespace("http://checksum-storage.example/")
-
-        class _MyChecksumArchiveCapabilities(AddonCapabilities):
-            GET = AddonCapability(
-                iri=self.namespace.get_thing,
-                label=rdf.literal("get a thing", language="en"),
-                comment=rdf.literal("can read", language="en"),
-            )
-            PUT = AddonCapability(
-                iri=self.namespace.put_thing,
-                label=rdf.literal("put a thing", language="en"),
-                comment=rdf.literal("can write", language="en"),
-            )
+        class _MyChecksumArchiveCapability(enum.StrEnum):
+            GET_IT = enum.auto()
+            PUT_IT = enum.auto()
 
         class _MyChecksumArchiveInterface(AddonInterface):
             """this is a docstring for _MyChecksumArchiveInterface
@@ -36,18 +23,18 @@ class TestAddonCategory(unittest.TestCase):
             it should find its way to browsable docs somewhere
             """
 
-            @redirect_operation(capability=_MyChecksumArchiveCapabilities.GET)
+            @redirect_operation(capability=_MyChecksumArchiveCapability.GET_IT)
             def url_for_get(self, checksum_iri) -> str:
                 """this url_for_get docstring should find its way to docs"""
                 return f"https://myarchive.example///{checksum_iri}"
 
-            @proxy_operation(capability=_MyChecksumArchiveCapabilities.GET)
+            @proxy_operation(capability=_MyChecksumArchiveCapability.GET_IT)
             async def query_relations(self, checksum_iri, query=None):
                 """this query_relations docstring should find its way to docs"""
                 # yields rdf triples (or twoples with implicit subject)
                 yield ("http://purl.org/dc/terms/references", "checksum:foo:bar")
 
-            @redirect_operation(capability=_MyChecksumArchiveCapabilities.PUT)
+            @redirect_operation(capability=_MyChecksumArchiveCapability.PUT_IT)
             def url_for_put(self, checksum_iri):
                 """this url_for_put docstring should find its way to docs"""
                 # TODO: how to represent "send a PUT request here"?
@@ -58,7 +45,7 @@ class TestAddonCategory(unittest.TestCase):
                 return f"https://myarchive.example///{checksum_iri}"
 
         self.my_addon_category = AddonCategory(
-            capabilities=_MyChecksumArchiveCapabilities,
+            capabilities=_MyChecksumArchiveCapability,
             base_interface=_MyChecksumArchiveInterface,
         )
 

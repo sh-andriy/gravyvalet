@@ -8,9 +8,9 @@ from rest_framework.test import APITestCase
 
 from addon_service import models as db
 from addon_service.configured_storage_addon.views import ConfiguredStorageAddonViewSet
+from addon_service.resource_reference.models import ResourceReference
 from addon_service.tests import _factories
 from addon_service.tests._helpers import get_test_request
-from addon_service.internal_resource.models import InternalResource
 
 
 class TestConfiguredStorageAddonAPI(APITestCase):
@@ -114,7 +114,7 @@ class TestConfiguredStorageAddonViewSet(TestCase):
 
     @unittest.expectedFailure  # TODO
     def test_wrong_user(self):
-        _another_user = _factories.InternalUserFactory()
+        _another_user = _factories.UserReferenceFactory()
         _resp = self._view(
             get_test_request(user=_another_user),
             pk=self._user.pk,
@@ -164,7 +164,7 @@ class TestConfiguredStorageAddonPOSTAPI(APITestCase):
                     },
                     "authorized_resource": {
                         "data": {
-                            "type": "internal-resources",
+                            "type": "resource-references",
                             "id": "http://domain.com/test0/",
                         }
                     },
@@ -172,17 +172,16 @@ class TestConfiguredStorageAddonPOSTAPI(APITestCase):
             }
         }
 
-
-
     def test_post_without_resource(self):
         """
-        Test for request made without an InternalResource in the system, so one must be created
+        Test for request made without an ResourceReference in the system, so one must be created
         """
         assert not self._asa.configured_storage_addons.exists()  # sanity/factory check
 
-
         response = self.client.post(
-            reverse("configured-storage-addons-list"), self.default_payload, format="vnd.api+json"
+            reverse("configured-storage-addons-list"),
+            self.default_payload,
+            format="vnd.api+json",
         )
         self.assertEqual(response.status_code, 201)
         configured_storage_addon = self._asa.configured_storage_addons.first()
@@ -191,17 +190,24 @@ class TestConfiguredStorageAddonPOSTAPI(APITestCase):
 
     def test_post_with_resource(self):
         """
-        Test for request made with a pre-existing InternalResource in the system, don't create one.
+        Test for request made with a pre-existing ResourceReference in the system, don't create one.
         """
         assert not self._asa.configured_storage_addons.exists()  # sanity/factory check
-        resource = _factories.InternalResourceFactory()
-        self.default_payload['data']['relationships']['authorized_resource']['data']['id'] = resource.resource_uri
+        resource = _factories.ResourceReferenceFactory()
+        self.default_payload["data"]["relationships"]["authorized_resource"]["data"][
+            "id"
+        ] = resource.resource_uri
 
         response = self.client.post(
-            reverse("configured-storage-addons-list"), self.default_payload, format="vnd.api+json"
+            reverse("configured-storage-addons-list"),
+            self.default_payload,
+            format="vnd.api+json",
         )
         self.assertEqual(response.status_code, 201)
         configured_storage_addon = self._asa.configured_storage_addons.first()
         assert configured_storage_addon
-        assert configured_storage_addon.authorized_resource.resource_uri == resource.resource_uri
-        assert InternalResource.objects.all().count() == 1
+        assert (
+            configured_storage_addon.authorized_resource.resource_uri
+            == resource.resource_uri
+        )
+        assert ResourceReference.objects.all().count() == 1

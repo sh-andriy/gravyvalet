@@ -1,26 +1,27 @@
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
-    ResourceRelatedField,
     HyperlinkedRelatedField,
+    ResourceRelatedField,
 )
 from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
-    ExternalStorageService,
-    ExternalCredentials,
     ExternalAccount,
-    InternalUser,
+    ExternalCredentials,
+    ExternalStorageService,
+    UserReference,
 )
+
 
 RESOURCE_NAME = get_resource_type_from_model(AuthorizedStorageAccount)
 
 
 class AccountOwnerField(ResourceRelatedField):
     def to_internal_value(self, data):
-        internal_user, _ = InternalUser.objects.get_or_create(user_uri=data["id"])
-        return internal_user
+        user_reference, _ = UserReference.objects.get_or_create(user_uri=data["id"])
+        return user_reference
 
 
 class ExternalStorageServiceField(ResourceRelatedField):
@@ -32,7 +33,6 @@ class ExternalStorageServiceField(ResourceRelatedField):
 
 
 class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -41,12 +41,11 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             self.fields.pop("configured_storage_addons", None)
 
     url = serializers.HyperlinkedIdentityField(
-        view_name=f"{RESOURCE_NAME}-detail",
-        required=False
+        view_name=f"{RESOURCE_NAME}-detail", required=False
     )
     account_owner = AccountOwnerField(
         many=False,
-        queryset=InternalUser.objects.all(),
+        queryset=UserReference.objects.all(),
         related_link_view_name=f"{RESOURCE_NAME}-related",
     )
     external_storage_service = ExternalStorageServiceField(
@@ -68,7 +67,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     )  # placeholder for ExternalCredentials integrity only not auth
 
     included_serializers = {
-        "account_owner": "addon_service.serializers.InternalUserSerializer",
+        "account_owner": "addon_service.serializers.UserReferenceSerializer",
         "external_storage_service": "addon_service.serializers.ExternalStorageServiceSerializer",
         "configured_storage_addons": "addon_service.serializers.ConfiguredStorageAddonSerializer",
     }

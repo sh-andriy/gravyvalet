@@ -26,7 +26,7 @@ class AddonOperationType(enum.Enum):
 
 @dataclasses.dataclass
 class _InterfaceOperations:
-    by_capability_id: dict[str, set["AddonOperation"]] = dataclasses.field(
+    by_capability: dict[enum.Enum, set["AddonOperation"]] = dataclasses.field(
         default_factory=dict,
     )
     by_method_name: dict[str, "AddonOperation"] = dataclasses.field(
@@ -39,16 +39,26 @@ class _InterfaceOperations:
             f" on {operation.declaration_cls}"
         )
         self.by_method_name[operation.method_name] = operation
-        self.by_capability_id.setdefault(
-            operation.capability_id,
+        self.by_capability.setdefault(
+            operation.capability,
             set(),
         ).add(operation)
 
 
 @dataclasses.dataclass(frozen=True)
-class AddonOperation:
+class _UnboundAddonOperation:
+    operation_fn: Callable
     operation_type: AddonOperationType
-    capability_id: str
+    capability: enum.Enum
+
+    def __set_name__(self, cls, name):
+        AddonOperation._register_operation(self, cls, name)
+        # replace this AddonOperation with the original function
+        setattr(cls, name, self.operation_fn)
+
+
+@dataclasses.dataclass(frozen=True)
+class AddonOperation(_UnboundAddonOperation):
     declaration_cls: type[AddonInterface]
     method_name: str
 
@@ -61,33 +71,43 @@ class AddonOperation:
     ] = weakref.WeakKeyDictionary()
 
     ###
-    # class methods for _registry interaction
+    # methods for _registry interaction
 
     @classmethod
-    def register(cls, operation: "AddonOperation"):
+    def _register_operation(
+        cls,
+        unbound_operation: _UnboundAddonOperation,
+        declaration_cls: type,
+        method_name: str,
+    ):
+        _operation = cls(
+            **dataclasses.asdict(unbound_operation),
+            declaration_cls=declaration_cls,
+            method_name=method_name,
+        )
         try:
-            _interface_ops = cls._registry[operation.declaration_cls]
+            _interface_ops = cls._registry[_operation.declaration_cls]
         except KeyError:
             _interface_ops = cls._registry[
-                operation.declaration_cls
+                _operation.declaration_cls
             ] = _InterfaceOperations()
-        _interface_ops.add_operation(operation)
+        _interface_ops.add_operation(_operation)
 
     @classmethod
     def operations_declared_on_interface(
         cls,
         interface_cls: type[AddonInterface],
-        capability_id: str | None = None,
+        capability: enum.Enum | None = None,
     ) -> Iterator["AddonOperation"]:
         try:
             _interface_ops = cls._registry[interface_cls]
         except KeyError:
             return  # zero
         else:
-            if capability_id is None:
+            if capability is None:
                 yield from _interface_ops.by_method_name.values()
             else:
-                yield from _interface_ops.by_capability_id.get(capability_id, ())
+                yield from _interface_ops.by_capability.get(capability, ())
 
     ###
     # instance methods
@@ -124,48 +144,26 @@ class AddonOperation:
         return _op_method(*(args or ()), **(kwargs or {}))
 
 
-@dataclasses.dataclass
-class _DecoratedOperation:
-    """a temporary object for decorated operation methods"""
-
-    operation_fn: Callable
-    operation_type: AddonOperationType
-    capability_id: str
-
-    def __set_name__(self, cls, name):
-        # register the operation (the whole point of _DecoratedOperation)
-        AddonOperation.register(
-            AddonOperation(
-                operation_type=self.operation_type,
-                capability_id=str(self.capability_id),
-                declaration_cls=cls,
-                method_name=name,
-            ),
-        )
-        # replace this _DecoratedOperation with the callable (TODO: reconsider)
-        setattr(cls, name, self.operation_fn)
-
-
-def redirect_operation(capability: str):
-    def _redirect_operation_decorator(fn: Callable) -> _DecoratedOperation:
+def redirect_operation(capability: enum.Enum):
+    def _redirect_operation_decorator(fn: Callable) -> _UnboundAddonOperation:
         # decorator for operations that may be performed by a client request
         # (e.g. redirect to waterbutler)
         assert inspect.isfunction(fn)  # TODO: inspect function params
         assert not inspect.isawaitable(fn)
         # TODO: helpful error messaging for implementers
-        return _DecoratedOperation(fn, AddonOperationType.REDIRECT, capability)
+        return _UnboundAddonOperation(fn, AddonOperationType.REDIRECT, capability)
 
     return _redirect_operation_decorator
 
 
-def proxy_operation(capability: str):
-    def _proxy_operation_decorator(fn: Callable) -> _DecoratedOperation:
+def proxy_operation(capability: enum.Enum):
+    def _proxy_operation_decorator(fn: Callable) -> _UnboundAddonOperation:
         # decorator for operations that require fetching data from elsewhere,
         # but make no changes (e.g. get a metadata description of an item,
         # list items in a given folder)
         # TODO: assert inspect.isasyncgenfunction(fn)  # generate rdf triples?
         # TODO: assert based on `inspect.signature(fn).parameters`
         # TODO: assert based on return value?
-        return _DecoratedOperation(fn, AddonOperationType.PROXY, capability)
+        return _UnboundAddonOperation(fn, AddonOperationType.PROXY, capability)
 
     return _proxy_operation_decorator

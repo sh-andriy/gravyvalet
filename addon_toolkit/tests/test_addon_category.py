@@ -13,9 +13,10 @@ from addon_toolkit import (
 
 class TestAddonCategory(unittest.TestCase):
     def setUp(self):
-        class _MyChecksumArchiveCapability(enum.StrEnum):
+        class _MyChecksumArchiveCapability(enum.Enum):
             GET_IT = "get-it"
             PUT_IT = "put-it"
+            UNUSED = "unused"  # for testing when a capability has no operations
 
         class _MyChecksumArchiveInterface(AddonInterface):
             """this is a docstring for _MyChecksumArchiveInterface
@@ -58,38 +59,43 @@ class TestAddonCategory(unittest.TestCase):
         self._MyChecksumArchiveImplementation = _MyChecksumArchiveImplementation
 
     def test_operation_list(self):
-        _get_operation = AddonOperation(
+        _my_cap = self.my_addon_category.capabilities
+        _my_interface_cls = self.my_addon_category.base_interface
+        _expected_get_op = AddonOperation(
+            operation_fn=_my_interface_cls.url_for_get,
             operation_type=AddonOperationType.REDIRECT,
-            capability_id=self.my_addon_category.capabilities.GET_IT,
-            declaration_cls=self.my_addon_category.base_interface,
+            capability=_my_cap.GET_IT,
+            declaration_cls=_my_interface_cls,
             method_name="url_for_get",
         )
-        _put_operation = AddonOperation(
+        _expected_put_op = AddonOperation(
+            operation_fn=_my_interface_cls.url_for_put,
             operation_type=AddonOperationType.REDIRECT,
-            capability_id=self.my_addon_category.capabilities.PUT_IT,
-            declaration_cls=self.my_addon_category.base_interface,
+            capability=_my_cap.PUT_IT,
+            declaration_cls=_my_interface_cls,
             method_name="url_for_put",
         )
         _query_operation = AddonOperation(
+            operation_fn=_my_interface_cls.query_relations,
             operation_type=AddonOperationType.PROXY,
-            capability_id=self.my_addon_category.capabilities.GET_IT,
-            declaration_cls=self.my_addon_category.base_interface,
+            capability=_my_cap.GET_IT,
+            declaration_cls=_my_interface_cls,
             method_name="query_relations",
         )
         self.assertEqual(
             set(self.my_addon_category.operations_declared()),
-            {_get_operation, _put_operation, _query_operation},
+            {_expected_get_op, _expected_put_op, _query_operation},
         )
         self.assertEqual(
-            set(self.my_addon_category.operations_declared(capability_id="get-it")),
-            {_get_operation, _query_operation},
+            set(self.my_addon_category.operations_declared(capability=_my_cap.GET_IT)),
+            {_expected_get_op, _query_operation},
         )
         self.assertEqual(
-            set(self.my_addon_category.operations_declared(capability_id="put-it")),
-            {_put_operation},
+            set(self.my_addon_category.operations_declared(capability=_my_cap.PUT_IT)),
+            {_expected_put_op},
         )
         self.assertEqual(
-            set(self.my_addon_category.operations_declared(capability_id="nothing")),
+            set(self.my_addon_category.operations_declared(capability=_my_cap.UNUSED)),
             set(),
         )
         self.assertEqual(
@@ -98,31 +104,31 @@ class TestAddonCategory(unittest.TestCase):
                     self._MyChecksumArchiveImplementation,
                 )
             ),
-            {_get_operation, _put_operation},
+            {_expected_get_op, _expected_put_op},
         )
         self.assertEqual(
             set(
                 self.my_addon_category.operations_implemented(
                     self._MyChecksumArchiveImplementation,
-                    capability_id="get-it",
+                    capability=_my_cap.GET_IT,
                 )
             ),
-            {_get_operation},
+            {_expected_get_op},
         )
         self.assertEqual(
             set(
                 self.my_addon_category.operations_implemented(
                     self._MyChecksumArchiveImplementation,
-                    capability_id="put-it",
+                    capability=_my_cap.PUT_IT,
                 )
             ),
-            {_put_operation},
+            {_expected_put_op},
         )
         self.assertEqual(
             set(
                 self.my_addon_category.operations_implemented(
                     self._MyChecksumArchiveImplementation,
-                    capability_id="nothing",
+                    capability=_my_cap.UNUSED,
                 )
             ),
             set(),

@@ -12,7 +12,7 @@ from addon_toolkit import (
 __all__ = ("StorageAddonCategory",)
 
 
-class StorageCapability(enum.StrEnum):
+class StorageCapability(enum.Enum):
     ACCESS = "access"
     UPDATE = "update"
 

@@ -53,12 +53,14 @@ class _UnboundAddonOperation:
 
     def __set_name__(self, cls, name):
         AddonOperation._register_operation(self, cls, name)
-        # replace this AddonOperation with the original function
+        # replace this _UnboundAddonOperation with the original function
         setattr(cls, name, self.operation_fn)
 
 
 @dataclasses.dataclass(frozen=True)
-class AddonOperation(_UnboundAddonOperation):
+class AddonOperation:
+    operation_type: AddonOperationType
+    capability: enum.Enum
     declaration_cls: type[AddonInterface]
     method_name: str
 
@@ -81,7 +83,8 @@ class AddonOperation(_UnboundAddonOperation):
         method_name: str,
     ):
         _operation = cls(
-            **dataclasses.asdict(unbound_operation),
+            operation_type=unbound_operation.operation_type,
+            capability=unbound_operation.capability,
             declaration_cls=declaration_cls,
             method_name=method_name,
         )

@@ -62,21 +62,18 @@ class TestAddonCategory(unittest.TestCase):
         _my_cap = self.my_addon_category.capabilities
         _my_interface_cls = self.my_addon_category.base_interface
         _expected_get_op = AddonOperation(
-            operation_fn=_my_interface_cls.url_for_get,
             operation_type=AddonOperationType.REDIRECT,
             capability=_my_cap.GET_IT,
             declaration_cls=_my_interface_cls,
             method_name="url_for_get",
         )
         _expected_put_op = AddonOperation(
-            operation_fn=_my_interface_cls.url_for_put,
             operation_type=AddonOperationType.REDIRECT,
             capability=_my_cap.PUT_IT,
             declaration_cls=_my_interface_cls,
             method_name="url_for_put",
         )
         _query_operation = AddonOperation(
-            operation_fn=_my_interface_cls.query_relations,
             operation_type=AddonOperationType.PROXY,
             capability=_my_cap.GET_IT,
             declaration_cls=_my_interface_cls,

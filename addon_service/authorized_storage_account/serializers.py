@@ -5,7 +5,7 @@ from rest_framework_json_api.relations import (
 )
 from rest_framework_json_api.utils import get_resource_type_from_model
 
-from addon_service.capability.serializers import StorageCapabilityField
+from addon_service.capability.serializers import StorageCapabilityListField
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
@@ -44,7 +44,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     url = serializers.HyperlinkedIdentityField(
         view_name=f"{RESOURCE_NAME}-detail", required=False
     )
-    authorized_capabilities = StorageCapabilityField()
+    authorized_capabilities = StorageCapabilityListField()
     account_owner = AccountOwnerField(
         many=False,
         queryset=UserReference.objects.all(),

@@ -2,12 +2,15 @@ import enum
 import unittest
 
 from addon_toolkit import (
-    AddonInterfaceDeclaration,
-    AddonOperationDeclaration,
-    AddonOperationType,
     addon_interface,
+    get_declared_operations,
+    get_implemented_operations,
     proxy_operation,
     redirect_operation,
+)
+from addon_toolkit.operation import (
+    AddonOperationDeclaration,
+    AddonOperationType,
 )
 
 
@@ -62,7 +65,6 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
         cls._MyCapability = _MyCapability
         cls._MyInterface = _MyInterface
         cls._MyImplementation = _MyImplementation
-        cls._declaration = AddonInterfaceDeclaration.for_class(_MyInterface)
 
         cls._expected_get_op = AddonOperationDeclaration(
             operation_type=AddonOperationType.REDIRECT,
@@ -82,29 +84,29 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
 
     def test_get_declared_operations(self):
         self.assertEqual(
-            set(self._declaration.get_declared_operations()),
+            set(get_declared_operations(self._MyInterface)),
             {self._expected_get_op, self._expected_put_op, self._expected_query_op},
         )
         self.assertEqual(
             set(
-                self._declaration.get_declared_operations(
-                    capability=self._MyCapability.GET_IT
+                get_declared_operations(
+                    self._MyInterface, capability=self._MyCapability.GET_IT
                 )
             ),
             {self._expected_get_op, self._expected_query_op},
         )
         self.assertEqual(
             set(
-                self._declaration.get_declared_operations(
-                    capability=self._MyCapability.PUT_IT
+                get_declared_operations(
+                    self._MyInterface, capability=self._MyCapability.PUT_IT
                 )
             ),
             {self._expected_put_op},
         )
         self.assertEqual(
             set(
-                self._declaration.get_declared_operations(
-                    capability=self._MyCapability.UNUSED
+                get_declared_operations(
+                    self._MyInterface, capability=self._MyCapability.UNUSED
                 )
             ),
             set(),
@@ -112,16 +114,12 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
 
     def test_get_implemented_operations(self):
         self.assertEqual(
-            set(
-                self._declaration.get_implemented_operations(
-                    self._MyImplementation,
-                )
-            ),
+            set(get_implemented_operations(self._MyImplementation)),
             {self._expected_get_op, self._expected_put_op},
         )
         self.assertEqual(
             set(
-                self._declaration.get_implemented_operations(
+                get_implemented_operations(
                     self._MyImplementation,
                     capability=self._MyCapability.GET_IT,
                 )
@@ -130,7 +128,7 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
         )
         self.assertEqual(
             set(
-                self._declaration.get_implemented_operations(
+                get_implemented_operations(
                     self._MyImplementation,
                     capability=self._MyCapability.PUT_IT,
                 )
@@ -139,7 +137,7 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
         )
         self.assertEqual(
             set(
-                self._declaration.get_implemented_operations(
+                get_implemented_operations(
                     self._MyImplementation,
                     capability=self._MyCapability.UNUSED,
                 )

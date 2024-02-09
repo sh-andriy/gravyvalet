@@ -7,13 +7,19 @@ from typing import (
     Callable,
     ClassVar,
     Iterator,
-    Optional,
 )
 
 from .operation import AddonOperationDeclaration
 
 
-__all__ = ("addon_interface", "PagedResult")
+__all__ = (
+    "PagedResult",
+    "addon_interface",
+    "get_declared_operations",
+    "get_implemented_operations",
+    "get_operation_fn_on",
+    "is_operation_implemented_on",
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -47,22 +53,34 @@ class AddonInterfaceDeclaration:
         weakref.WeakKeyDictionary[type, "AddonInterfaceDeclaration"]
     ] = weakref.WeakKeyDictionary()
 
-    @staticmethod
-    def declare(capabilities: type[enum.Enum]):
+    @classmethod
+    def declare(cls, capabilities: type[enum.Enum]):
         def _cls_decorator(interface_cls: type) -> type:
-            AddonInterfaceDeclaration.__declarations_by_cls[
-                interface_cls
-            ] = AddonInterfaceDeclaration(interface_cls, capabilities)
+            cls.__declarations_by_cls[interface_cls] = AddonInterfaceDeclaration(
+                interface_cls, capabilities
+            )
             return interface_cls
 
         return _cls_decorator
 
-    @staticmethod
-    def for_class(interface_cls: type) -> Optional["AddonInterfaceDeclaration"]:
-        return AddonInterfaceDeclaration.__declarations_by_cls.get(interface_cls)
+    @classmethod
+    def for_class_or_instance(
+        cls, interface: type | object
+    ) -> "AddonInterfaceDeclaration":
+        _interface_cls = interface if isinstance(interface, type) else type(interface)
+        return cls.for_class(_interface_cls)
+
+    @classmethod
+    def for_class(cls, interface_cls: type) -> "AddonInterfaceDeclaration":
+        for _cls in interface_cls.__mro__:
+            try:
+                return AddonInterfaceDeclaration.__declarations_by_cls[_cls]
+            except KeyError:
+                pass
+        raise ValueError(f"no addon_interface declaration found for {interface_cls}")
 
     ###
-    # AddonInterfaceDeclaration instance methods
+    # private methods for populating operations
 
     def __post_init__(self):
         self._gather_operations()
@@ -83,62 +101,62 @@ class AddonInterfaceDeclaration:
             set(),
         ).add(operation)
 
-    def get_operation_method(
-        self, cls_or_instance: type | object, operation: AddonOperationDeclaration
-    ) -> Callable:
-        _cls = (
-            cls_or_instance
-            if isinstance(cls_or_instance, type)
-            else type(cls_or_instance)
-        )
-        assert self.interface_cls is not _cls
-        assert issubclass(_cls, self.interface_cls)
-        try:
-            _method_name = self.method_name_by_op[operation]
-        except KeyError:
-            raise ValueError  # TODO: helpful exception type
-        _declared_fn = getattr(self.interface_cls, _method_name)
-        _implemented_fn = getattr(_cls, _method_name)
-        if _implemented_fn is _declared_fn:
-            raise NotImplementedError(  # TODO: helpful exception type
-                f"operation '{_method_name}' not implemented by {_cls}"
-            )
-        # now get the method directly on what was passed in
-        # to ensure a bound method when that arg is an interface instance
-        return getattr(cls_or_instance, _method_name)
-
-    def operation_is_implemented(
-        self, implementation_cls: type, operation: AddonOperationDeclaration
-    ):
-        try:
-            return bool(self.get_operation_method(implementation_cls, operation))
-        except NotImplementedError:  # TODO: more specific error
-            return False
-
-    def invoke(self, operation, interface_instance, /, args=None, kwargs=None):
-        # TODO: reconsider
-        _op_method = self.get_operation_method(interface_instance, operation)
-        return _op_method(*(args or ()), **(kwargs or {}))
-
-    def get_declared_operations(
-        self,
-        *,
-        capability: enum.Enum | None = None,
-    ) -> Iterator[AddonOperationDeclaration]:
-        if capability is None:
-            yield from self.method_name_by_op.keys()
-        else:
-            yield from self.ops_by_capability.get(capability, ())
-
-    def get_implemented_operations(
-        self,
-        implementation_cls: type,
-        capability: enum.Enum | None = None,
-    ) -> Iterator[AddonOperationDeclaration]:
-        for _op in self.get_declared_operations(capability=capability):
-            if self.operation_is_implemented(implementation_cls, _op):
-                yield _op
-
 
 # meant for use as decorator on a class, `@addon_interface(MyCapabilitiesEnum)`
 addon_interface = AddonInterfaceDeclaration.declare
+
+
+def get_declared_operations(
+    interface: type | object, capability: enum.Enum | None = None
+) -> Iterator[AddonOperationDeclaration]:
+    _interface_dec = AddonInterfaceDeclaration.for_class_or_instance(interface)
+    if capability is None:
+        yield from _interface_dec.method_name_by_op.keys()
+    else:
+        yield from _interface_dec.ops_by_capability.get(capability, ())
+
+
+def get_implemented_operations(
+    interface: type | object,
+    capability: enum.Enum | None = None,
+) -> Iterator[AddonOperationDeclaration]:
+    for _op in get_declared_operations(interface, capability=capability):
+        if is_operation_implemented_on(_op, interface):
+            yield _op
+
+
+def get_operation_fn_on(
+    operation: AddonOperationDeclaration,
+    interface: type | object,
+) -> Callable:
+    _interface_cls = interface if isinstance(interface, type) else type(interface)
+    _interface_dec = AddonInterfaceDeclaration.for_class(_interface_cls)
+    try:
+        _method_name = _interface_dec.method_name_by_op[operation]
+    except KeyError:
+        raise ValueError  # TODO: helpful exception type
+    _declared_fn = getattr(_interface_dec.interface_cls, _method_name)
+    _implemented_fn = getattr(_interface_cls, _method_name)
+    if _implemented_fn is _declared_fn:
+        raise NotImplementedError(  # TODO: helpful exception type
+            f"operation '{_method_name}' not implemented by {_interface_cls}"
+        )
+    # now get the method directly on what was passed in
+    # to ensure a bound method when that arg is an interface instance
+    return getattr(interface, _method_name)
+
+
+def is_operation_implemented_on(
+    operation: AddonOperationDeclaration,
+    interface: type | object,
+) -> bool:
+    try:
+        return bool(get_operation_fn_on(operation, interface))
+    except NotImplementedError:  # TODO: more specific error
+        return False
+
+
+def invoke(operation, interface_instance, /, args=None, kwargs=None):
+    # TODO: reconsider
+    _op_method = get_operation_fn_on(operation, interface_instance)
+    return _op_method(*(args or ()), **(kwargs or {}))

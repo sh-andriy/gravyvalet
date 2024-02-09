@@ -1,5 +1,5 @@
 from addon_service.common.enums import IntEnumForEnum
-from addon_toolkit.categories.storage import StorageCapability
+from addon_toolkit.storage import StorageCapability
 
 
 __all__ = ("IntStorageCapability",)

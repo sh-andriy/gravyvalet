@@ -1,6 +1,6 @@
 from addon_service.capability.models import IntStorageCapability
 from addon_service.common.enums.serializers import DualEnumsListField
-from addon_toolkit.categories.storage import StorageCapability
+from addon_toolkit.storage import StorageCapability
 
 
 class StorageCapabilityListField(

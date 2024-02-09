@@ -1,15 +1,14 @@
 import enum
 
 from addon_toolkit import (
-    AddonCategory,
-    AddonInterface,
     PagedResult,
+    addon_interface,
     proxy_operation,
     redirect_operation,
 )
 
 
-__all__ = ("StorageAddonCategory",)
+__all__ = ("StorageAddon",)
 
 
 class StorageCapability(enum.Enum):
@@ -17,8 +16,9 @@ class StorageCapability(enum.Enum):
     UPDATE = "update"
 
 
-# what a base StorageInterface could be like (incomplete)
-class StorageInterface(AddonInterface):
+# what a base StorageAddon could be like (incomplete)
+@addon_interface(capabilities=StorageCapability)
+class StorageAddon:
     ##
     # "item-read" operations:
 
@@ -88,9 +88,3 @@ class StorageInterface(AddonInterface):
     @proxy_operation(capability=StorageCapability.UPDATE)
     async def pls_restore_version(self, item_id: str, version_id: str):
         raise NotImplementedError
-
-
-StorageAddonCategory = AddonCategory(
-    capabilities=StorageCapability,
-    base_interface=StorageInterface,
-)

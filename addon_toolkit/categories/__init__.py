@@ -1,4 +1,4 @@
-from .storage import StorageAddonCategory
+from .storage import StorageAddon
 
 
-__all__ = ("StorageAddonCategory",)
+__all__ = ("StorageAddon",)

@@ -1,10 +1,10 @@
-from .category import AddonCategory
 from .interface import (
-    AddonInterface,
+    AddonInterfaceDeclaration,
     PagedResult,
+    addon_interface,
 )
 from .operation import (
-    AddonOperation,
+    AddonOperationDeclaration,
     AddonOperationType,
     proxy_operation,
     redirect_operation,
@@ -12,11 +12,11 @@ from .operation import (
 
 
 __all__ = (
-    "AddonCategory",
-    "AddonInterface",
-    "AddonOperation",
+    "AddonInterfaceDeclaration",
+    "AddonOperationDeclaration",
     "AddonOperationType",
     "PagedResult",
+    "addon_interface",
     "proxy_operation",
     "redirect_operation",
 )

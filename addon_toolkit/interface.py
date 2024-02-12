@@ -2,14 +2,16 @@ import dataclasses
 import enum
 import inspect
 import logging
-import weakref
 from typing import (
     Callable,
-    ClassVar,
     Iterator,
 )
 
-from .operation import AddonOperationDeclaration
+from .declarator import ClassDeclarator
+from .operation import (
+    AddonOperationDeclaration,
+    operation_declarator,
+)
 
 
 __all__ = (
@@ -45,40 +47,6 @@ class AddonInterfaceDeclaration:
     )
 
     ###
-    # AddonInterfaceDeclaration stores references to declared interface classes
-
-    # private storage linking a class to data gleaned from its decorator
-    __declarations_by_cls: ClassVar[
-        weakref.WeakKeyDictionary[type, "AddonInterfaceDeclaration"]
-    ] = weakref.WeakKeyDictionary()
-
-    @classmethod
-    def declare(cls, capability_enum: type[enum.Enum]):
-        def _cls_decorator(interface_cls: type) -> type:
-            cls.__declarations_by_cls[interface_cls] = AddonInterfaceDeclaration(
-                interface_cls, capability_enum
-            )
-            return interface_cls
-
-        return _cls_decorator
-
-    @classmethod
-    def for_class_or_instance(
-        cls, interface: type | object
-    ) -> "AddonInterfaceDeclaration":
-        _interface_cls = interface if isinstance(interface, type) else type(interface)
-        return cls.for_class(_interface_cls)
-
-    @classmethod
-    def for_class(cls, interface_cls: type) -> "AddonInterfaceDeclaration":
-        for _cls in interface_cls.__mro__:
-            try:
-                return AddonInterfaceDeclaration.__declarations_by_cls[_cls]
-            except KeyError:
-                pass
-        raise ValueError(f"no addon_interface declaration found for {interface_cls}")
-
-    ###
     # private methods for populating operations
 
     def __post_init__(self):
@@ -86,7 +54,7 @@ class AddonInterfaceDeclaration:
 
     def _gather_operations(self):
         for _name, _fn in inspect.getmembers(self.interface_cls, inspect.isfunction):
-            _maybe_op = AddonOperationDeclaration.get_for_function(_fn)
+            _maybe_op = operation_declarator.get_declaration(_fn)
             if _maybe_op is not None:
                 self._add_operation(_name, _maybe_op)
 
@@ -101,8 +69,11 @@ class AddonInterfaceDeclaration:
         ).add(operation)
 
 
-# meant for use as decorator on a class, `@addon_interface(MyCapabilitiesEnum)`
-addon_interface = AddonInterfaceDeclaration.declare
+# the class decorator itself
+addon_interface = ClassDeclarator(
+    dataclass=AddonInterfaceDeclaration,
+    target_fieldname="interface_cls",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -113,15 +84,18 @@ class AddonOperationImplementation:
     operation: AddonOperationDeclaration
 
     def __post_init__(self):
-        _interface_cls_fn = getattr(self.interface.interface_cls, self.method_name)
-        if self.implementation_fn is _interface_cls_fn:
+        if self.implementation_fn is self.interface_fn:  # may raise NotImplementedError
             raise NotImplementedError(  # TODO: helpful exception type
                 f"operation '{self.operation}' not implemented by {self.implementation_cls}"
             )
 
     @property
     def interface(self) -> AddonInterfaceDeclaration:
-        return AddonInterfaceDeclaration.for_class(self.implementation_cls)
+        return addon_interface.get_declaration_for_class(self.implementation_cls)
+
+    @property
+    def interface_fn(self) -> Callable:
+        return getattr(self.interface.interface_cls, self.method_name)
 
     @property
     def method_name(self) -> str:
@@ -147,7 +121,7 @@ class AddonOperationImplementation:
 def get_operation_declarations(
     interface: type | object, capability: enum.Enum | None = None
 ) -> Iterator[AddonOperationDeclaration]:
-    _interface_dec = AddonInterfaceDeclaration.for_class_or_instance(interface)
+    _interface_dec = addon_interface.get_declaration_for_class_or_instance(interface)
     if capability is None:
         yield from _interface_dec.method_name_by_op.keys()
     else:

@@ -1,17 +1,14 @@
 import dataclasses
 import enum
-import inspect
-import weakref
-from typing import (
-    Callable,
-    ClassVar,
-    Optional,
-)
+from typing import Callable
+
+from .declarator import Declarator
 
 
 __all__ = (
     "AddonOperationDeclaration",
     "AddonOperationType",
+    "operation_declarator",
     "proxy_operation",
     "redirect_operation",
 )
@@ -35,32 +32,6 @@ class AddonOperationDeclaration:
     operation_fn: Callable
 
     ###
-    # AddonOperationDeclaration stores references to declared operations
-
-    # private storage linking a function to data gleaned from its decorator
-    __operations_by_fn: ClassVar[
-        weakref.WeakKeyDictionary[Callable, "AddonOperationDeclaration"]
-    ] = weakref.WeakKeyDictionary()
-
-    @staticmethod
-    def declared(
-        operation_fn: Callable,
-        capability: enum.Enum,
-        operation_type: AddonOperationType,
-    ):
-        AddonOperationDeclaration.__operations_by_fn[
-            operation_fn
-        ] = AddonOperationDeclaration(
-            operation_type=operation_type,
-            capability=capability,
-            operation_fn=operation_fn,
-        )
-
-    @staticmethod
-    def get_for_function(fn: Callable) -> Optional["AddonOperationDeclaration"]:
-        return AddonOperationDeclaration.__operations_by_fn.get(fn)
-
-    ###
     # instance methods
 
     @property
@@ -68,29 +39,24 @@ class AddonOperationDeclaration:
         # TODO: consider docstring param on operation decorators, allow overriding __doc__
         return self.operation_fn.__doc__
 
-
-def redirect_operation(capability: enum.Enum):
-    def _redirect_operation_decorator(fn: Callable) -> Callable:
-        # decorator for operations that may be performed by a client request
-        # (e.g. redirect to waterbutler)
-        assert inspect.isfunction(fn)  # TODO: inspect function params
-        assert not inspect.isawaitable(fn)
-        # TODO: helpful error messaging for implementers
-        AddonOperationDeclaration.declared(fn, capability, AddonOperationType.REDIRECT)
-        return fn
-
-    return _redirect_operation_decorator
+    @classmethod
+    def for_function(self, fn: Callable) -> "AddonOperationDeclaration":
+        return operation_declarator.get_declaration(fn)
 
 
-def proxy_operation(capability: enum.Enum):
-    def _proxy_operation_decorator(fn: Callable) -> Callable:
-        # decorator for operations that require fetching data from elsewhere,
-        # but make no changes (e.g. get a metadata description of an item,
-        # list items in a given folder)
-        # TODO: assert inspect.isasyncgenfunction(fn)  # generate rdf triples?
-        # TODO: assert based on `inspect.signature(fn).parameters`
-        # TODO: assert based on return value?
-        AddonOperationDeclaration.declared(fn, capability, AddonOperationType.PROXY)
-        return fn
+# decorator for operations (used by operation_type-specific decorators below)
+operation_declarator = Declarator(
+    dataclass=AddonOperationDeclaration,
+    target_fieldname="operation_fn",
+)
 
-    return _proxy_operation_decorator
+# decorator for operations that may be performed by a client request (e.g. redirect to waterbutler)
+redirect_operation = operation_declarator.with_kwargs(
+    operation_type=AddonOperationType.REDIRECT,
+)
+
+# decorator for operations that require fetching data from elsewhere, but make no changes
+# (e.g. get a metadata description of an item, list items in a given folder)
+proxy_operation = operation_declarator.with_kwargs(
+    operation_type=AddonOperationType.PROXY,
+)

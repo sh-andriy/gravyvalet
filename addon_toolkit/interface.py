@@ -15,9 +15,8 @@ from .operation import AddonOperationDeclaration
 __all__ = (
     "PagedResult",
     "addon_interface",
-    "get_declared_operations",
-    "get_implemented_operations",
-    "get_operation_fn_on",
+    "get_operation_declarations",
+    "get_operation_implementations",
     "is_operation_implemented_on",
 )
 
@@ -35,7 +34,7 @@ class AddonInterfaceDeclaration:
     """dataclass for the operations declared on a class decorated with `addon_interface`"""
 
     interface_cls: type
-    capabilities: type[enum.Enum]
+    capability_enum: type[enum.Enum]
     method_name_by_op: dict[AddonOperationDeclaration, str] = dataclasses.field(
         default_factory=dict,
     )
@@ -46,7 +45,7 @@ class AddonInterfaceDeclaration:
     )
 
     ###
-    # AddonInterface stores references to declared interface classes
+    # AddonInterfaceDeclaration stores references to declared interface classes
 
     # private storage linking a class to data gleaned from its decorator
     __declarations_by_cls: ClassVar[
@@ -54,10 +53,10 @@ class AddonInterfaceDeclaration:
     ] = weakref.WeakKeyDictionary()
 
     @classmethod
-    def declare(cls, capabilities: type[enum.Enum]):
+    def declare(cls, capability_enum: type[enum.Enum]):
         def _cls_decorator(interface_cls: type) -> type:
             cls.__declarations_by_cls[interface_cls] = AddonInterfaceDeclaration(
-                interface_cls, capabilities
+                interface_cls, capability_enum
             )
             return interface_cls
 
@@ -87,7 +86,7 @@ class AddonInterfaceDeclaration:
 
     def _gather_operations(self):
         for _name, _fn in inspect.getmembers(self.interface_cls, inspect.isfunction):
-            _maybe_op = AddonOperationDeclaration.for_function(_fn)
+            _maybe_op = AddonOperationDeclaration.get_for_function(_fn)
             if _maybe_op is not None:
                 self._add_operation(_name, _maybe_op)
 
@@ -106,7 +105,46 @@ class AddonInterfaceDeclaration:
 addon_interface = AddonInterfaceDeclaration.declare
 
 
-def get_declared_operations(
+@dataclasses.dataclass(frozen=True)
+class AddonOperationImplementation:
+    """dataclass for an implemented operation on an interface subclass"""
+
+    implementation_cls: type
+    operation: AddonOperationDeclaration
+
+    def __post_init__(self):
+        _interface_cls_fn = getattr(self.interface.interface_cls, self.method_name)
+        if self.implementation_fn is _interface_cls_fn:
+            raise NotImplementedError(  # TODO: helpful exception type
+                f"operation '{self.operation}' not implemented by {self.implementation_cls}"
+            )
+
+    @property
+    def interface(self) -> AddonInterfaceDeclaration:
+        return AddonInterfaceDeclaration.for_class(self.implementation_cls)
+
+    @property
+    def method_name(self) -> str:
+        return self.interface.method_name_by_op[self.operation]
+
+    @property
+    def implementation_fn(self) -> Callable:
+        return getattr(self.implementation_cls, self.method_name)
+
+    @property
+    def combined_docstring(self) -> str | None:
+        return "\n".join(
+            (
+                self.operation.docstring or "",
+                self.implementation_fn.__doc__ or "",
+            )
+        )
+
+    def get_callable_for(self, addon_instance: object) -> Callable:
+        return getattr(addon_instance, self.method_name)
+
+
+def get_operation_declarations(
     interface: type | object, capability: enum.Enum | None = None
 ) -> Iterator[AddonOperationDeclaration]:
     _interface_dec = AddonInterfaceDeclaration.for_class_or_instance(interface)
@@ -116,47 +154,35 @@ def get_declared_operations(
         yield from _interface_dec.ops_by_capability.get(capability, ())
 
 
-def get_implemented_operations(
-    interface: type | object,
+def get_operation_implementations(
+    implementation_cls: type,
     capability: enum.Enum | None = None,
-) -> Iterator[AddonOperationDeclaration]:
-    for _op in get_declared_operations(interface, capability=capability):
-        if is_operation_implemented_on(_op, interface):
-            yield _op
-
-
-def get_operation_fn_on(
-    operation: AddonOperationDeclaration,
-    interface: type | object,
-) -> Callable:
-    _interface_cls = interface if isinstance(interface, type) else type(interface)
-    _interface_dec = AddonInterfaceDeclaration.for_class(_interface_cls)
-    try:
-        _method_name = _interface_dec.method_name_by_op[operation]
-    except KeyError:
-        raise ValueError  # TODO: helpful exception type
-    _declared_fn = getattr(_interface_dec.interface_cls, _method_name)
-    _implemented_fn = getattr(_interface_cls, _method_name)
-    if _implemented_fn is _declared_fn:
-        raise NotImplementedError(  # TODO: helpful exception type
-            f"operation '{_method_name}' not implemented by {_interface_cls}"
-        )
-    # now get the method directly on what was passed in
-    # to ensure a bound method when that arg is an interface instance
-    return getattr(interface, _method_name)
+) -> Iterator[AddonOperationImplementation]:
+    for _op in get_operation_declarations(implementation_cls, capability=capability):
+        try:
+            yield AddonOperationImplementation(implementation_cls, _op)
+        except NotImplementedError:
+            pass
 
 
 def is_operation_implemented_on(
     operation: AddonOperationDeclaration,
-    interface: type | object,
+    implementation_cls: type,
 ) -> bool:
     try:
-        return bool(get_operation_fn_on(operation, interface))
+        return bool(AddonOperationImplementation(implementation_cls, operation))
     except NotImplementedError:  # TODO: more specific error
         return False
 
 
-def invoke(operation, interface_instance, /, args=None, kwargs=None):
+def invoke(
+    operation: AddonOperationDeclaration,
+    interface_instance: object,
+    /,
+    args=None,
+    kwargs=None,
+):
     # TODO: reconsider
-    _op_method = get_operation_fn_on(operation, interface_instance)
-    return _op_method(*(args or ()), **(kwargs or {}))
+    _imp = AddonOperationImplementation(interface_instance.__class__, operation)
+    _method = _imp.get_callable_for(interface_instance)
+    return _method(*(args or ()), **(kwargs or {}))

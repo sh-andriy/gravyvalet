@@ -17,7 +17,7 @@ class StorageCapability(enum.Enum):
 
 
 # what a base StorageAddon could be like (incomplete)
-@addon_interface(capabilities=StorageCapability)
+@addon_interface(capability_enum=StorageCapability)
 class StorageAddon:
     ##
     # "item-read" operations:

@@ -1,9 +1,8 @@
 from .interface import (
     PagedResult,
     addon_interface,
-    get_declared_operations,
-    get_implemented_operations,
-    get_operation_fn_on,
+    get_operation_declarations,
+    get_operation_implementations,
     is_operation_implemented_on,
 )
 from .operation import (
@@ -17,8 +16,7 @@ __all__ = (
     "addon_interface",
     "proxy_operation",
     "redirect_operation",
-    "get_declared_operations",
-    "get_implemented_operations",
-    "get_operation_fn_on",
+    "get_operation_declarations",
+    "get_operation_implementations",
     "is_operation_implemented_on",
 )

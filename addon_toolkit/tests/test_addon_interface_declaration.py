@@ -3,11 +3,12 @@ import unittest
 
 from addon_toolkit import (
     addon_interface,
-    get_declared_operations,
-    get_implemented_operations,
+    get_operation_declarations,
+    get_operation_implementations,
     proxy_operation,
     redirect_operation,
 )
+from addon_toolkit.interface import AddonOperationImplementation
 from addon_toolkit.operation import (
     AddonOperationDeclaration,
     AddonOperationType,
@@ -25,12 +26,9 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
             PUT_IT = "put-it"
             UNUSED = "unused"  # for testing when a capability has no operations
 
-        @addon_interface(capabilities=_MyCapability)
+        @addon_interface(capability_enum=_MyCapability)
         class _MyInterface:
-            """this is a docstring for _MyInterface
-
-            it should find its way to browsable docs somewhere
-            """
+            """this _MyInterface docstring should find its way to browsable docs somewhere"""
 
             @redirect_operation(capability=_MyCapability.GET_IT)
             def url_for_get(self, checksum_iri) -> str:
@@ -52,9 +50,11 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
 
         class _MyImplementation(_MyInterface):
             def url_for_get(self, checksum_iri) -> str:
+                """this url_for_get docstring could contain implementation-specific caveats"""
                 return f"https://myarchive.example///{checksum_iri}"
 
             def url_for_put(self, checksum_iri):
+                """this url_for_put docstring could contain implementation-specific caveats"""
                 # TODO: how to represent "send a PUT request here"?
                 # return RedirectLadle(
                 #     HTTPMethod.PUT,
@@ -82,14 +82,23 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
             operation_fn=_MyInterface.query_relations,
         )
 
-    def test_get_declared_operations(self):
+        cls._expected_get_imp = AddonOperationImplementation(
+            operation=cls._expected_get_op,
+            implementation_cls=_MyImplementation,
+        )
+        cls._expected_put_imp = AddonOperationImplementation(
+            operation=cls._expected_put_op,
+            implementation_cls=_MyImplementation,
+        )
+
+    def test_get_operation_declarations(self):
         self.assertEqual(
-            set(get_declared_operations(self._MyInterface)),
+            set(get_operation_declarations(self._MyInterface)),
             {self._expected_get_op, self._expected_put_op, self._expected_query_op},
         )
         self.assertEqual(
             set(
-                get_declared_operations(
+                get_operation_declarations(
                     self._MyInterface, capability=self._MyCapability.GET_IT
                 )
             ),
@@ -97,7 +106,7 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
         )
         self.assertEqual(
             set(
-                get_declared_operations(
+                get_operation_declarations(
                     self._MyInterface, capability=self._MyCapability.PUT_IT
                 )
             ),
@@ -105,7 +114,7 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
         )
         self.assertEqual(
             set(
-                get_declared_operations(
+                get_operation_declarations(
                     self._MyInterface, capability=self._MyCapability.UNUSED
                 )
             ),
@@ -114,30 +123,30 @@ class TestAddonInterfaceDeclaration(unittest.TestCase):
 
     def test_get_implemented_operations(self):
         self.assertEqual(
-            set(get_implemented_operations(self._MyImplementation)),
-            {self._expected_get_op, self._expected_put_op},
+            set(get_operation_implementations(self._MyImplementation)),
+            {self._expected_get_imp, self._expected_put_imp},
         )
         self.assertEqual(
             set(
-                get_implemented_operations(
+                get_operation_implementations(
                     self._MyImplementation,
                     capability=self._MyCapability.GET_IT,
                 )
             ),
-            {self._expected_get_op},
+            {self._expected_get_imp},
         )
         self.assertEqual(
             set(
-                get_implemented_operations(
+                get_operation_implementations(
                     self._MyImplementation,
                     capability=self._MyCapability.PUT_IT,
                 )
             ),
-            {self._expected_put_op},
+            {self._expected_put_imp},
         )
         self.assertEqual(
             set(
-                get_implemented_operations(
+                get_operation_implementations(
                     self._MyImplementation,
                     capability=self._MyCapability.UNUSED,
                 )

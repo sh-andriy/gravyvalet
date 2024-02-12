@@ -24,9 +24,10 @@ class AddonOperationType(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class AddonOperationDeclaration:
-    """dataclass for a declared operation method on a subclass of AddonInterface
+    """dataclass for a declared operation method on an interface
 
-    created by the decorators "proxy_operation" and "redirect_operation"
+    created by decorating a method with `@proxy_operation` or `@redirect_operation`
+    on a class decorated with `@addon_operation`.
     """
 
     operation_type: AddonOperationType
@@ -56,8 +57,16 @@ class AddonOperationDeclaration:
         )
 
     @staticmethod
-    def for_function(fn: Callable) -> Optional["AddonOperationDeclaration"]:
+    def get_for_function(fn: Callable) -> Optional["AddonOperationDeclaration"]:
         return AddonOperationDeclaration.__operations_by_fn.get(fn)
+
+    ###
+    # instance methods
+
+    @property
+    def docstring(self) -> str | None:
+        # TODO: consider docstring param on operation decorators, allow overriding __doc__
+        return self.operation_fn.__doc__
 
 
 def redirect_operation(capability: enum.Enum):

@@ -71,8 +71,8 @@ class AddonInterfaceDeclaration:
 
 # the class decorator itself
 addon_interface = ClassDeclarator(
-    dataclass=AddonInterfaceDeclaration,
-    target_fieldname="interface_cls",
+    declaration_dataclass=AddonInterfaceDeclaration,
+    object_field="interface_cls",
 )
 
 

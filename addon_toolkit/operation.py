@@ -46,8 +46,8 @@ class AddonOperationDeclaration:
 
 # decorator for operations (used by operation_type-specific decorators below)
 operation_declarator = Declarator(
-    dataclass=AddonOperationDeclaration,
-    target_fieldname="operation_fn",
+    declaration_dataclass=AddonOperationDeclaration,
+    object_field="operation_fn",
 )
 
 # decorator for operations that may be performed by a client request (e.g. redirect to waterbutler)

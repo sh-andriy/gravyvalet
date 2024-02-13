@@ -15,7 +15,7 @@ from addon_toolkit.operation import (
 )
 
 
-class TestAddonInterfaceDeclaration(unittest.TestCase):
+class TestAddonInterface(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         ###

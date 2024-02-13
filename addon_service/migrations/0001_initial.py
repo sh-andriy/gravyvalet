@@ -177,8 +177,6 @@ class Migration(migrations.Migration):
                 ),
                 ("created", models.DateTimeField(editable=False)),
                 ("modified", models.DateTimeField()),
-                ("remote_account_id", models.CharField()),
-                ("remote_account_display_name", models.CharField()),
                 (
                     "credentials",
                     models.ForeignKey(

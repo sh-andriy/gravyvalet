@@ -23,6 +23,8 @@ class CredentialsIssuerFactory(DjangoModelFactory):
     class Meta:
         model = db.CredentialsIssuer
 
+    name = factory.Faker("word")
+
 
 class ExternalCredentialsFactory(DjangoModelFactory):
     class Meta:
@@ -32,9 +34,6 @@ class ExternalCredentialsFactory(DjangoModelFactory):
 class ExternalAccountFactory(DjangoModelFactory):
     class Meta:
         model = db.ExternalAccount
-
-    remote_account_id = factory.Faker("word")
-    remote_account_display_name = factory.Faker("word")
 
     credentials_issuer = factory.SubFactory(CredentialsIssuerFactory)
     owner = factory.SubFactory(UserReferenceFactory)

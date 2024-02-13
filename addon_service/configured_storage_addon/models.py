@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from addon_service.capability.models import IntStorageCapability
@@ -6,7 +7,7 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 
 class ConfiguredStorageAddon(AddonsServiceBaseModel):
-    root_folder = models.CharField()
+    root_folder = models.CharField(blank=True)
 
     connected_capabilities = ArrayField(
         models.IntegerField(choices=IntStorageCapability.as_django_choices()),
@@ -34,3 +35,15 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     @property
     def account_owner(self):
         return self.base_account.external_account.owner
+
+    def clean(self):
+        _connected_caps = set(self.connected_capabilities)
+        if not _connected_caps.issubset(self.base_account.authorized_capabilities):
+            _unauthorized_caps = _connected_caps.difference(
+                self.base_account.authorized_capabilities
+            )
+            raise ValidationError(
+                {
+                    "connected_capabilities": f"capabilities not authorized on account: {_unauthorized_caps}",
+                }
+            )

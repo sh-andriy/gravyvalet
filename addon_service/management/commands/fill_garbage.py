@@ -26,8 +26,6 @@ class Command(LabelCommand):
             )
             _ec = db.ExternalCredentials.objects.create()
             _ea = db.ExternalAccount.objects.create(
-                remote_account_id=label,
-                remote_account_display_name=label,
                 credentials_issuer=_ci,
                 owner=_iu,
                 credentials=_ec,

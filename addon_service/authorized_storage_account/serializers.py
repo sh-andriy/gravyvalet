@@ -47,6 +47,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         many=False,
         queryset=UserReference.objects.all(),
         related_link_view_name=f"{RESOURCE_NAME}-related",
+        read_only=True
     )
     external_storage_service = ExternalStorageServiceField(
         queryset=ExternalStorageService.objects.all(),

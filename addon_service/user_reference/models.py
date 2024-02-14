@@ -7,6 +7,11 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 class UserReference(AddonsServiceBaseModel):
     user_uri = models.URLField(unique=True, db_index=True, null=False)
 
+
+    @property
+    def account_owner(self):
+        return self
+
     @property
     def authorized_storage_accounts(self):
         return AuthorizedStorageAccount.objects.filter(

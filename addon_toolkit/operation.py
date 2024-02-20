@@ -16,7 +16,7 @@ __all__ = (
 
 class AddonOperationType(enum.Enum):
     REDIRECT = "redirect"
-    PROXY = "redirect"
+    PROXY = "proxy"
 
 
 @dataclasses.dataclass(frozen=True)

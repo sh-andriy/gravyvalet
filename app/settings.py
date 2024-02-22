@@ -15,6 +15,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.DEBUG
 
+RESOURCE_REFERENCE_LOOKUP_URL = "https://api.osf.io/v2/guids/{0}/"
+USER_REFERENCE_LOOKUP_URL = "https://api.osf.io/v2/users/me/"
+USER_REFERENCE_COOKIE = "osf"
+
+URI_ID = "http://osf.example/"
+AUTH_URI_ID = "http://osf.auth/"
+
 ALLOWED_HOSTS = env.ALLOWED_HOSTS
 
 
@@ -102,6 +109,7 @@ REST_FRAMEWORK = {
         "rest_framework_json_api.django_filters.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
     ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("app.authentication.GVCombinedAuthentication",),
     "SEARCH_PARAM": "filter[search]",
     "TEST_REQUEST_RENDERER_CLASSES": (
         "rest_framework_json_api.renderers.JSONRenderer",

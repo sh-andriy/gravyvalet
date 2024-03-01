@@ -20,6 +20,7 @@ USER_REFERENCE_LOOKUP_URL = "https://api.osf.io/v2/users/me/"
 USER_REFERENCE_COOKIE = "osf"
 
 OSF_BROKER_URL = "amqp://guest:guest@192.168.168.167:5672//"
+OSF_DEFAULT_QUEUE = "celery"
 
 URI_ID = "http://osf.example/"
 AUTH_URI_ID = "http://osf.auth/"

@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from addon_service.tasks import listen_for_disabled_users
+from addon_service.listeners import listen_for_disabled_users
 
 
 class Command(BaseCommand):

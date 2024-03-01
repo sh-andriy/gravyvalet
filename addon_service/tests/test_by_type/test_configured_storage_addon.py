@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from addon_service.models import ConfiguredStorageAddon
@@ -73,13 +74,33 @@ class ConfiguredStorageAddonAPITests(BaseAPITest):
 class ConfiguredStorageAddonModelTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.configured_storage_addon = test_factories.ConfiguredStorageAddonFactory()
+        # Create active and disabled users via your factory setup or directly
+        cls.active_user = test_factories.UserReferenceFactory(
+            disabled=None)  # Assuming you have a factory for UserReference
+        cls.disabled_user = test_factories.UserReferenceFactory(disabled=timezone.now())
+
+        # Assuming the ExternalAccountFactory can link to UserReference and you have a method to create a ConfiguredStorageAddon with a base account
+        cls.active_configured_storage_addon = test_factories.ConfiguredStorageAddonFactory(
+            base_account__external_account__owner=cls.active_user
+        )
+        cls.disabled_configured_storage_addon = test_factories.ConfiguredStorageAddonFactory(
+            base_account__external_account__owner=cls.disabled_user
+        )
 
     def test_model_loading(self):
         loaded_addon = ConfiguredStorageAddon.objects.get(
-            id=self.configured_storage_addon.id
+            id=self.active_configured_storage_addon.id
         )
-        self.assertEqual(self.configured_storage_addon.pk, loaded_addon.pk)
+        self.assertEqual(self.active_configured_storage_addon.pk, loaded_addon.pk)
+
+
+    def test_active_user_manager_excludes_disabled_users(self):
+        # Fetch all configured storage addons using the manager
+        addons = ConfiguredStorageAddon.objects.all()
+
+        # Ensure that only addons associated with active users are returned
+        self.assertIn(self.active_configured_storage_addon, addons)
+        self.assertNotIn(self.disabled_configured_storage_addon, addons)
 
 
 class ConfiguredStorageAddonViewSetTests(BaseAPITest):

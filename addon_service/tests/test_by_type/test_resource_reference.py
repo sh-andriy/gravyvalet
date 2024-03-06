@@ -11,6 +11,7 @@ from addon_service.resource_reference.views import ResourceReferenceViewSet
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     get_test_request,
+    MockOSF,
     with_mocked_httpx_get,
 )
 from app import settings
@@ -26,9 +27,10 @@ class TestResourceReferenceAPI(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = [
-            "Some form of auth is necessary or POSTS are ignored."
-        ]
+        self._mock_osf = MockOSF(permissions={self._user.user_uri: {self._resource.resource_uri: 'admin'}})
+        self.addCleanup(self._mock_osf.stop)
+        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
+
 
     @property
     def _detail_path(self):
@@ -48,13 +50,11 @@ class TestResourceReferenceAPI(APITestCase):
             },
         )
 
-    @with_mocked_httpx_get
     def test_get(self):
         _resp = self.client.get(self._detail_path)
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
         self.assertEqual(_resp.data["resource_uri"], self._resource.resource_uri)
 
-    @with_mocked_httpx_get
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
             self._detail_path: {"patch", "put", "post"},
@@ -112,10 +112,14 @@ class TestResourceReferenceViewSet(TestCase):
         # _user magically becomes the current requester
         cls._user = cls._csa.base_account.external_account.owner
 
-    @with_mocked_httpx_get
+    def setUp(self):
+        self._mock_osf = MockOSF()
+        self.addCleanup(self._mock_osf.stop)
+        self._mock_osf.configure_user_role(self._user.user_uri, self._resource.resource_uri, 'admin')
+
     def test_get(self):
         _resp = self._view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._resource.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
@@ -133,12 +137,10 @@ class TestResourceReferenceViewSet(TestCase):
             },
         )
 
-    @with_mocked_httpx_get
     def test_unauthorized(self):
         _anon_resp = self._view(get_test_request(), pk=self._resource.pk)
         self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
 
-    @with_mocked_httpx_get(response_status=403)
     def test_wrong_user(self):
         _resp = self._view(
             get_test_request(

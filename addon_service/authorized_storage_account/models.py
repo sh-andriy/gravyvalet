@@ -33,4 +33,4 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @property
     def owner_reference(self):
-        return self.external_account.owner.user_uri
+        return self.account_owner.user_uri

@@ -1,3 +1,4 @@
+from rest_framework.serializers import ReadOnlyField
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
     HyperlinkedRelatedField,
@@ -5,6 +6,7 @@ from rest_framework_json_api.relations import (
 )
 from rest_framework_json_api.utils import get_resource_type_from_model
 
+from addon_service.common.serializer_fields import ReadOnlyResourceRelatedField
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
@@ -18,19 +20,6 @@ from addon_service.models import (
 RESOURCE_NAME = get_resource_type_from_model(AuthorizedStorageAccount)
 
 
-class AccountOwnerField(ResourceRelatedField):
-    def to_internal_value(self, data):
-        return UserReference.objects.get(user_uri=data["id"])
-
-
-class ExternalStorageServiceField(ResourceRelatedField):
-    def to_internal_value(self, data):
-        external_storage_service, _ = ExternalStorageService.objects.get_or_create(
-            auth_uri=data["id"],
-        )
-        return external_storage_service
-
-
 class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,12 +31,12 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     url = serializers.HyperlinkedIdentityField(
         view_name=f"{RESOURCE_NAME}-detail", required=False
     )
-    account_owner = AccountOwnerField(
+    account_owner = ReadOnlyResourceRelatedField(
         many=False,
         queryset=UserReference.objects.all(),
         related_link_view_name=f"{RESOURCE_NAME}-related",
     )
-    external_storage_service = ExternalStorageServiceField(
+    external_storage_service = ResourceRelatedField(
         queryset=ExternalStorageService.objects.all(),
         many=False,
         related_link_view_name=f"{RESOURCE_NAME}-related",
@@ -72,15 +61,16 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     }
 
     def create(self, validate_data):
-        account_owner = validate_data["account_owner"]
+        session_user_uri = self.context['request'].session.get('user_reference_uri')
+        account_owner, _ =  UserReference.objects.get_or_create(user_uri=session_user_uri)
         external_storage_service = validate_data["external_storage_service"]
         # TODO(ENG-5189): Update this once credentials format is finalized
-        credentials, created = ExternalCredentials.objects.get_or_create(
+        credentials, _ = ExternalCredentials.objects.get_or_create(
             oauth_key=validate_data["username"],
             oauth_secret=validate_data["password"],
         )
 
-        external_account, created = ExternalAccount.objects.get_or_create(
+        external_account, _ = ExternalAccount.objects.get_or_create(
             owner=account_owner,
             credentials=credentials,
             credentials_issuer=external_storage_service.credentials_issuer,

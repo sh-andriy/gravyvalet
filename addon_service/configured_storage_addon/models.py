@@ -5,7 +5,11 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 class ActiveUserManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(base_account__external_account__owner__disabled__isnull=True)
+        return (
+            super()
+            .get_queryset()
+            .filter(base_account__external_account__owner__disabled__isnull=True)
+        )
 
 
 class ConfiguredStorageAddon(AddonsServiceBaseModel):

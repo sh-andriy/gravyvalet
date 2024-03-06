@@ -76,15 +76,20 @@ class ConfiguredStorageAddonModelTests(TestCase):
     def setUpTestData(cls):
         # Create active and disabled users via your factory setup or directly
         cls.active_user = test_factories.UserReferenceFactory(
-            disabled=None)  # Assuming you have a factory for UserReference
+            disabled=None
+        )  # Assuming you have a factory for UserReference
         cls.disabled_user = test_factories.UserReferenceFactory(disabled=timezone.now())
 
         # Assuming the ExternalAccountFactory can link to UserReference and you have a method to create a ConfiguredStorageAddon with a base account
-        cls.active_configured_storage_addon = test_factories.ConfiguredStorageAddonFactory(
-            base_account__external_account__owner=cls.active_user
+        cls.active_configured_storage_addon = (
+            test_factories.ConfiguredStorageAddonFactory(
+                base_account__external_account__owner=cls.active_user
+            )
         )
-        cls.disabled_configured_storage_addon = test_factories.ConfiguredStorageAddonFactory(
-            base_account__external_account__owner=cls.disabled_user
+        cls.disabled_configured_storage_addon = (
+            test_factories.ConfiguredStorageAddonFactory(
+                base_account__external_account__owner=cls.disabled_user
+            )
         )
 
     def test_model_loading(self):
@@ -92,7 +97,6 @@ class ConfiguredStorageAddonModelTests(TestCase):
             id=self.active_configured_storage_addon.id
         )
         self.assertEqual(self.active_configured_storage_addon.pk, loaded_addon.pk)
-
 
     def test_active_user_manager_excludes_disabled_users(self):
         # Fetch all configured storage addons using the manager

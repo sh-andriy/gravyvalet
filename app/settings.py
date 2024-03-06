@@ -20,7 +20,6 @@ USER_REFERENCE_LOOKUP_URL = "https://api.osf.io/v2/users/me/"
 USER_REFERENCE_COOKIE = "osf"
 
 OSF_BROKER_URL = "amqp://guest:guest@192.168.168.167:5672//"
-OSF_DEFAULT_QUEUE = "celery"
 
 URI_ID = "http://osf.example/"
 AUTH_URI_ID = "http://osf.auth/"
@@ -144,3 +143,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = "/static/"
+
+# Queue names and routing keys for Rabbit/Celery Messaging
+EXCHANGE_NAME = (
+    "account_status_changes"  # Assuming this is the exchange name used for publishing
+)
+DEACTIVATED_ROUTING_KEY = "user.deactivated"
+REACTIVATED_ROUTING_KEY = "user.reactivated"
+MERGED_ROUTING_KEY = "user.merged"

@@ -5,7 +5,10 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from addon_service.models import ConfiguredStorageAddon, ResourceReference
+from addon_service.models import (
+    ConfiguredStorageAddon,
+    ResourceReference,
+)
 from addon_service.tests import _factories as test_factories
 from addon_service.tests._helpers import MockOSF
 from app import settings
@@ -33,7 +36,7 @@ class BaseAPITest(APITestCase):
         self._mock_osf = MockOSF()
         self.addCleanup(self._mock_osf.stop)
         self._mock_osf.configure_user_role(
-            self._user.user_uri, self._configured_storage_addon.resource_uri, 'admin'
+            self._user.user_uri, self._configured_storage_addon.resource_uri, "admin"
         )
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
 
@@ -57,12 +60,12 @@ class BaseAPITest(APITestCase):
 
 
 class ConfiguredStorageAddonAPITests(BaseAPITest):
-
     def test_get_detail(self):
         response = self.client.get(self.detail_url())
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
-            response.json()['data']['attributes']["root_folder"], self._configured_storage_addon.root_folder
+            response.json()["data"]["attributes"]["root_folder"],
+            self._configured_storage_addon.root_folder,
         )
 
     def test_methods_not_allowed(self):
@@ -90,7 +93,6 @@ class ConfiguredStorageAddonModelTests(TestCase):
 
 
 class ConfiguredStorageAddonViewSetTests(BaseAPITest):
-
     def test_viewset_retrieve(self):
         response = self.client.get(self.detail_url())
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -109,9 +111,7 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
                 "base_account": {
                     "data": {"type": "authorized-storage-accounts", "id": ""}
                 },
-                "authorized_resource": {
-                    "data": {"type": "resource-references"}
-                },
+                "authorized_resource": {"data": {"type": "resource-references"}},
             },
         }
     }
@@ -124,8 +124,12 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
 
     def test_post_with_new_resource(self):
         new_resource_uri = "http://example.com/new_resource/"
-        self._mock_osf.configure_user_role(self._user.user_uri, new_resource_uri, 'admin')
-        self.assertFalse(ResourceReference.objects.filter(resource_uri=new_resource_uri).exists())
+        self._mock_osf.configure_user_role(
+            self._user.user_uri, new_resource_uri, "admin"
+        )
+        self.assertFalse(
+            ResourceReference.objects.filter(resource_uri=new_resource_uri).exists()
+        )
         self.default_payload["data"]["relationships"]["authorized_resource"]["data"][
             "resource_uri"
         ] = new_resource_uri

@@ -1,6 +1,8 @@
-import json
 from collections import defaultdict
-from functools import partial, wraps
+from functools import (
+    partial,
+    wraps,
+)
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -21,10 +23,10 @@ def get_test_request(user=None, method="get", path="", cookies=None):
             _request.COOKIES[name] = value
     return _request
 
-class MockOSF:
 
+class MockOSF:
     def __init__(self, permissions=None):
-        '''A lightweight, configurable  mock of OSF for testing remote permissions.
+        """A lightweight, configurable  mock of OSF for testing remote permissions.
 
         Accepts a mapping of arbitrary resource_uris to user permissiosn and `public` status
         {
@@ -37,16 +39,20 @@ class MockOSF:
         Users of the mock can either explicitly tell the Mock which user to assume a call is from,
         or they can include a cookie with the 'user_uri' in their GET request, and MockOSF will honor
         that user
-        '''
+        """
         self._permissions = defaultdict(lambda: defaultdict(dict))
         if permissions:
             self._permissions.update(permissions)
         self._configured_caller_uri = None
-        self._mock_auth_request = patch('app.authentication.make_auth_request', side_effect=self._mock_user_check)
-        self._mock_resource_check = patch('addon_service.common.permissions.authenticate_resource', side_effect=self._mock_resource_check)
+        self._mock_auth_request = patch(
+            "app.authentication.make_auth_request", side_effect=self._mock_user_check
+        )
+        self._mock_resource_check = patch(
+            "addon_service.common.permissions.authenticate_resource",
+            side_effect=self._mock_resource_check,
+        )
         self._mock_auth_request.start()
         self._mock_resource_check.start()
-
 
     def stop(self):
         self._mock_auth_request.stop()
@@ -59,7 +65,7 @@ class MockOSF:
         self._permissions[resource_uri][user_uri] = role
 
     def configure_resource_visibility(self, resource_uri, *, public=True):
-        self._permissions[resource_uri]['public'] = public
+        self._permissions[resource_uri]["public"] = public
 
     def _get_assumed_caller(self, cookies=None):
         if self._configured_caller_uri:
@@ -71,18 +77,18 @@ class MockOSF:
     def _get_user_permissions(self, user_uri, resource_uri):
         # Use of defaultdict means this will always have some value
         role = self._permissions[resource_uri][user_uri]
-        if role == 'read':
-            return ['read']
-        if role == 'write':
-            return ['read', 'write']
-        if role == 'admin':
-            return ['read', 'write', 'admin']
-        if self._permissions[resource_uri]['public']:
-            return ['read']
+        if role == "read":
+            return ["read"]
+        if role == "write":
+            return ["read", "write"]
+        if role == "admin":
+            return ["read", "write", "admin"]
+        if self._permissions[resource_uri]["public"]:
+            return ["read"]
         return []
 
     def _mock_user_check(self, *args, **kwargs):
-        caller_uri = self._get_assumed_caller(cookies=kwargs.get('cookies'))
+        caller_uri = self._get_assumed_caller(cookies=kwargs.get("cookies"))
         return {"data": {"links": {"iri": caller_uri}}}
 
     def _mock_resource_check(self, request, uri, required_permission, *args, **kwargs):
@@ -93,20 +99,17 @@ class MockOSF:
         return uri  # mimicking behavior from the check being mocked
 
 
-
 def with_mocked_httpx_get(response_status=HTTPStatus.OK, user_uri=None):
-
-
     def decorator(func):
         @wraps(func)
         def wrapper(testcase, *args, **kwargs):
             mock_side_effect = partial(
                 _mock_httpx_response,
                 response_status=response_status,
-                user_uri=user_uri or testcase._user.user_uri
+                user_uri=user_uri or testcase._user.user_uri,
             )
-            patcher = patch('httpx.Client.get', side_effect=mock_side_effect)
-            client = patcher.start()
+            patcher = patch("httpx.Client.get", side_effect=mock_side_effect)
+            patcher.start()
             test_result = func(testcase, *args, **kwargs)
             patcher.stop()
             return test_result
@@ -127,9 +130,7 @@ def _mock_httpx_response(response_status, user_uri, url, *args, **kwargs):
         guid = url.rstrip("/").split("/")[-1]
         payload = {
             "data": {
-                "attributes": {
-                    "current_user_permissions": ["read", "write", "admin"]
-                },
+                "attributes": {"current_user_permissions": ["read", "write", "admin"]},
                 "links": {"iri": f"{settings.URI_ID}{guid}"},
             }
         }

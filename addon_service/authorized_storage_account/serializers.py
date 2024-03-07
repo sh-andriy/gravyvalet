@@ -1,4 +1,3 @@
-from rest_framework.serializers import ReadOnlyField
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
     HyperlinkedRelatedField,
@@ -61,8 +60,10 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     }
 
     def create(self, validate_data):
-        session_user_uri = self.context['request'].session.get('user_reference_uri')
-        account_owner, _ =  UserReference.objects.get_or_create(user_uri=session_user_uri)
+        session_user_uri = self.context["request"].session.get("user_reference_uri")
+        account_owner, _ = UserReference.objects.get_or_create(
+            user_uri=session_user_uri
+        )
         external_storage_service = validate_data["external_storage_service"]
         # TODO(ENG-5189): Update this once credentials format is finalized
         credentials, _ = ExternalCredentials.objects.get_or_create(

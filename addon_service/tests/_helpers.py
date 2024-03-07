@@ -26,11 +26,10 @@ class MockOSF:
     def __init__(self, permissions=None):
         '''A lightweight, configurable  mock of OSF for testing remote permissions.
 
-        Accepts a mapping of arbitrary user_uris to their roles on arbitrary resource_uris.
-        i.e.
+        Accepts a mapping of arbitrary resource_uris to user permissiosn and `public` status
         {
-            'osf.io/abcde': {'osf.io/bcdef': 'write', 'osf.io/cdefg': 'admin'},
-            'osf.io/zyxwv': {'osf.io/yxwvut': 'read'}
+            'osf.io/abcde': {'osf.io/bcdef': 'write', 'osf.io/cdefg': 'admin', 'public': True},
+            'osf.io/zyxwv': {'osf.io/yxwvut': 'read', 'public': False}
         }
         Intercepts 'get' requests and uses the request url and this mapping to generate a minimal
         response required for testing GravyValet's behavior.
@@ -57,25 +56,30 @@ class MockOSF:
         self._configured_caller_uri = caller_uri
 
     def configure_user_role(self, user_uri, resource_uri, role):
-        self._permissions[user_uri][resource_uri] = role
+        self._permissions[resource_uri][user_uri] = role
+
+    def configure_resource_visibility(self, resource_uri, *, public=True):
+        self._permissions[resource_uri]['public'] = public
 
     def _get_assumed_caller(self, cookies=None):
         if self._configured_caller_uri:
             return self._configured_caller_uri
         if cookies is not None:
             return cookies.get(settings.USER_REFERENCE_COOKIE)
-        raise ValueError('MockOSF cannot handle requests without configuring a user')
+        return None
 
     def _get_user_permissions(self, user_uri, resource_uri):
-        role = self._permissions[user_uri][resource_uri]
-        if not role:
-            return []
+        # Use of defaultdict means this will always have some value
+        role = self._permissions[resource_uri][user_uri]
         if role == 'read':
             return ['read']
         if role == 'write':
             return ['read', 'write']
         if role == 'admin':
             return ['read', 'write', 'admin']
+        if self._permissions[resource_uri]['public']:
+            return ['read']
+        return []
 
     def _mock_user_check(self, *args, **kwargs):
         caller_uri = self._get_assumed_caller(cookies=kwargs.get('cookies'))

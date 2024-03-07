@@ -171,12 +171,11 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
         self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_wrong_user(self):
-        self._mock_osf.configure_assumed_caller('wrong/10')
         _resp = self._view(
             get_test_request(
                 cookies={settings.USER_REFERENCE_COOKIE: "wrong/10"}
             ),
-            pk=self._user.pk,
+            pk=self._asa.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
 

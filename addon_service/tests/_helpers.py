@@ -1,12 +1,4 @@
 from collections import defaultdict
-<<<<<<< HEAD
-=======
-from functools import (
-    partial,
-    wraps,
-)
-from http import HTTPStatus
->>>>>>> 34c2f802e72862ee8940846cee0e7cfff5ceed79
 from unittest.mock import patch
 
 from django.contrib.sessions.backends.db import SessionStore
@@ -56,7 +48,6 @@ class MockOSF:
         self._mock_auth_request.start()
         self._mock_resource_check.start()
 
-<<<<<<< HEAD
     def __enter__(self):
         self.start_mocks()
         return self
@@ -70,9 +61,6 @@ class MockOSF:
         self._mock_resource_check.start()
 
     def stop_mocks(self):
-=======
-    def stop(self):
->>>>>>> 34c2f802e72862ee8940846cee0e7cfff5ceed79
         self._mock_auth_request.stop()
         self._mock_resource_check.stop()
 
@@ -115,44 +103,3 @@ class MockOSF:
         if required_permission.lower() not in permissions:
             raise drf_exceptions.PermissionDenied
         return uri  # mimicking behavior from the check being mocked
-<<<<<<< HEAD
-=======
-
-
-def with_mocked_httpx_get(response_status=HTTPStatus.OK, user_uri=None):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(testcase, *args, **kwargs):
-            mock_side_effect = partial(
-                _mock_httpx_response,
-                response_status=response_status,
-                user_uri=user_uri or testcase._user.user_uri,
-            )
-            patcher = patch("httpx.Client.get", side_effect=mock_side_effect)
-            patcher.start()
-            test_result = func(testcase, *args, **kwargs)
-            patcher.stop()
-            return test_result
-
-        return wrapper
-
-    return decorator
-
-
-def _mock_httpx_response(response_status, user_uri, url, *args, **kwargs):
-    """Generates mock httpx.Response based on the requested URL and response status."""
-    if not response_status.is_success:
-        return httpx.Response(status_code=response_status)
-
-    if url == settings.USER_REFERENCE_LOOKUP_URL:
-        payload = {"data": {"links": {"iri": user_uri}}}
-    else:
-        guid = url.rstrip("/").split("/")[-1]
-        payload = {
-            "data": {
-                "attributes": {"current_user_permissions": ["read", "write", "admin"]},
-                "links": {"iri": f"{settings.URI_ID}{guid}"},
-            }
-        }
-    return httpx.Response(status_code=response_status, json=payload)
->>>>>>> 34c2f802e72862ee8940846cee0e7cfff5ceed79

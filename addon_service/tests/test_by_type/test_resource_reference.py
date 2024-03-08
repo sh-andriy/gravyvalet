@@ -12,7 +12,6 @@ from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,
     get_test_request,
-    with_mocked_httpx_get,
 )
 from app import settings
 
@@ -194,26 +193,31 @@ class TestResourceReferenceRelatedView(TestCase):
         # _user magically becomes the current requester
         cls._user = cls._csa.base_account.external_account.owner
 
-    @with_mocked_httpx_get
+    def setUp(self):
+        self._mock_osf = MockOSF()
+        self._mock_osf.configure_user_role(
+            self._user.user_uri, self._resource.resource_uri, "admin"
+        )
+        self.enterContext(self._mock_osf)
+
     def test_get_related__empty(self):
         self._csa.delete()
 
         _resp = self._related_view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._resource.pk,
             related_field="configured_storage_addons",
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
         self.assertEqual(_resp.data, [])
 
-    @with_mocked_httpx_get
     def test_get_related__several(self):
         _addons = _factories.ConfiguredStorageAddonFactory.create_batch(
             size=4,
             authorized_resource=self._resource,
         ) + [self._csa]
         _resp = self._related_view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._resource.pk,
             related_field="configured_storage_addons",
         )

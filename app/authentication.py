@@ -14,7 +14,7 @@ from rest_framework import (
 )
 
 
-TODO: Improve dockerization of OSF so that we don't need this
+# TODO: Improve dockerization of OSF so that we don't need this
 def handle_redirects(response):
     """Redirect fix for localhost during local development."""
     if settings.DEBUG and response.status_code in {301, 302, 303, 307, 308}:
@@ -84,7 +84,7 @@ def make_auth_request(url, **kwargs):
         auth=kwargs.pop("auth", None),
         event_hooks={"response": [handle_redirects]},
     ) as client:
-        response = client.get(url, **kwargs)
+        response = client.get(url=url, **kwargs)
         exceptions_map = {
             400: exceptions.ValidationError("Invalid request."),
             401: exceptions.AuthenticationFailed("Invalid credentials."),

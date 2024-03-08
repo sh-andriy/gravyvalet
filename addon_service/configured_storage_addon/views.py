@@ -1,6 +1,6 @@
 from addon_service.common.permissions import (
-    CanCreateCSA,
-    SessionUserIsOwner,
+    SessionUserCanViewReferencedResource,
+    SessionUserIsReferencedResourceAdmin,
 )
 from addon_service.common.viewsets import RetrieveWriteViewSet
 
@@ -17,8 +17,8 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
             return super().get_permissions()
 
         if self.action in ["retrieve", "retrieve_related", "update", "destroy"]:
-            return [SessionUserIsOwner()]
+            return [SessionUserCanViewReferencedResource()]
         elif self.action == "create":
-            return [CanCreateCSA()]
+            return [SessionUserIsReferencedResourceAdmin()]
         else:
             raise NotImplementedError("view action permission not implemented")

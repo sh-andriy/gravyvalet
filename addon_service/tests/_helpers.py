@@ -1,8 +1,8 @@
-from functools import wraps
+from collections import defaultdict
 from unittest.mock import patch
 
-import httpx
 from django.contrib.sessions.backends.db import SessionStore
+from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
 
 from app import settings
@@ -18,40 +18,88 @@ def get_test_request(user=None, method="get", path="", cookies=None):
     return _request
 
 
-def with_mocked_httpx_get(response_status=200):
-    """Decorator to mock httpx.Client get requests with a customizable response status."""
+class MockOSF:
+    def __init__(self, permissions=None):
+        """A lightweight, configurable  mock of OSF for testing remote permissions.
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            with patch(
-                "httpx.Client.get",
-                new=lambda *args, **kwargs: mock_httpx_response(
-                    *args, response_status=response_status
-                ),
-            ):
-                return func(self, *args, **kwargs)
+        Accepts a mapping of arbitrary resource_uris to user permissiosn and `public` status
+        {
+            'osf.io/abcde': {'osf.io/bcdef': 'write', 'osf.io/cdefg': 'admin', 'public': True},
+            'osf.io/zyxwv': {'osf.io/yxwvut': 'read', 'public': False}
+        }
+        Intercepts 'get' requests and uses the request url and this mapping to generate a minimal
+        response required for testing GravyValet's behavior.
 
-        return wrapper
+        Users of the mock can either explicitly tell the Mock which user to assume a call is from,
+        or they can include a cookie with the 'user_uri' in their GET request, and MockOSF will honor
+        that user
+        """
+        self._permissions = defaultdict(lambda: defaultdict(dict))
+        if permissions:
+            self._permissions.update(permissions)
+        self._configured_caller_uri = None
+        self._mock_auth_request = patch(
+            "app.authentication.make_auth_request", side_effect=self._mock_user_check
+        )
+        self._mock_resource_check = patch(
+            "addon_service.common.permissions.authenticate_resource",
+            side_effect=self._mock_resource_check,
+        )
+        self._mock_auth_request.start()
+        self._mock_resource_check.start()
 
-    return decorator
+    def __enter__(self):
+        self.start_mocks()
+        return self
 
+    def __exit__(self, *exc):
+        self.stop_mocks()
+        return False
 
-def mock_httpx_response(url, current_user, response_status, *args, **kwargs):
-    """Generates mock httpx.Response based on the requested URL and response status."""
-    if response_status == 200:
-        if url == settings.USER_REFERENCE_LOOKUP_URL:
-            payload = {"data": {"links": {"iri": current_user.user_uri}}}
-        else:
-            guid = url.rstrip("/").split("/")[-1]
-            payload = {
-                "data": {
-                    "attributes": {
-                        "current_user_permissions": ["read", "write", "admin"]
-                    },
-                    "links": {"iri": f"{settings.URI_ID}{guid}"},
-                }
-            }
-        return httpx.Response(status_code=200, json=payload)
-    else:  # Handles 403 and other statuses explicitly
-        return httpx.Response(status_code=response_status)
+    def start_mocks(self):
+        self._mock_auth_request.start()
+        self._mock_resource_check.start()
+
+    def stop_mocks(self):
+        self._mock_auth_request.stop()
+        self._mock_resource_check.stop()
+
+    def configure_assumed_caller(self, caller_uri):
+        self._configured_caller_uri = caller_uri
+
+    def configure_user_role(self, user_uri, resource_uri, role):
+        self._permissions[resource_uri][user_uri] = role
+
+    def configure_resource_visibility(self, resource_uri, *, public=True):
+        self._permissions[resource_uri]["public"] = public
+
+    def _get_assumed_caller(self, cookies=None):
+        if self._configured_caller_uri:
+            return self._configured_caller_uri
+        if cookies is not None:
+            return cookies.get(settings.USER_REFERENCE_COOKIE)
+        return None
+
+    def _get_user_permissions(self, user_uri, resource_uri):
+        # Use of defaultdict means this will always have some value
+        role = self._permissions[resource_uri][user_uri]
+        if role == "read":
+            return ["read"]
+        if role == "write":
+            return ["read", "write"]
+        if role == "admin":
+            return ["read", "write", "admin"]
+        if self._permissions[resource_uri]["public"]:
+            return ["read"]
+        return []
+
+    def _mock_user_check(self, *args, **kwargs):
+        caller_uri = self._get_assumed_caller(cookies=kwargs.get("cookies"))
+        return {"data": {"links": {"iri": caller_uri}}}
+
+    def _mock_resource_check(self, request, uri, required_permission, *args, **kwargs):
+        caller = self._get_assumed_caller(cookies=request.COOKIES)
+        permissions = self._get_user_permissions(user_uri=caller, resource_uri=uri)
+        if required_permission.lower() not in permissions:
+            raise drf_exceptions.PermissionDenied
+        return uri  # mimicking behavior from the check being mocked

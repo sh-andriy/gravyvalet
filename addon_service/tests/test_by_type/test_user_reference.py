@@ -10,9 +10,8 @@ from rest_framework.test import APITestCase
 from addon_service import models as db
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
+    MockOSF,
     get_test_request,
-    with_mocked_httpx_get,
-    MockOSF
 )
 from addon_service.user_reference.views import UserReferenceViewSet
 from app import settings
@@ -124,9 +123,7 @@ class TestUserReferenceViewSet(TestCase):
     def test_get(self):
         _resp = self._view(
             get_test_request(
-                cookies={
-                    settings.USER_REFERENCE_COOKIE: self._user.user_uri
-                },
+                cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri},
             ),
             pk=self._user.pk,
         )
@@ -147,7 +144,9 @@ class TestUserReferenceViewSet(TestCase):
 
     def test_wrong_user(self):
         _resp = self._view(
-            get_test_request(cookies={settings.USER_REFERENCE_COOKIE: "this is the wrong cookie"}),
+            get_test_request(
+                cookies={settings.USER_REFERENCE_COOKIE: "this is the wrong cookie"}
+            ),
             pk=self._user.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
@@ -171,7 +170,6 @@ class TestUserReferenceRelatedView(APITestCase):
             user=self._user,
             cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri},
         )
-
 
     def test_get_related__empty(self):
         _resp = self._related_view(

@@ -1,4 +1,3 @@
-from rest_framework.exceptions import MethodNotAllowed
 from addon_service.common.permissions import (
     IsAuthenticated,
     SessionUserIsOwner,

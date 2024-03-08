@@ -11,8 +11,8 @@ from addon_service.authorized_storage_account.views import (
 )
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
+    MockOSF,
     get_test_request,
-    MockOSF
 )
 from app import settings
 
@@ -82,8 +82,12 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             reverse("authorized-storage-accounts-list"), payload, format="vnd.api+json"
         )
         self.assertEqual(_resp.status_code, 201)
-        created_account_id = int(_resp.data['url'].rstrip('/').split('/')[-1])
-        self.assertTrue(external_service.authorized_storage_accounts.filter(id=created_account_id).exists())
+        created_account_id = int(_resp.data["url"].rstrip("/").split("/")[-1])
+        self.assertTrue(
+            external_service.authorized_storage_accounts.filter(
+                id=created_account_id
+            ).exists()
+        )
 
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
@@ -138,7 +142,6 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
         cls._user = cls._asa.external_account.owner
         cls._view = AuthorizedStorageAccountViewSet.as_view({"get": "retrieve"})
 
-
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
@@ -172,9 +175,7 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
 
     def test_wrong_user(self):
         _resp = self._view(
-            get_test_request(
-                cookies={settings.USER_REFERENCE_COOKIE: "wrong/10"}
-            ),
+            get_test_request(cookies={settings.USER_REFERENCE_COOKIE: "wrong/10"}),
             pk=self._asa.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)

@@ -10,8 +10,8 @@ from addon_service import models as db
 from addon_service.resource_reference.views import ResourceReferenceViewSet
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
-    get_test_request,
     MockOSF,
+    get_test_request,
     with_mocked_httpx_get,
 )
 from app import settings
@@ -29,7 +29,11 @@ class TestResourceReferenceAPI(APITestCase):
         super().setUp()
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
-        self._mock_osf.configure_user_role(user_uri=self._user.user_uri, resource_uri=self._resource.resource_uri, role='admin')
+        self._mock_osf.configure_user_role(
+            user_uri=self._user.user_uri,
+            resource_uri=self._resource.resource_uri,
+            role="admin",
+        )
         self.enterContext(self._mock_osf)
 
     @property
@@ -114,7 +118,9 @@ class TestResourceReferenceViewSet(TestCase):
 
     def setUp(self):
         self._mock_osf = MockOSF()
-        self._mock_osf.configure_user_role(self._user.user_uri, self._resource.resource_uri, 'admin')
+        self._mock_osf.configure_user_role(
+            self._user.user_uri, self._resource.resource_uri, "admin"
+        )
         self.enterContext(self._mock_osf)
 
     def test_get(self):
@@ -138,17 +144,23 @@ class TestResourceReferenceViewSet(TestCase):
         )
 
     def test_unauthorized__private_resource(self):
-        self._mock_osf.configure_resource_visibility(self._resource.resource_uri, public=False)
+        self._mock_osf.configure_resource_visibility(
+            self._resource.resource_uri, public=False
+        )
         _anon_resp = self._view(get_test_request(), pk=self._resource.pk)
         self.assertEqual(_anon_resp.status_code, HTTPStatus.FORBIDDEN)
 
     def test_unauthorized__public_resource(self):
-        self._mock_osf.configure_resource_visibility(self._resource.resource_uri, public=True)
+        self._mock_osf.configure_resource_visibility(
+            self._resource.resource_uri, public=True
+        )
         _anon_resp = self._view(get_test_request(), pk=self._resource.pk)
         self.assertEqual(_anon_resp.status_code, HTTPStatus.OK)
 
     def test_wrong_user__pivate_resource(self):
-        self._mock_osf.configure_resource_visibility(self._resource.resource_uri, public=False)
+        self._mock_osf.configure_resource_visibility(
+            self._resource.resource_uri, public=False
+        )
         _resp = self._view(
             get_test_request(
                 cookies={settings.USER_REFERENCE_COOKIE: "this is wrong user auth"}
@@ -158,7 +170,9 @@ class TestResourceReferenceViewSet(TestCase):
         self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
 
     def test_wrong_user__public_resource(self):
-        self._mock_osf.configure_resource_visibility(self._resource.resource_uri, public=True)
+        self._mock_osf.configure_resource_visibility(
+            self._resource.resource_uri, public=True
+        )
         _resp = self._view(
             get_test_request(
                 cookies={settings.USER_REFERENCE_COOKIE: "this is wrong user auth"}

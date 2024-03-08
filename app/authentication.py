@@ -1,11 +1,11 @@
 import base64
 import binascii
-import httpx
 from urllib.parse import (
     urlparse,
     urlunparse,
 )
 
+import httpx
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import (
@@ -14,7 +14,7 @@ from rest_framework import (
 )
 
 
-#TODO: Improve dockerization of OSF so that we don't need this
+# TODO: Improve dockerization of OSF so that we don't need this
 def handle_redirects(response):
     """Redirect fix for localhost during local development."""
     if settings.DEBUG and response.status_code in {301, 302, 303, 307, 308}:
@@ -33,7 +33,7 @@ class SkipAuthMethod(exceptions.APIException):
 
 
 def authenticate_resource(request, uri, required_permission):
-    print('WHAT?!!!!\n\n\n')
+    print("WHAT?!!!!\n\n\n")
     resource_url = settings.RESOURCE_REFERENCE_LOOKUP_URL.format(
         uri.replace(settings.URI_ID, "").rstrip("/")
     )

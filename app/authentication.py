@@ -33,7 +33,6 @@ class SkipAuthMethod(exceptions.APIException):
 
 
 def authenticate_resource(request, uri, required_permission):
-    print("WHAT?!!!!\n\n\n")
     resource_url = settings.RESOURCE_REFERENCE_LOOKUP_URL.format(
         uri.replace(settings.URI_ID, "").rstrip("/")
     )

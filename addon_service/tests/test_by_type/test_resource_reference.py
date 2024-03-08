@@ -27,11 +27,10 @@ class TestResourceReferenceAPI(APITestCase):
 
     def setUp(self):
         super().setUp()
+        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
         self._mock_osf.configure_user_role(user_uri=self._user.user_uri, resource_uri=self._resource.resource_uri, role='admin')
-        self.addCleanup(self._mock_osf.stop)
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
-
+        self.enterContext(self._mock_osf)
 
     @property
     def _detail_path(self):
@@ -115,8 +114,8 @@ class TestResourceReferenceViewSet(TestCase):
 
     def setUp(self):
         self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
         self._mock_osf.configure_user_role(self._user.user_uri, self._resource.resource_uri, 'admin')
+        self.enterContext(self._mock_osf)
 
     def test_get(self):
         _resp = self._view(

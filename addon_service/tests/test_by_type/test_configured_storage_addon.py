@@ -30,12 +30,13 @@ class BaseAPITest(APITestCase):
         cls._user = cls._configured_storage_addon.base_account.external_account.owner
 
     def setUp(self):
+        super().setUp()
+        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
         self._mock_osf.configure_user_role(
             self._user.user_uri, self._configured_storage_addon.resource_uri, 'admin'
         )
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
+        self.enterContext(self._mock_osf)
 
     def detail_url(self):
         return reverse(

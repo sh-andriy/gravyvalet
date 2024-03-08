@@ -48,7 +48,19 @@ class MockOSF:
         self._mock_resource_check.start()
 
 
-    def stop(self):
+    def __enter__(self):
+        self.start_mocks()
+        return self
+
+    def __exit__(self, *exc):
+        self.stop_mocks()
+        return False
+
+    def start_mocks(self):
+        self._mock_auth_request.start()
+        self._mock_resource_check.start()
+
+    def stop_mocks(self):
         self._mock_auth_request.stop()
         self._mock_resource_check.stop()
 

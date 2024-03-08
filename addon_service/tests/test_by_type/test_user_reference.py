@@ -25,9 +25,9 @@ class TestUserReferenceAPI(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
+        self._mock_osf = MockOSF()
+        self.enterContext(self._mock_osf)
 
     @property
     def _detail_path(self):
@@ -119,7 +119,7 @@ class TestUserReferenceViewSet(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
+        self.enterContext(self._mock_osf)
 
     def test_get(self):
         _resp = self._view(
@@ -146,7 +146,6 @@ class TestUserReferenceViewSet(TestCase):
         )
 
     def test_wrong_user(self):
-        self._mock_osf.configure_assumed_caller('wrong')
         _resp = self._view(
             get_test_request(cookies={settings.USER_REFERENCE_COOKIE: "this is the wrong cookie"}),
             pk=self._user.pk,
@@ -167,7 +166,7 @@ class TestUserReferenceRelatedView(APITestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
+        self.enterContext(self._mock_osf)
         self.request = get_test_request(
             user=self._user,
             cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri},

@@ -25,9 +25,9 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
+        self._mock_osf = MockOSF()
+        self.enterContext(self._mock_osf)
 
     @property
     def _detail_path(self):
@@ -142,7 +142,7 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.addCleanup(self._mock_osf.stop)
+        self.enterContext(self._mock_osf)
 
     def test_get(self):
         _resp = self._view(
@@ -192,12 +192,11 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self._mock_osf.configure_assumed_caller(self._user.user_uri)
-        self.addCleanup(self._mock_osf.stop)
+        self.enterContext(self._mock_osf)
 
     def test_get_related__empty(self):
         _resp = self._related_view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._asa.pk,
             related_field="configured_storage_addons",
         )
@@ -210,7 +209,7 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
             base_account=self._asa,
         )
         _resp = self._related_view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._asa.pk,
             related_field="configured_storage_addons",
         )

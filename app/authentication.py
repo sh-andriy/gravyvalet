@@ -84,7 +84,7 @@ def make_auth_request(url, **kwargs):
         auth=kwargs.pop("auth", None),
         event_hooks={"response": [handle_redirects]},
     ) as client:
-        response = client.get(url, **kwargs)
+        response = client.get(url=url, **kwargs)
         exceptions_map = {
             400: exceptions.ValidationError("Invalid request."),
             401: exceptions.AuthenticationFailed("Invalid credentials."),

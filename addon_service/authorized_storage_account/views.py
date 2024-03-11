@@ -1,5 +1,5 @@
 from addon_service.common.permissions import (
-    CanCreateASA,
+    IsAuthenticated,
     SessionUserIsOwner,
 )
 from addon_service.common.viewsets import RetrieveWriteViewSet
@@ -18,7 +18,4 @@ class AuthorizedStorageAccountViewSet(RetrieveWriteViewSet):
 
         if self.action in ["retrieve", "retrieve_related", "update", "destroy"]:
             return [SessionUserIsOwner()]
-        elif self.action == "create":
-            return [CanCreateASA()]
-        else:
-            raise NotImplementedError("view action permission not implemented")
+        return [IsAuthenticated()]

@@ -11,8 +11,8 @@ from addon_service.authorized_storage_account.views import (
 )
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
+    MockOSF,
     get_test_request,
-    with_mocked_httpx_get,
 )
 from app import settings
 
@@ -21,13 +21,13 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls._asa = _factories.AuthorizedStorageAccountFactory()
-        cls._user = cls._asa.external_account.owner
+        cls._user = cls._asa.account_owner
 
     def setUp(self):
         super().setUp()
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = [
-            "Some form of auth is necessary or POSTS are ignored."
-        ]
+        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
+        self._mock_osf = MockOSF()
+        self.enterContext(self._mock_osf)
 
     @property
     def _detail_path(self):
@@ -49,7 +49,6 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             },
         )
 
-    @with_mocked_httpx_get
     def test_get(self):
         _resp = self.client.get(self._detail_path)
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
@@ -58,7 +57,38 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             self._asa.default_root_folder,
         )
 
-    @with_mocked_httpx_get
+    def test_post(self):
+        external_service = _factories.ExternalStorageServiceFactory()
+        self.assertFalse(external_service.authorized_storage_accounts.exists())
+        payload = {
+            "data": {
+                "type": "authorized-storage-accounts",
+                "attributes": {
+                    "username": "<placeholder-username>",
+                    "password": "<placeholder-password>",
+                },
+                "relationships": {
+                    "external_storage_service": {
+                        "data": {
+                            "type": "external-storage-services",
+                            "id": external_service.id,
+                        }
+                    },
+                },
+            }
+        }
+
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"), payload, format="vnd.api+json"
+        )
+        self.assertEqual(_resp.status_code, 201)
+        created_account_id = int(_resp.data["url"].rstrip("/").split("/")[-1])
+        self.assertTrue(
+            external_service.authorized_storage_accounts.filter(
+                id=created_account_id
+            ).exists()
+        )
+
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
             self._detail_path: {"post"},
@@ -112,10 +142,14 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
         cls._user = cls._asa.external_account.owner
         cls._view = AuthorizedStorageAccountViewSet.as_view({"get": "retrieve"})
 
-    @with_mocked_httpx_get
+    def setUp(self):
+        super().setUp()
+        self._mock_osf = MockOSF()
+        self.enterContext(self._mock_osf)
+
     def test_get(self):
         _resp = self._view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._asa.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
@@ -139,13 +173,10 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
         _anon_resp = self._view(get_test_request(), pk=self._asa.pk)
         self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
 
-    @with_mocked_httpx_get(response_status=403)
     def test_wrong_user(self):
         _resp = self._view(
-            get_test_request(
-                cookies={settings.USER_REFERENCE_COOKIE: "this is wrong user auth"}
-            ),
-            pk=self._user.pk,
+            get_test_request(cookies={settings.USER_REFERENCE_COOKIE: "wrong/10"}),
+            pk=self._asa.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
 
@@ -159,24 +190,27 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
             {"get": "retrieve_related"},
         )
 
-    @with_mocked_httpx_get
+    def setUp(self):
+        super().setUp()
+        self._mock_osf = MockOSF()
+        self.enterContext(self._mock_osf)
+
     def test_get_related__empty(self):
         _resp = self._related_view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._asa.pk,
             related_field="configured_storage_addons",
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
         self.assertEqual(_resp.data, [])
 
-    @with_mocked_httpx_get
     def test_get_related__several(self):
         _addons = _factories.ConfiguredStorageAddonFactory.create_batch(
             size=5,
             base_account=self._asa,
         )
         _resp = self._related_view(
-            get_test_request(cookies={"osf": "This is my chosen form of auth"}),
+            get_test_request(cookies={"osf": self._user.user_uri}),
             pk=self._asa.pk,
             related_field="configured_storage_addons",
         )
@@ -186,51 +220,3 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
             {_datum["id"] for _datum in _content["data"]},
             {str(_addon.pk) for _addon in _addons},
         )
-
-
-class TestAuthorizedStorageAccountPOSTAPI(APITestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls._ess = _factories.ExternalStorageServiceFactory()
-        cls._ea = _factories.ExternalAccountFactory()
-        cls._user = cls._ea.owner
-
-    def setUp(self):
-        super().setUp()
-        self.client.cookies[settings.USER_REFERENCE_COOKIE] = [
-            "Some form of auth is necessary or POSTS are ignored."
-        ]
-
-    @with_mocked_httpx_get
-    def test_post(self):
-        assert not self._ess.authorized_storage_accounts.all()  # sanity/factory check
-
-        payload = {
-            "data": {
-                "type": "authorized-storage-accounts",
-                "attributes": {
-                    "username": "<placeholder-username>",
-                    "password": "<placeholder-password>",
-                },
-                "relationships": {
-                    "external_storage_service": {
-                        "data": {
-                            "type": "external-storage-services",
-                            "id": self._ess.auth_uri,
-                        }
-                    },
-                    "account_owner": {
-                        "data": {
-                            "id": self._user.user_uri,
-                            "type": "user-references",
-                        }
-                    },
-                },
-            }
-        }
-
-        response = self.client.post(
-            reverse("authorized-storage-accounts-list"), payload, format="vnd.api+json"
-        )
-        self.assertEqual(response.status_code, 201)
-        assert self._ess.authorized_storage_accounts.all()

@@ -85,7 +85,6 @@ class ConfiguredStorageAddonAPITests(BaseAPITest):
 class ConfiguredStorageAddonModelTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-<<<<<<< HEAD
         # Create active and disabled users via your factory setup or directly
         cls.active_user = test_factories.UserReferenceFactory(
             disabled=None
@@ -117,15 +116,6 @@ class ConfiguredStorageAddonModelTests(TestCase):
         # Ensure that only addons associated with active users are returned
         self.assertIn(self.active_configured_storage_addon, addons)
         self.assertNotIn(self.disabled_configured_storage_addon, addons)
-=======
-        cls._configured_storage_addon = test_factories.ConfiguredStorageAddonFactory()
-
-    def test_model_loading(self):
-        loaded_addon = ConfiguredStorageAddon.objects.get(
-            id=self._configured_storage_addon.id
-        )
-        self.assertEqual(self._configured_storage_addon.pk, loaded_addon.pk)
->>>>>>> a00cf9932b4b07baedbc1da893347e0528b1a851
 
 
 class ConfiguredStorageAddonViewSetTests(BaseAPITest):

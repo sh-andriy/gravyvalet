@@ -4,6 +4,9 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 
 class ActiveUserManager(models.Manager):
+    """
+    Only returned active users, not ones that are disabled.
+    """
     def get_queryset(self):
         return (
             super()
@@ -13,7 +16,7 @@ class ActiveUserManager(models.Manager):
 
 
 class ConfiguredStorageAddon(AddonsServiceBaseModel):
-    objects = ActiveUserManager()  # The default manager.
+    objects = ActiveUserManager()
 
     root_folder = models.CharField()
 

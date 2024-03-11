@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO)
 
 @contextmanager
 def consumer_connection(queues, callbacks):
-    """Context manager to handle consumer connections and exceptions."""
     logger.info(f"Starting to listen on queue")
     try:
         with Celery(broker=settings.OSF_BROKER_URL).connection() as connection:
@@ -39,7 +38,7 @@ def handle_messaging_exceptions(message):
     except UserReference.DoesNotExist as e:
         logger.exception(f"An error occurred during message processing: {e}")
         message.reject()  # Assuming you log the error above, hence log_error=False
-        raise  # Optional: re-raise exception if you want calling code to handle it
+        raise e
     else:
         message.ack()
 

@@ -34,21 +34,17 @@ class UserReference(AddonsServiceBaseModel):
     def owner_reference(self):
         return self.user_uri
 
-    def _delete(self, using=None, keep_parents=False):
-        """
-        For preventing hard deletes use deactivate instead.
-        """
+    def deactivate(self):
         self.disabled = timezone.now()
         self.save()
 
-    def deactivate(self):
-        self._delete()
-
-    def delete(self):
+    def delete(self, force=False):
         """
         For preventing hard deletes use deactivate instead.
         """
-        self._delete()
+        if force:
+            return super().delete()
+        raise NotImplementedError('This is to prevent hard deletes, use deactivate or force=True.')
 
     def reactivate(self):
         # TODO: Logging?
@@ -58,7 +54,9 @@ class UserReference(AddonsServiceBaseModel):
     def merge(self, merge_with):
         """
         This represents the user "being merged into", the "merged_user" is the old account that is deactivated and that
-        is handled in a seperate signal.
+        is handled via separate signal.
         """
         # TODO: Logging?
-        self.configured_storage_addons.add(*merge_with.configured_storage_addons.add())
+        merge_with.configured_storage_addons.update(
+            base_account=self.authorized_storage_accounts.first()
+        )

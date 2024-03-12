@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO)
 
 @contextmanager
 def consumer_connection(queues, callbacks):
-    logger.info(f"Starting to listen on queue")
     try:
         with Celery(broker=settings.OSF_BROKER_URL).connection() as connection:
             with Consumer(
@@ -24,7 +23,6 @@ def consumer_connection(queues, callbacks):
                 callbacks=callbacks,
                 accept=["json"],
             ) as consumer:
-                logger.info("Consumer set up successfully. Waiting for messages...")
                 yield consumer
     except Exception as e:
         logger.exception(f"An error occurred while listening on queue. Error: {e}")
@@ -78,7 +76,6 @@ def queue_routing_handler(body, message):
 
 
 def listen_to_queue_route(queue_routes):
-    logger.info("Starting to listen for deactivated user signals...")
     with consumer_connection(queue_routes, [queue_routing_handler]) as consumer:
         while True:
             consumer.connection.drain_events()

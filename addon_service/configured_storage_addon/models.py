@@ -7,6 +7,7 @@ class ActiveUserManager(models.Manager):
     """
     Only returned active users, not ones that are disabled.
     """
+
     def get_queryset(self):
         return (
             super()

@@ -1,4 +1,5 @@
 import threading
+
 from django.apps import AppConfig
 
 from app.celery import account_status_change_queues
@@ -15,8 +16,9 @@ class AddonServiceConfig(AppConfig):
         """
         super().ready()
         from addon_service.listeners import listen_to_queue_route
+
         threading.Thread(
             target=listen_to_queue_route,
             args=(account_status_change_queues,),
-            daemon=True
+            daemon=True,
         ).start()

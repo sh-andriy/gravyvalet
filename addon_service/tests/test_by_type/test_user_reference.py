@@ -127,7 +127,10 @@ class TestUserReferenceModel(TestCase):
         _accounts_before_merge = self._user.configured_storage_addons.count()
         self._user.merge(merge_with)
         _accounts_after_merge = self._user.configured_storage_addons.count()
-        self.assertEqual(_accounts_after_merge, _accounts_before_merge + merge_with.configured_storage_addons.count())
+        self.assertEqual(
+            _accounts_after_merge,
+            _accounts_before_merge + merge_with.configured_storage_addons.count(),
+        )
 
 
 # unit-test viewset (call the view with test requests)

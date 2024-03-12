@@ -44,7 +44,9 @@ class UserReference(AddonsServiceBaseModel):
         """
         if force:
             return super().delete()
-        raise NotImplementedError('This is to prevent hard deletes, use deactivate or force=True.')
+        raise NotImplementedError(
+            "This is to prevent hard deletes, use deactivate or force=True."
+        )
 
     def reactivate(self):
         # TODO: Logging?

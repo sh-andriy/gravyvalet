@@ -16,7 +16,13 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
         if not self.action:
             return super().get_permissions()
 
-        if self.action in ["retrieve", "retrieve_related", "update", "destroy"]:
+        if self.action in [
+            "retrieve",
+            "retrieve_related",
+            "partial_update",
+            "update",
+            "destroy",
+        ]:
             return [SessionUserCanViewReferencedResource()]
         elif self.action == "create":
             return [SessionUserIsReferencedResourceAdmin()]

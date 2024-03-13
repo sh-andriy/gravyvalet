@@ -108,6 +108,9 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
     default_payload = {
         "data": {
             "type": "configured-storage-addons",
+            "attributes": {
+                "connected_capabilities": ["ACCESS"],
+            },
             "relationships": {
                 "base_account": {
                     "data": {"type": "authorized-storage-accounts", "id": ""}

@@ -49,7 +49,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             },
         )
 
-    def test_get(self):
+    def test_get_detail(self):
         _resp = self.client.get(self._detail_path)
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
         self.assertEqual(
@@ -64,6 +64,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             "data": {
                 "type": "authorized-storage-accounts",
                 "attributes": {
+                    "authorized_capabilities": ["ACCESS"],
                     "username": "<placeholder-username>",
                     "password": "<placeholder-password>",
                 },
@@ -158,7 +159,13 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
             set(_content["data"]["attributes"].keys()),
             {
                 "default_root_folder",
+                "authorized_capabilities",
+                "authorized_operation_names",
             },
+        )
+        self.assertEqual(
+            _content["data"]["attributes"]["authorized_capabilities"],
+            ["ACCESS"],
         )
         self.assertEqual(
             set(_content["data"]["relationships"].keys()),
@@ -166,6 +173,7 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
                 "account_owner",
                 "external_storage_service",
                 "configured_storage_addons",
+                "authorized_operations",
             },
         )
 

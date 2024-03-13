@@ -4,18 +4,9 @@ from unittest.mock import patch
 from django.contrib.sessions.backends.db import SessionStore
 from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
+from rest_framework_json_api.utils import get_resource_type_from_model
 
 from app import settings
-
-
-def get_test_request(user=None, method="get", path="", cookies=None):
-    _factory_method = getattr(APIRequestFactory(), method)
-    _request = _factory_method(path)  # note that path is optional for view tests
-    _request.session = SessionStore()  # Add cookies if provided
-    if cookies:
-        for name, value in cookies.items():
-            _request.COOKIES[name] = value
-    return _request
 
 
 class MockOSF:
@@ -103,3 +94,22 @@ class MockOSF:
         if required_permission.lower() not in permissions:
             raise drf_exceptions.PermissionDenied
         return uri  # mimicking behavior from the check being mocked
+
+
+# TODO: use this more often in tests
+def jsonapi_ref(obj) -> dict:
+    """return a jsonapi resource reference (as json-serializable dict)"""
+    return {
+        "type": get_resource_type_from_model(obj.__class__),
+        "id": obj.pk,
+    }
+
+
+def get_test_request(user=None, method="get", path="", cookies=None):
+    _factory_method = getattr(APIRequestFactory(), method)
+    _request = _factory_method(path)  # note that path is optional for view tests
+    _request.session = SessionStore()  # Add cookies if provided
+    if cookies:
+        for name, value in cookies.items():
+            _request.COOKIES[name] = value
+    return _request

@@ -54,7 +54,7 @@ class Command(LabelCommand):
                 _soi = db.AddonOperationInvocation.objects.create(
                     invocation_status=InvocationStatus.STARTING,
                     operation_identifier=_op.natural_key_str,
-                    operation_kwargs={"item_id": "foo"},
+                    operation_kwargs={"item": {"item_id": "foo"}, "page": {}},
                     thru_addon=_csa,
                     by_user=_iu,
                 )

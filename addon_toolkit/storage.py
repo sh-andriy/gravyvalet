@@ -32,7 +32,7 @@ class PagedResult:
 
 @dataclasses.dataclass
 class PageArg:
-    cursor: str
+    cursor: str = ""
 
 
 @dataclasses.dataclass

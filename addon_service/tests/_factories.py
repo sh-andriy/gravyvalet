@@ -2,6 +2,8 @@ import factory
 from factory.django import DjangoModelFactory
 
 from addon_service import models as db
+from addon_service.addon_imp.known import get_imp_by_name
+from addon_toolkit import AddonCapabilities
 from app.settings import (
     AUTH_URI_ID,
     URI_ID,
@@ -26,6 +28,8 @@ class CredentialsIssuerFactory(DjangoModelFactory):
     class Meta:
         model = db.CredentialsIssuer
 
+    name = factory.Faker("word")
+
 
 class ExternalCredentialsFactory(DjangoModelFactory):
     class Meta:
@@ -36,12 +40,21 @@ class ExternalAccountFactory(DjangoModelFactory):
     class Meta:
         model = db.ExternalAccount
 
-    remote_account_id = factory.Faker("word")
-    remote_account_display_name = factory.Faker("word")
-
     credentials_issuer = factory.SubFactory(CredentialsIssuerFactory)
     owner = factory.SubFactory(UserReferenceFactory)
     credentials = factory.SubFactory(ExternalCredentialsFactory)
+
+
+class AddonOperationInvocationFactory(DjangoModelFactory):
+    class Meta:
+        model = db.AddonOperationInvocation
+
+    operation_identifier = "BLARG:download"
+    operation_kwargs = {"item_id": "foo"}
+    thru_addon = factory.SubFactory(
+        "addon_service.tests._factories.ConfiguredStorageAddonFactory"
+    )
+    by_user = factory.SubFactory(UserReferenceFactory)
 
 
 ###
@@ -56,6 +69,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     max_upload_mb = factory.Faker("pyint")
     auth_uri = factory.Sequence(lambda n: f"{AUTH_URI_ID}{n}")
     credentials_issuer = factory.SubFactory(CredentialsIssuerFactory)
+    int_addon_imp = get_imp_by_name("BLARG").imp_number
 
 
 class AuthorizedStorageAccountFactory(DjangoModelFactory):
@@ -63,6 +77,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         model = db.AuthorizedStorageAccount
 
     default_root_folder = "/"
+    authorized_capabilities = factory.List([AddonCapabilities.ACCESS])
     external_storage_service = factory.SubFactory(ExternalStorageServiceFactory)
     external_account = factory.SubFactory(ExternalAccountFactory)
     # TODO: external_account.credentials_issuer same as
@@ -74,5 +89,6 @@ class ConfiguredStorageAddonFactory(DjangoModelFactory):
         model = db.ConfiguredStorageAddon
 
     root_folder = "/"
+    connected_capabilities = factory.List([AddonCapabilities.ACCESS])
     base_account = factory.SubFactory(AuthorizedStorageAccountFactory)
     authorized_resource = factory.SubFactory(ResourceReferenceFactory)

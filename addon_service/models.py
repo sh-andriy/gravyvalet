@@ -1,5 +1,8 @@
 """ Import models here so they auto-detect for makemigrations """
 
+from addon_service.addon_imp.models import AddonImp
+from addon_service.addon_operation.models import AddonOperationModel
+from addon_service.addon_operation_invocation.models import AddonOperationInvocation
 from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
 from addon_service.configured_storage_addon.models import ConfiguredStorageAddon
 from addon_service.credentials_issuer.models import CredentialsIssuer
@@ -12,14 +15,14 @@ from addon_service.user_reference.models import UserReference
 
 __all__ = (
     "AuthorizedStorageAccount",
-    # 'AuthorizedComputeAccount',
     "ConfiguredStorageAddon",
-    # 'ConfiguredComputeAddon',
     "CredentialsIssuer",
     "ExternalAccount",
     "ExternalCredentials",
     "ExternalStorageService",
-    # 'ExternalComputeService',
     "ResourceReference",
+    "AddonImp",
+    "AddonOperationInvocation",
+    "AddonOperationModel",
     "UserReference",
 )

@@ -27,7 +27,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
         super().setUp()
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     @property
     def _detail_path(self):
@@ -146,7 +146,7 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     def test_get(self):
         _resp = self._view(
@@ -201,7 +201,7 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     def test_get_related__empty(self):
         _resp = self._related_view(

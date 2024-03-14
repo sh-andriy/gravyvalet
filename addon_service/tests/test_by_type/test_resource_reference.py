@@ -33,7 +33,7 @@ class TestResourceReferenceAPI(APITestCase):
             resource_uri=self._resource.resource_uri,
             role="admin",
         )
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     @property
     def _detail_path(self):
@@ -120,7 +120,7 @@ class TestResourceReferenceViewSet(TestCase):
         self._mock_osf.configure_user_role(
             self._user.user_uri, self._resource.resource_uri, "admin"
         )
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     def test_get(self):
         _resp = self._view(
@@ -198,7 +198,7 @@ class TestResourceReferenceRelatedView(TestCase):
         self._mock_osf.configure_user_role(
             self._user.user_uri, self._resource.resource_uri, "admin"
         )
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     def test_get_related__empty(self):
         self._csa.delete()

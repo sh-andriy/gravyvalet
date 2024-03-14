@@ -1,3 +1,4 @@
+import contextlib
 from collections import defaultdict
 from unittest.mock import patch
 
@@ -10,6 +11,9 @@ from app import settings
 
 
 class MockOSF:
+    _configured_caller_uri: str | None = None
+    _permissions: dict[str, dict[str, str | bool]]
+
     def __init__(self, permissions=None):
         """A lightweight, configurable  mock of OSF for testing remote permissions.
 
@@ -25,35 +29,20 @@ class MockOSF:
         or they can include a cookie with the 'user_uri' in their GET request, and MockOSF will honor
         that user
         """
-        self._permissions = defaultdict(lambda: defaultdict(dict))
+        self._permissions = defaultdict(dict)
         if permissions:
             self._permissions.update(permissions)
-        self._configured_caller_uri = None
-        self._mock_auth_request = patch(
-            "app.authentication.make_auth_request", side_effect=self._mock_user_check
-        )
-        self._mock_resource_check = patch(
+
+    @contextlib.contextmanager
+    def mocking(self):
+        with patch(
+            "app.authentication.make_auth_request",
+            side_effect=self._mock_user_check,
+        ), patch(
             "addon_service.common.permissions.authenticate_resource",
             side_effect=self._mock_resource_check,
-        )
-        self._mock_auth_request.start()
-        self._mock_resource_check.start()
-
-    def __enter__(self):
-        self.start_mocks()
-        return self
-
-    def __exit__(self, *exc):
-        self.stop_mocks()
-        return False
-
-    def start_mocks(self):
-        self._mock_auth_request.start()
-        self._mock_resource_check.start()
-
-    def stop_mocks(self):
-        self._mock_auth_request.stop()
-        self._mock_resource_check.stop()
+        ):
+            yield self
 
     def configure_assumed_caller(self, caller_uri):
         self._configured_caller_uri = caller_uri
@@ -73,7 +62,7 @@ class MockOSF:
 
     def _get_user_permissions(self, user_uri, resource_uri):
         # Use of defaultdict means this will always have some value
-        role = self._permissions[resource_uri][user_uri]
+        role = self._permissions[resource_uri].get(user_uri)
         if role == "read":
             return ["read"]
         if role == "write":

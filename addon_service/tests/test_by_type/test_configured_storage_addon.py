@@ -39,7 +39,7 @@ class BaseAPITest(APITestCase):
         self._mock_osf.configure_user_role(
             self._user.user_uri, self._configured_storage_addon.resource_uri, "admin"
         )
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     def detail_url(self):
         return reverse(

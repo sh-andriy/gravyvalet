@@ -1,6 +1,7 @@
 import json
 from http import HTTPStatus
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.test import TestCase
@@ -14,7 +15,6 @@ from addon_service.tests._helpers import (
     get_test_request,
 )
 from addon_service.user_reference.views import UserReferenceViewSet
-from app import settings
 
 
 class TestUserReferenceAPI(APITestCase):

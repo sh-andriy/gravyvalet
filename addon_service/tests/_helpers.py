@@ -2,12 +2,11 @@ import contextlib
 from collections import defaultdict
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.sessions.backends.db import SessionStore
 from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
 from rest_framework_json_api.utils import get_resource_type_from_model
-
-from app import settings
 
 
 class MockOSF:

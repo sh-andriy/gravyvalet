@@ -1,6 +1,7 @@
 import base64
 from http import HTTPStatus
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -11,7 +12,6 @@ from addon_service.models import (
 )
 from addon_service.tests import _factories as test_factories
 from addon_service.tests._helpers import MockOSF
-from app import settings
 
 
 class BaseAPITest(APITestCase):

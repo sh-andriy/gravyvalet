@@ -1,6 +1,7 @@
 import json
 from http import HTTPStatus
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -14,7 +15,6 @@ from addon_service.tests._helpers import (
     MockOSF,
     get_test_request,
 )
-from app import settings
 
 
 class TestAuthorizedStorageAccountAPI(APITestCase):

@@ -1,27 +1,24 @@
 import factory
+from django.conf import settings
 from factory.django import DjangoModelFactory
 
 from addon_service import models as db
 from addon_service.addon_imp.known import get_imp_by_name
 from addon_toolkit import AddonCapabilities
-from app.settings import (
-    AUTH_URI_ID,
-    URI_ID,
-)
 
 
 class UserReferenceFactory(DjangoModelFactory):
     class Meta:
         model = db.UserReference
 
-    user_uri = factory.Sequence(lambda n: f"{URI_ID}user{n}")
+    user_uri = factory.Sequence(lambda n: f"{settings.URI_ID}user{n}")
 
 
 class ResourceReferenceFactory(DjangoModelFactory):
     class Meta:
         model = db.ResourceReference
 
-    resource_uri = factory.Sequence(lambda n: f"{URI_ID}thing{n}")
+    resource_uri = factory.Sequence(lambda n: f"{settings.URI_ID}thing{n}")
 
 
 class CredentialsIssuerFactory(DjangoModelFactory):
@@ -67,7 +64,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
 
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
-    auth_uri = factory.Sequence(lambda n: f"{AUTH_URI_ID}{n}")
+    auth_uri = factory.Sequence(lambda n: f"{settings.AUTH_URI_ID}{n}")
     credentials_issuer = factory.SubFactory(CredentialsIssuerFactory)
     int_addon_imp = get_imp_by_name("BLARG").imp_number
 

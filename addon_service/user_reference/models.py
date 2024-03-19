@@ -8,7 +8,7 @@ from addon_service.configured_storage_addon.models import ConfiguredStorageAddon
 
 class UserReference(AddonsServiceBaseModel):
     user_uri = models.URLField(unique=True, db_index=True, null=False)
-    disabled = models.DateTimeField(null=True, blank=True)
+    deactivated = models.DateTimeField(null=True, blank=True)
 
     @property
     def authorized_storage_accounts(self):
@@ -35,7 +35,7 @@ class UserReference(AddonsServiceBaseModel):
         return self.user_uri
 
     def deactivate(self):
-        self.disabled = timezone.now()
+        self.deactivated = timezone.now()
         self.save()
 
     def delete(self, force=False):
@@ -50,7 +50,7 @@ class UserReference(AddonsServiceBaseModel):
 
     def reactivate(self):
         # TODO: Logging?
-        self.disabled = None
+        self.deactivated = None
         self.save()
 
     def merge(self, merge_with):

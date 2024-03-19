@@ -5,14 +5,14 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 
 class ActiveUserManager(models.Manager):
     """
-    Only returned active users, not ones that are disabled.
+    Only returned active users, not ones that are deactivated.
     """
 
     def get_queryset(self):
         return (
             super()
             .get_queryset()
-            .filter(base_account__external_account__owner__disabled__isnull=True)
+            .filter(base_account__external_account__owner__deactivated__isnull=True)
         )
 
 

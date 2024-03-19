@@ -85,11 +85,11 @@ class ConfiguredStorageAddonAPITests(BaseAPITest):
 class ConfiguredStorageAddonModelTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        # Create active and disabled users via your factory setup or directly
+        # Create active and deactivated users via your factory setup or directly
         cls.active_user = test_factories.UserReferenceFactory(
-            disabled=None
+            deactivated=None
         )  # Assuming you have a factory for UserReference
-        cls.disabled_user = test_factories.UserReferenceFactory(disabled=timezone.now())
+        cls.disabled_user = test_factories.UserReferenceFactory(deactivated=timezone.now())
 
         # Assuming the ExternalAccountFactory can link to UserReference and you have a method to create a ConfiguredStorageAddon with a base account
         cls.active_configured_storage_addon = (

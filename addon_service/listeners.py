@@ -43,7 +43,7 @@ def handle_messaging_exceptions(message):
 
 def process_deactivated_user_message(body, message):
     user_uri = body.get("user_uri")
-    UserReference.objects.get(user_uri=user_uri).delete()
+    UserReference.objects.get(user_uri=user_uri).deactivate()
     logger.info(f"Processed and deactivated user: {user_uri}")
 
 

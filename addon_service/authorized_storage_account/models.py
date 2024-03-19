@@ -59,7 +59,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         return self.external_account.owner  # TODO: prefetch/select_related
 
     @property
-    def owner_reference(self):
+    def owner_uri(self) -> str:
         return self.account_owner.user_uri
 
     @property
@@ -78,7 +78,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     def iter_authorized_operations(self) -> Iterator[AddonOperationImp]:
         _addon_imp: AddonImp = self.external_storage_service.addon_imp.imp
-        _authorized_caps = self.authorized_capabilities
-        for _operation_imp in _addon_imp.get_operation_imps():
-            if _operation_imp.operation.capability in _authorized_caps:
-                yield _operation_imp
+        yield from _addon_imp.get_operation_imps(
+            capabilities=self.authorized_capabilities
+        )

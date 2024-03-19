@@ -74,36 +74,46 @@ def json_for_arguments(bound_kwargs: inspect.BoundArguments) -> dict:
     }
 
 
-def json_for_typed_value(annotation: type, value: typing.Any):
-    """return json-serializable representation of field value"""
+# TODO generic type: def json_for_typed_value[_ValueType: object](type_annotation: type[_ValueType], value: _ValueType):
+def json_for_typed_value(type_annotation: typing.Any, value: typing.Any):
+    """return json-serializable representation of field value
+
+    >>> json_for_typed_value(int, 13)
+    13
+    >>> json_for_typed_value(str, 13)
+    '13'
+    >>> json_for_typed_value(list[int], [2,3,'7'])
+    [2, 3, 7]
+    """
     if value is None:
-        return None  # TODO: check optional?
-    if dataclasses.is_dataclass(annotation):
-        if not isinstance(value, annotation):
-            raise ValueError(f"expected instance of {annotation}, got {value}")
+        # check type_annotation allows None
+        assert isinstance(None, type_annotation), f"got {value=} with {type_annotation}"
+        return None
+    if dataclasses.is_dataclass(type_annotation):
+        if not isinstance(value, type_annotation):
+            raise ValueError(f"expected instance of {type_annotation}, got {value}")
         return json_for_dataclass(value)
-    if issubclass(annotation, enum.Enum):
-        if value not in annotation:
-            raise ValueError(f"expected member of enum {annotation}, got {value}")
+    if issubclass(type_annotation, enum.Enum):
+        if value not in type_annotation:
+            raise ValueError(f"expected member of enum {type_annotation}, got {value}")
         return value.value
-    if annotation in (str, int, float):  # check str before Iterable
-        return value
-    if isinstance(annotation, typing.Iterable):
-        if not isinstance(annotation, types.GenericAlias):
-            return list(value)
-        # parameterized generic type, e.g. list[int]
-        try:
-            (_item_annotation,) = annotation.__args__
-        except ValueError:
-            raise ValueError(
-                f"expected exactly one type param, got {len(annotation.__args__)} (on {annotation})"
-            )
-        else:
-            return [
-                json_for_typed_value(_item_annotation, _item_value)
-                for _item_value in value
-            ]
-    raise NotImplementedError(f"what do with argument type {annotation}? ({value=})")
+    if type_annotation in (str, int, float):  # check str before Iterable
+        return type_annotation(value)
+    # support parameterized generics like `list[int]`
+    if isinstance(type_annotation, types.GenericAlias):
+        if issubclass(type_annotation.__origin__, typing.Iterable):
+            try:
+                (_item_annotation,) = type_annotation.__args__
+            except ValueError:
+                pass
+            else:
+                return [
+                    json_for_typed_value(_item_annotation, _item_value)
+                    for _item_value in value
+                ]
+    raise NotImplementedError(
+        f"what do with argument type {type_annotation}? ({value=})"
+    )
 
 
 def bound_kwargs_from_json(

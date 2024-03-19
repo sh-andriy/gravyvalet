@@ -46,6 +46,10 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
     def operation(self) -> AddonOperationModel:
         return AddonOperationModel.get_by_natural_key_str(self.operation_identifier)
 
+    @property
+    def owner_uri(self) -> str:
+        return self.by_user.user_uri
+
     def clean(self):
         try:
             jsonschema.validate(

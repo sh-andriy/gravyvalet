@@ -1,16 +1,19 @@
 import dataclasses
 import weakref
 from typing import (
+    Any,
     Callable,
+    Generic,
     TypeVar,
 )
 
 
 DecoratorTarget = TypeVar("DecoratorTarget")
+DeclarationDataclass = TypeVar("DeclarationDataclass")
 
 
 @dataclasses.dataclass
-class Declarator:
+class Declarator(Generic[DeclarationDataclass]):
     """Declarator: add declarative metadata in python using decorators and dataclasses
 
     define a dataclass with fields you want declared in your decorator, plus a field
@@ -45,16 +48,18 @@ class Declarator:
     TwoPartGreetingDeclaration(a='kia', b='ora', on=<function _kia_ora at 0x...>)
     """
 
-    declaration_dataclass: type
+    declaration_dataclass: type[DeclarationDataclass]
     field_for_target: str
-    static_kwargs: dict | None = None
+    static_kwargs: dict[str, Any] | None = None
 
     # private storage linking a decorated class or function to data gleaned from its decorator
-    __declarations_by_target: weakref.WeakKeyDictionary = dataclasses.field(
+    __declarations_by_target: weakref.WeakKeyDictionary[
+        object, DeclarationDataclass
+    ] = dataclasses.field(
         default_factory=weakref.WeakKeyDictionary,
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         assert dataclasses.is_dataclass(
             self.declaration_dataclass
         ), f"expected dataclass, got {self.declaration_dataclass}"
@@ -79,7 +84,9 @@ class Declarator:
         # note: shared __declarations_by_target
         return dataclasses.replace(self, static_kwargs=static_kwargs)
 
-    def set_declaration(self, declaration_target, **declaration_dataclass_kwargs):
+    def set_declaration(
+        self, declaration_target: DecoratorTarget, **declaration_dataclass_kwargs
+    ) -> None:
         """create a declaration associated with the target
 
         has the same effect as using the declarator as a decorator with the given kwargs
@@ -91,7 +98,7 @@ class Declarator:
             **{self.field_for_target: declaration_target},
         )
 
-    def get_declaration(self, target):
+    def get_declaration(self, target) -> DeclarationDataclass:
         try:
             return self.__declarations_by_target[target]
         except KeyError:

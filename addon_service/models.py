@@ -1,6 +1,6 @@
 """ Import models here so they auto-detect for makemigrations """
 
-from addon_service.addon_imp.models import AddonImp
+from addon_service.addon_imp.models import AddonImpModel
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.addon_operation_invocation.models import AddonOperationInvocation
 from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
@@ -21,7 +21,7 @@ __all__ = (
     "ExternalCredentials",
     "ExternalStorageService",
     "ResourceReference",
-    "AddonImp",
+    "AddonImpModel",
     "AddonOperationInvocation",
     "AddonOperationModel",
     "UserReference",

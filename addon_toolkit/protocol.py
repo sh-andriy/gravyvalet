@@ -41,7 +41,7 @@ class AddonProtocolDeclaration:
                 yield _op
 
     def get_operation_by_name(self, op_name: str) -> AddonOperationDeclaration:
-        return AddonOperationDeclaration.for_function(
+        return addon_operation.get_declaration(
             getattr(self.protocol_cls, op_name),
         )
 

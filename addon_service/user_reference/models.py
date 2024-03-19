@@ -22,5 +22,5 @@ class UserReference(AddonsServiceBaseModel):
         resource_name = "user-references"
 
     @property
-    def owner_reference(self):
+    def owner_uri(self) -> str:
         return self.user_uri

@@ -2,6 +2,7 @@ import json
 import unittest
 from http import HTTPStatus
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -12,6 +13,7 @@ from addon_service.addon_operation_invocation.views import (
 )
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
+    MockOSF,
     get_test_request,
     jsonapi_ref,
 )
@@ -24,6 +26,12 @@ class TestAddonOperationInvocationCreate(APITestCase):
         cls._operation = models.AddonOperationModel.get_by_natural_key_str(
             "BLARG:blargblarg"
         )
+
+    def setUp(self):
+        super().setUp()
+        self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
+        self._mock_osf = MockOSF()
+        self.enterContext(self._mock_osf.mocking())
 
     @property
     def _list_path(self):

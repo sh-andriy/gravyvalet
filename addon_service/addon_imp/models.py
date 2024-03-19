@@ -17,12 +17,8 @@ class AddonImpModel(BaseDataclassModel):
     imp: AddonImp
 
     @classmethod
-    def get_by_natural_key(cls, key: tuple[str, ...]) -> "AddonImpModel":
-        try:
-            (_imp_name,) = key
-        except ValueError:
-            raise ValueError(f"expected list of length one, got {key}")
-        return cls(imp=get_imp_by_name(_imp_name))
+    def get_by_natural_key(cls, imp_name: str) -> "AddonImpModel":
+        return cls(imp=get_imp_by_name(imp_name))
 
     @property
     def name(self) -> str:

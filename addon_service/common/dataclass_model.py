@@ -18,7 +18,7 @@ class BaseDataclassModel(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def get_by_natural_key(cls, key: tuple[str, ...]):
+    def get_by_natural_key(cls, *key_parts):
         raise NotImplementedError
 
     @property
@@ -37,7 +37,7 @@ class BaseDataclassModel(abc.ABC):
     @classmethod
     def get_by_natural_key_str(cls, key_str: str):
         _key = tuple(unquote(_key_segment) for _key_segment in key_str.split(":"))
-        return cls.get_by_natural_key(_key)
+        return cls.get_by_natural_key(*_key)
 
     ###
     # instance methods

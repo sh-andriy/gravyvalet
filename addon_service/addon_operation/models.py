@@ -18,10 +18,9 @@ class AddonOperationModel(BaseDataclassModel):
     operation_imp: AddonOperationImp
 
     @classmethod
-    def get_by_natural_key(cls, key: tuple[str, ...]) -> "AddonOperationModel":
-        _imp_name, _operation_name = key
-        _addon_imp = get_imp_by_name(_imp_name)
-        return cls(_addon_imp.get_operation_imp_by_name(_operation_name))
+    def get_by_natural_key(cls, imp_name, operation_name) -> "AddonOperationModel":
+        _addon_imp = get_imp_by_name(imp_name)
+        return cls(_addon_imp.get_operation_imp_by_name(operation_name))
 
     @property
     def natural_key(self) -> list:

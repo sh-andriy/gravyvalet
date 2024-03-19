@@ -4,6 +4,7 @@ from django.utils import timezone
 from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.configured_storage_addon.models import ConfiguredStorageAddon
+from addon_service.external_account.models import ExternalAccount
 
 
 class UserReference(AddonsServiceBaseModel):
@@ -55,10 +56,9 @@ class UserReference(AddonsServiceBaseModel):
 
     def merge(self, merge_with):
         """
-        This represents the user "being merged into", the "merged_user" is the old account that is deactivated and that
-        is handled via separate signal.
+        This represents the user "being merged into", the "merge_with" is the old account that is deactivated.
         """
-        # TODO: Logging?
-        merge_with.configured_storage_addons.update(
-            base_account=self.authorized_storage_accounts.first()
+        ExternalAccount.objects(owner=merge_with).update(
+            owner=self
         )
+        merge_with.deactivate()

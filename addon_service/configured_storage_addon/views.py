@@ -9,7 +9,7 @@ from .serializers import ConfiguredStorageAddonSerializer
 
 
 class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
-    queryset = ConfiguredStorageAddon.objects.all()
+    queryset = ConfiguredStorageAddon.objects.active.all()
     serializer_class = ConfiguredStorageAddonSerializer
 
     def get_permissions(self):

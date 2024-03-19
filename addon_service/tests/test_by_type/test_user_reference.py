@@ -108,9 +108,9 @@ class TestUserReferenceModel(TestCase):
             self._user.clean_fields(exclude=["modified"])
 
     def test_deactivate(self):
-        self.assertIsNone(self._user.disabled)
+        self.assertIsNone(self._user.deactivated)
         self._user.deactivate()
-        self.assertIsNotNone(self._user.disabled)
+        self.assertIsNotNone(self._user.deactivated)
 
     def test_delete(self):
         with self.assertRaises(NotImplementedError):
@@ -118,9 +118,9 @@ class TestUserReferenceModel(TestCase):
 
     def test_reactivate(self):
         self._user.deactivate()
-        self.assertIsNotNone(self._user.disabled)
+        self.assertIsNotNone(self._user.deactivated)
         self._user.reactivate()
-        self.assertIsNone(self._user.disabled)
+        self.assertIsNone(self._user.deactivated)
 
     def test_merge(self):
         merge_with = _factories.UserReferenceFactory()

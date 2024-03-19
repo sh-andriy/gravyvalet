@@ -42,7 +42,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     )
     configured_storage_addons = HyperlinkedRelatedField(
         many=True,
-        queryset=ConfiguredStorageAddon.objects.all(),
+        queryset=ConfiguredStorageAddon.objects.active.all(),
         related_link_view_name=f"{RESOURCE_NAME}-related",
         required=False,
     )

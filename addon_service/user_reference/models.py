@@ -58,7 +58,7 @@ class UserReference(AddonsServiceBaseModel):
         """
         This represents the user "being merged into", the "merge_with" is the old account that is deactivated.
         """
-        ExternalAccount.objects(owner=merge_with).update(
+        ExternalAccount.objects.filter(owner=merge_with).update(
             owner=self
         )
         merge_with.deactivate()

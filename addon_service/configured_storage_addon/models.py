@@ -3,12 +3,13 @@ from django.db import models
 from addon_service.common.base_model import AddonsServiceBaseModel
 
 
-class ActiveUserManager(models.Manager):
+class ConnectedStorageAddonManager(models.Manager):
     """
     Only returned active users, not ones that are deactivated.
     """
 
-    def get_queryset(self):
+    @property
+    def active(self):
         return (
             super()
             .get_queryset()
@@ -17,7 +18,7 @@ class ActiveUserManager(models.Manager):
 
 
 class ConfiguredStorageAddon(AddonsServiceBaseModel):
-    objects = ActiveUserManager()
+    objects = ConnectedStorageAddonManager()
 
     root_folder = models.CharField()
 

@@ -1,4 +1,5 @@
 from addon_service.common.permissions import (
+    IsAuthenticated,
     SessionUserIsOwner,
     SessionUserMayAccessInvocation,
     SessionUserMayInvokeThruAddon,
@@ -13,15 +14,17 @@ class AddonOperationInvocationViewSet(RetrieveWriteViewSet):
     queryset = AddonOperationInvocation.objects.all()
     serializer_class = AddonOperationInvocationSerializer
 
-    def get_permissions(self) -> list[type]:
+    def get_permissions(self):
         match self.action:
             case "retrieve" | "retrieve_related":
-                return [SessionUserMayAccessInvocation()]
+                return [IsAuthenticated(), SessionUserMayAccessInvocation()]
             case "partial_update" | "update" | "destroy":
-                return [SessionUserIsOwner()]
+                return [IsAuthenticated(), SessionUserIsOwner()]
             case "create":
-                return [SessionUserMayInvokeThruAddon()]
+                return [IsAuthenticated(), SessionUserMayInvokeThruAddon()]
+            case None:
+                return super().get_permissions()
             case _:
                 raise NotImplementedError(
-                    "no permission implemented for action '{self.action}'"
+                    f"no permission implemented for action '{self.action}'"
                 )

@@ -68,7 +68,7 @@ class MockOSF:
             return ["read", "write"]
         if role == "admin":
             return ["read", "write", "admin"]
-        if self._permissions[resource_uri]["public"]:
+        if self._permissions[resource_uri].get("public", False):
             return ["read"]
         return []
 

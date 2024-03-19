@@ -1,5 +1,4 @@
 import dataclasses
-import enum
 
 from rest_framework import mixins as drf_mixins
 from rest_framework.response import Response
@@ -12,25 +11,6 @@ from rest_framework_json_api.views import (
     PreloadIncludesMixin,
     RelatedMixin,
 )
-
-
-class ViewSetActions(enum.Enum):
-    CREATE = "create"
-    DESTROY = "destroy"
-    LIST = "list"
-    PARTIAL_UPDATE = "partial_update"
-    RETRIEVE = "retrieve"
-    RETRIEVE_RELATED = "retrieve_related"
-    UPDATE = "update"
-
-    def is_item_action(self) -> bool:
-        return self in {
-            ViewSetActions.RETRIEVE,
-            ViewSetActions.RETRIEVE_RELATED,
-            ViewSetActions.PARTIAL_UPDATE,
-            ViewSetActions.UPDATE,
-            ViewSetActions.DESTROY,
-        }
 
 
 class _DrfJsonApiHelpers(AutoPrefetchMixin, PreloadIncludesMixin, RelatedMixin):

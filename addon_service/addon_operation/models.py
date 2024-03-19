@@ -53,7 +53,8 @@ class AddonOperationModel(BaseDataclassModel):
 
     @property
     def implemented_by(self):
-        # avoid circular import -- AddonOperationModel and AddonImpModel co-depend
+        # avoid circular import
+        # (AddonOperationModel and AddonImpModel need to be mutually aware of each other in order to populate their respective relationship fields)
         from addon_service.addon_imp.models import AddonImpModel
 
         return AddonImpModel(self.operation_imp.addon_imp)

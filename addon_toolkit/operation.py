@@ -38,7 +38,7 @@ class AddonOperationDeclaration:
     capability: enum.Enum
     operation_fn: Callable  # the decorated function
     return_dataclass: type = dataclasses.field(
-        default=type(None),  # if not provided, will be
+        default=type(None),  # if not provided, inferred by __post_init__
         compare=False,
     )
 

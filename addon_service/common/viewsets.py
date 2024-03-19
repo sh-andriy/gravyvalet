@@ -35,6 +35,8 @@ class RetrieveWriteViewSet(
 
 
 class DataclassViewset(ViewSet, RelatedMixin):
+    http_method_names = ["get", "head", "options"]
+
     # set in subclasses:
     serializer_class: type  # should have a dataclass at serializer_class.Meta.model
 

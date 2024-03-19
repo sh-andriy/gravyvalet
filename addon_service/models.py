@@ -14,6 +14,9 @@ from addon_service.user_reference.models import UserReference
 
 
 __all__ = (
+    "AddonImpModel",
+    "AddonOperationInvocation",
+    "AddonOperationModel",
     "AuthorizedStorageAccount",
     "ConfiguredStorageAddon",
     "CredentialsIssuer",
@@ -21,8 +24,5 @@ __all__ = (
     "ExternalCredentials",
     "ExternalStorageService",
     "ResourceReference",
-    "AddonImpModel",
-    "AddonOperationInvocation",
-    "AddonOperationModel",
     "UserReference",
 )

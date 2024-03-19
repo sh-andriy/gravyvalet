@@ -16,6 +16,12 @@ class _BaseEnumNameChoiceField(serializers.ChoiceField):
 
 
 class EnumNameChoiceField(_BaseEnumNameChoiceField):
+    """serializer field allowing member names (as strings) from a given enum
+
+    note: the "internal value" is the enum member (not the member `value`)
+    so if you use this for updates, make sure your model supports that
+    """
+
     def to_internal_value(self, data) -> enum.Enum:
         _name = super().to_internal_value(data)
         return self.enum_cls[_name]
@@ -27,6 +33,12 @@ class EnumNameChoiceField(_BaseEnumNameChoiceField):
 class EnumNameMultipleChoiceField(
     _BaseEnumNameChoiceField, serializers.MultipleChoiceField
 ):
+    """serializer field allowing a set of member names (as a list of strings) from a given enum
+
+    note: the "internal value" is a list of enum members (not the member `value`s)
+    so if you use this for updates, make sure your model supports that
+    """
+
     def to_internal_value(self, data) -> list[enum.Enum]:
         _names: set = super().to_internal_value(data)
         return [self.enum_cls[_name] for _name in _names]

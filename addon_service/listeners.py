@@ -54,11 +54,11 @@ def process_reactivated_user_message(body, message):
 
 
 def process_merged_user_message(body, message):
-    user_uri = body.get("user_uri")
-    merged_user_uri = body.get("merged_user_uri")
-    merged_user = UserReference.objects.get(user_uri=merged_user_uri)
-    UserReference.objects.get(user_uri=user_uri).merge(merged_user)
-    logger.info(f"Processed and merged user: {user_uri}")
+    into_user_uri = body.get("into_user_uri")
+    from_user_uri = body.get("from_user_uri")
+    merged_user = UserReference.objects.get(user_uri=from_user_uri)
+    UserReference.objects.get(user_uri=into_user_uri).merge(merged_user)
+    logger.info(f"Processed and merged user: {into_user_uri}")
 
 
 def queue_routing_handler(body, message):

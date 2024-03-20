@@ -113,7 +113,7 @@ class ConfiguredStorageAddonModelTests(TestCase):
 
     def test_active_user_manager_excludes_disabled_users(self):
         # Fetch all configured storage addons using the manager
-        addons = ConfiguredStorageAddon.objects.active.all()
+        addons = ConfiguredStorageAddon.objects.active()
 
         # Ensure that only addons associated with active users are returned
         self.assertIn(self.active_configured_storage_addon, addons)

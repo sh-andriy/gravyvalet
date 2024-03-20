@@ -8,12 +8,9 @@ class ConnectedStorageAddonManager(models.Manager):
     Only returned active users, not ones that are deactivated.
     """
 
-    @property
     def active(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(base_account__external_account__owner__deactivated__isnull=True)
+        return self.get_queryset().filter(
+            base_account__external_account__owner__deactivated__isnull=True
         )
 
 

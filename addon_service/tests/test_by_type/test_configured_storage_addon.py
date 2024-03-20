@@ -89,7 +89,9 @@ class ConfiguredStorageAddonModelTests(TestCase):
         cls.active_user = test_factories.UserReferenceFactory(
             deactivated=None
         )  # Assuming you have a factory for UserReference
-        cls.disabled_user = test_factories.UserReferenceFactory(deactivated=timezone.now())
+        cls.disabled_user = test_factories.UserReferenceFactory(
+            deactivated=timezone.now()
+        )
 
         # Assuming the ExternalAccountFactory can link to UserReference and you have a method to create a ConfiguredStorageAddon with a base account
         cls.active_configured_storage_addon = (

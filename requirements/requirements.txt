@@ -5,3 +5,5 @@ djangorestframework-jsonapi==6.1.0
 django-filter
 httpx==0.26.0
 celery
+jsonschema==4.21.1
+

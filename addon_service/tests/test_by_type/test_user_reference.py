@@ -1,6 +1,7 @@
 import json
 from http import HTTPStatus
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.test import TestCase
@@ -14,7 +15,6 @@ from addon_service.tests._helpers import (
     get_test_request,
 )
 from addon_service.user_reference.views import UserReferenceViewSet
-from app import settings
 
 
 class TestUserReferenceAPI(APITestCase):
@@ -26,7 +26,7 @@ class TestUserReferenceAPI(APITestCase):
         super().setUp()
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     @property
     def _detail_path(self):
@@ -118,7 +118,7 @@ class TestUserReferenceViewSet(TestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
 
     def test_get(self):
         _resp = self._view(
@@ -165,7 +165,7 @@ class TestUserReferenceRelatedView(APITestCase):
     def setUp(self):
         super().setUp()
         self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf)
+        self.enterContext(self._mock_osf.mocking())
         self.request = get_test_request(
             user=self._user,
             cookies={settings.USER_REFERENCE_COOKIE: self._user.user_uri},

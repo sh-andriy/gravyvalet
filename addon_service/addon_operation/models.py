@@ -7,7 +7,10 @@ from addon_service.addon_imp.known import (
     get_imp_name,
 )
 from addon_service.common.static_dataclass_model import StaticDataclassModel
-from addon_toolkit import AddonOperationImp
+from addon_toolkit import (
+    AddonCapabilities,
+    AddonOperationImp,
+)
 from addon_toolkit.json_arguments import jsonschema_for_signature_params
 from addon_toolkit.operation import AddonOperationType
 
@@ -42,7 +45,7 @@ class AddonOperationModel(StaticDataclassModel):
         return self.operation_imp.imp_function.__doc__ or ""
 
     @cached_property
-    def capability(self) -> str:
+    def capability(self) -> AddonCapabilities:
         return self.operation_imp.declaration.capability
 
     @cached_property

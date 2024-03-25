@@ -7,6 +7,7 @@ from typing import (
     Iterator,
 )
 
+from .capabilities import AddonCapabilities
 from .declarator import Declarator
 
 
@@ -35,7 +36,7 @@ class AddonOperationDeclaration:
     """
 
     operation_type: AddonOperationType
-    capability: enum.Enum
+    capability: AddonCapabilities
     operation_fn: Callable  # the decorated function
     return_type: type = dataclasses.field(
         default=type(None),  # if not provided, inferred by __post_init__

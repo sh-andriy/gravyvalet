@@ -18,6 +18,9 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         models.IntegerField(validators=[validate_addon_capability])
     )
 
+    # OAUTH Only
+    authorized_scopes = ArrayField(models.CharField(), null=True)
+
     default_root_folder = models.CharField(blank=True)
 
     external_storage_service = models.ForeignKey(

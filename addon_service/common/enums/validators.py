@@ -1,3 +1,4 @@
+from addon_servcie.common.credentials import CredentialsFormats
 from django.core.exceptions import ValidationError
 
 from addon_service.addon_imp.known import get_imp_by_number
@@ -33,3 +34,7 @@ def validate_storage_imp_number(value):
         raise ValidationError(f"invalid imp number: {value}")
     if _imp.addon_protocol.protocol_cls is not StorageAddonProtocol:
         raise ValidationError(f"expected storage imp (got {_imp})")
+
+
+def validate_credentials_format(value):
+    _validate_enum_value(CredentialsFormats, value)

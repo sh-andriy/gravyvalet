@@ -25,10 +25,15 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         on_delete=models.CASCADE,
         related_name="authorized_storage_accounts",
     )
-    external_account = models.ForeignKey(
-        "addon_service.ExternalAccount",
+    account_owner = models.ForeignKey(
+        "addon_service.UserReference",
         on_delete=models.CASCADE,
         related_name="authorized_storage_accounts",
+    )
+    credentials = models.OneToOneField(
+        "addon_service.ExternalCredentials",
+        on_delete=models.CASCADE,
+        primary_key=False,
     )
 
     class Meta:
@@ -53,10 +58,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         self.int_authorized_capabilities = [
             AddonCapabilities(_cap).value for _cap in new_capabilities
         ]
-
-    @property
-    def account_owner(self):
-        return self.external_account.owner  # TODO: prefetch/select_related
 
     @property
     def owner_uri(self) -> str:

@@ -13,7 +13,6 @@ class ExternalStorageService(AddonsServiceBaseModel):
     )
     max_concurrent_downloads = models.IntegerField(null=False)
     max_upload_mb = models.IntegerField(null=False)
-    auth_uri = models.URLField(null=False)
 
     credentials_issuer = models.ForeignKey(
         "addon_service.CredentialsIssuer",
@@ -32,3 +31,11 @@ class ExternalStorageService(AddonsServiceBaseModel):
     @property
     def addon_imp(self) -> AddonImpModel:
         return AddonImpModel(get_imp_by_number(self.int_addon_imp))
+
+    @property
+    def auth_uri(self):
+        return self.credentials_issuer.auth_uri
+
+    @property
+    def credentials_format(self):
+        return self.credentials_issuer.credentials_format

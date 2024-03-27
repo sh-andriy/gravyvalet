@@ -56,11 +56,11 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     @property
     def account_owner(self):
-        return self.base_account.external_account.owner
+        return self.base_account.account_owner
 
     @property
     def owner_uri(self) -> str:
-        return self.base_account.external_account.owner.user_uri
+        return self.base_account.owner_uri
 
     @property
     def resource_uri(self):

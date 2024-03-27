@@ -19,7 +19,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     )
 
     # OAUTH Only
-    authorized_scopes = ArrayField(models.CharField(), null=True)
+    authorized_scopes = ArrayField(models.CharField(), null=True, blank=True)
 
     default_root_folder = models.CharField(blank=True)
 

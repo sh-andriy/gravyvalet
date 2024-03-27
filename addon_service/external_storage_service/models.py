@@ -12,7 +12,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
         null=False,
         validators=[validate_storage_imp_number],
     )
-    default_scopes = ArrayField(models.CharField(), null=True)
+    default_scopes = ArrayField(models.CharField(), null=True, blank=True)
     max_concurrent_downloads = models.IntegerField(null=False)
     max_upload_mb = models.IntegerField(null=False)
     auth_uri = models.URLField(null=False)

@@ -1,5 +1,10 @@
 import json
 from http import HTTPStatus
+from urllib.parse import (
+    urlencode,
+    urlparse,
+    urlunparse,
+)
 
 from django.conf import settings
 from django.test import TestCase
@@ -15,6 +20,17 @@ from addon_service.tests._helpers import (
     MockOSF,
     get_test_request,
 )
+
+
+def build_auth_url(auth_uri, oauth_key, state_token, authorized_scopes, redirect_uri):
+    query_params = {
+        "response_type": "code",
+        "client_id": oauth_key,
+        "state": state_token,
+        "scope": authorized_scopes.join(",") if authorized_scopes else None,
+        "redirect_uri": redirect_uri,
+    }
+    return urlunparse(urlparse(auth_uri)._replace(query=urlencode(query_params)))
 
 
 class TestAuthorizedStorageAccountAPI(APITestCase):
@@ -82,7 +98,15 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
         _resp = self.client.post(
             reverse("authorized-storage-accounts-list"), payload, format="vnd.api+json"
         )
+        expected_auth_url = build_auth_url(
+            external_service.auth_uri,
+            external_service.authorized_storage_accounts.first().external_account.credentials.oauth_key,
+            external_service.authorized_storage_accounts.first().external_account.credentials.state_token,
+            external_service.authorized_storage_accounts.first().authorized_scopes,
+            external_service.callback_url,
+        )
         self.assertEqual(_resp.status_code, 201)
+        self.assertEqual(_resp.data["auth_url"], expected_auth_url)
         created_account_id = int(_resp.data["url"].rstrip("/").split("/")[-1])
         self.assertTrue(
             external_service.authorized_storage_accounts.filter(

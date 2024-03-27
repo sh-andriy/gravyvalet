@@ -161,6 +161,7 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
                 "default_root_folder",
                 "authorized_capabilities",
                 "authorized_operation_names",
+                "auth_url",
             },
         )
         self.assertEqual(

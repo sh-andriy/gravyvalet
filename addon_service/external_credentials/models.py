@@ -1,6 +1,7 @@
 from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
+from addon_service.common.credentials import CredentialsFormats
 from addon_service.common.exceptions import InvalidCredentials
 
 
@@ -23,24 +24,18 @@ class ExternalCredentials(AddonsServiceBaseModel):
     )
 
     # For USER_PASS services (e.g. Boa)
-    user_name = models.CharField(blank=True, null=True)
+    username = models.CharField(blank=True, null=True)
     pwd = models.CharField(blank=True, null=True)
 
     # For USER_PASS_HOST services (e.g. OwnCloud)
-    service_host = models.CharField(blank=True, null=True)
+    service_host = models.URLField(blank=True, null=True)
 
     # For S3_LIKE services (e.g. ... S3)
     access_key = models.CharField(blank=True, null=True)
     secret_key = models.CharField(blank=True, null=True)
 
-    # For OAuth 1/2
+    # For OAUTH2 services
     oauth_access_token = models.CharField(blank=True, null=True)
-
-    # For OAuth1, this is usually the "oauth_token_secret"
-    # For OAuth2, this is not used
-    oauth_secret = models.CharField(blank=True, null=True)
-
-    # Used for OAuth2 only
     oauth2_refresh_token = models.CharField(blank=True, null=True)
     oauth2_refresh_date = models.DateTimeField(blank=True, null=True)
     oauth2_refresh_expiration = models.DateTimeField(blank=True, null=True)
@@ -60,11 +55,24 @@ class ExternalCredentials(AddonsServiceBaseModel):
             for field_name in _CREDENTIALS_VALUE_FIELDS
             if getattr(self, field_name, None)
         }
-        credentials_format = self.credentials_issuer.credentials_format
-        required_fields = credentials_format.required_fields
+        required_fields = set()
+        match self.credentials_issuer.credentials_format:
+            case CredentialsFormats.OAUTH2:
+                required_fields = (
+                    {"oauth_access_token"} if not self.state_token else set()
+                )
+            case CredentialsFormats.S3_LIKE:
+                required_fields = {"access_key", "secret_key"}
+            case CredentialsFormats.USER_PASS:
+                required_fields = {"user_name", "pwd"}
+            case CredentialsFormats.USER_PASS_HOST:
+                required_fields = {"user_name", "pwd", "service_host"}
+            case _:
+                raise ValueError("CredentialsIssuer has unsupported credentials_format")
+
         if assigned_fields != required_fields:
             raise InvalidCredentials(
-                credentials_format=credentials_format,
+                credentials_issuer=self.credentials_issuer,
                 missing_fields=required_fields - assigned_fields,
                 extra_fields=assigned_fields - required_fields,
             )

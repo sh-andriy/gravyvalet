@@ -33,15 +33,6 @@ class ExternalCredentialsFactory(DjangoModelFactory):
         model = db.ExternalCredentials
 
 
-class ExternalAccountFactory(DjangoModelFactory):
-    class Meta:
-        model = db.ExternalAccount
-
-    credentials_issuer = factory.SubFactory(CredentialsIssuerFactory)
-    owner = factory.SubFactory(UserReferenceFactory)
-    credentials = factory.SubFactory(ExternalCredentialsFactory)
-
-
 class AddonOperationInvocationFactory(DjangoModelFactory):
     class Meta:
         model = db.AddonOperationInvocation
@@ -76,9 +67,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
     default_root_folder = "/"
     authorized_capabilities = factory.List([AddonCapabilities.ACCESS])
     external_storage_service = factory.SubFactory(ExternalStorageServiceFactory)
-    external_account = factory.SubFactory(ExternalAccountFactory)
-    # TODO: external_account.credentials_issuer same as
-    #       external_storage_service.credentials_issuer
+    account_owner = factory.SubFactory(UserReferenceFactory)
 
 
 class ConfiguredStorageAddonFactory(DjangoModelFactory):

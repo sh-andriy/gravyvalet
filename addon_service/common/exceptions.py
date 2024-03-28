@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 
 
-class InvalidCredentialsError(ValidationError):
+class InvalidCredentials(ValidationError):
     def __init__(
         self, credentials_issuer, missing_fields, extra_fields, *args, **kwargs
     ):

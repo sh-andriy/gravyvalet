@@ -1,4 +1,4 @@
-from addon_servcie.common.credentials import CredentialsFormats
+from addon_service.common.credentials import CredentialsFormats
 from django.core.exceptions import ValidationError
 
 from addon_service.addon_imp.known import get_imp_by_number

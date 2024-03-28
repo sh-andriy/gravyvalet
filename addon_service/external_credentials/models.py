@@ -18,7 +18,7 @@ _CREDENTIALS_VALUE_FIELDS = [
 # TODO: Settle on encryption solution
 class ExternalCredentials(AddonsServiceBaseModel):
     credentials_issuer = models.ForeignKey(
-        "addons_service.CredentialsIssuer",
+        "addon_service.CredentialsIssuer",
         on_delete=models.CASCADE,
         related_name="linked_credentials",
     )

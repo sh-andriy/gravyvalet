@@ -15,7 +15,6 @@ from addon_service.common.serializer_fields import (
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
-    ExternalAccount,
     ExternalCredentials,
     ExternalStorageService,
     UserReference,
@@ -54,7 +53,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     )
     configured_storage_addons = HyperlinkedRelatedField(
         many=True,
-        queryset=ConfiguredStorageAddon.objects.all(),
+        queryset=ConfiguredStorageAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
         required=False,
     )
@@ -85,13 +84,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         external_storage_service = validated_data["external_storage_service"]
         # TODO(ENG-5189): Update this once credentials format is finalized
         credentials, _ = ExternalCredentials.objects.get_or_create(
-            oauth_key=validated_data["username"],
-            oauth_secret=validated_data["password"],
-        )
-        external_account, _ = ExternalAccount.objects.get_or_create(
-            owner=account_owner,
-            credentials=credentials,
-            credentials_issuer=external_storage_service.credentials_issuer,
+            credentials_issuer=external_storage_service.credentials_issuer
         )
         return AuthorizedStorageAccount.objects.create(
             external_storage_service=external_storage_service,

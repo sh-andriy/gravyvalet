@@ -7,7 +7,7 @@ from addon_service.common.enums.validators import validate_credentials_format
 
 class CredentialsIssuer(AddonsServiceBaseModel):
     name = models.CharField(null=False)
-    int_credentials_format = models.IntField(
+    int_credentials_format = models.IntegerField(
         null=False,
         validators=[validate_credentials_format],
     )

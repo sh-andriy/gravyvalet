@@ -40,6 +40,9 @@ class ExternalCredentials(AddonsServiceBaseModel):
     oauth2_refresh_date = models.DateTimeField(blank=True, null=True)
     oauth2_refresh_expiration = models.DateTimeField(blank=True, null=True)
 
+    # State token
+    state_token = models.CharField(blank=True, null=True)
+
     class Meta:
         verbose_name = "External Credentials"
         verbose_name_plural = "External Credentials"

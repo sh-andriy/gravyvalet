@@ -13,7 +13,20 @@ from addon_toolkit import (
 )
 
 
+class ConnectedStorageAddonManager(models.Manager):
+    """
+    Only returned active users, not ones that are deactivated.
+    """
+
+    def active(self):
+        return self.get_queryset().filter(
+            base_account__external_account__owner__deactivated__isnull=True
+        )
+
+
 class ConfiguredStorageAddon(AddonsServiceBaseModel):
+    objects = ConnectedStorageAddonManager()
+
     root_folder = models.CharField(blank=True)
 
     int_connected_capabilities = ArrayField(

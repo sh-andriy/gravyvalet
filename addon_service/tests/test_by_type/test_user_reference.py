@@ -107,6 +107,31 @@ class TestUserReferenceModel(TestCase):
         with self.assertRaises(ValidationError):
             self._user.clean_fields(exclude=["modified"])
 
+    def test_deactivate(self):
+        self.assertIsNone(self._user.deactivated)
+        self._user.deactivate()
+        self.assertIsNotNone(self._user.deactivated)
+
+    def test_delete(self):
+        with self.assertRaises(NotImplementedError):
+            self._user.delete()
+
+    def test_reactivate(self):
+        self._user.deactivate()
+        self.assertIsNotNone(self._user.deactivated)
+        self._user.reactivate()
+        self.assertIsNone(self._user.deactivated)
+
+    def test_merge(self):
+        merge_with = _factories.UserReferenceFactory()
+        _accounts_before_merge = self._user.configured_storage_addons.count()
+        self._user.merge(merge_with)
+        _accounts_after_merge = self._user.configured_storage_addons.count()
+        self.assertEqual(
+            _accounts_after_merge,
+            _accounts_before_merge + merge_with.configured_storage_addons.count(),
+        )
+
 
 # unit-test viewset (call the view with test requests)
 class TestUserReferenceViewSet(TestCase):

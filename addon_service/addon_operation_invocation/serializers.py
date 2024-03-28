@@ -44,7 +44,7 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
 
     thru_addon = ResourceRelatedField(
         many=False,
-        queryset=ConfiguredStorageAddon.objects.all(),
+        queryset=ConfiguredStorageAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
 

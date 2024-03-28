@@ -18,7 +18,7 @@ class ResourceReferenceSerializer(serializers.HyperlinkedModelSerializer):
     )
     configured_storage_addons = HyperlinkedRelatedField(
         many=True,
-        queryset=ConfiguredStorageAddon.objects.all(),
+        queryset=ConfiguredStorageAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     included_serializers = {

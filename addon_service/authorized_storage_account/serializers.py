@@ -1,3 +1,6 @@
+from secrets import token_urlsafe
+
+from rest_framework.serializers import JSONField
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
     HyperlinkedRelatedField,
@@ -7,6 +10,7 @@ from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common import view_names
+from addon_service.common.credentials import CredentialsFormats
 from addon_service.common.enums.serializers import EnumNameMultipleChoiceField
 from addon_service.common.serializer_fields import (
     DataclassRelatedLinkField,
@@ -41,6 +45,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         child=serializers.CharField(),
         read_only=True,
     )
+    auth_url = serializers.CharField(read_only=True)
     account_owner = ReadOnlyResourceRelatedField(
         many=False,
         queryset=UserReference.objects.all(),
@@ -61,12 +66,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         dataclass_model=AddonOperationModel,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
-    username = serializers.CharField(
-        write_only=True
-    )  # placeholder for ExternalCredentials integrity only not auth
-    password = serializers.CharField(
-        write_only=True
-    )  # placeholder for ExternalCredentials integrity only not auth
+    credentials = JSONField(write_only=True, required=False)
 
     included_serializers = {
         "account_owner": "addon_service.serializers.UserReferenceSerializer",
@@ -82,14 +82,20 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             user_uri=session_user_uri
         )
         external_storage_service = validated_data["external_storage_service"]
-        # TODO(ENG-5189): Update this once credentials format is finalized
-        credentials, _ = ExternalCredentials.objects.get_or_create(
-            credentials_issuer=external_storage_service.credentials_issuer
+        # TODO(ENG-5189): Flesh this out better
+        if external_storage_service.credentials_format is CredentialsFormats.OAUTH2:
+            credentials_create_kwargs = {"state_token": token_urlsafe(16)}
+        else:
+            credentials_create_kwargs = validated_data["credentials"]
+        credentials = ExternalCredentials.objects.create(
+            credentials_issuer=external_storage_service.credentials_issuer,
+            **credentials_create_kwargs
         )
         return AuthorizedStorageAccount.objects.create(
             external_storage_service=external_storage_service,
-            external_account=external_account,
+            account_owner = account_owner,
             authorized_capabilities=authorized_capabilities,
+            credentials=credentials,
         )
 
     class Meta:
@@ -97,12 +103,12 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         fields = [
             "url",
             "account_owner",
-            "configured_storage_addons",
-            "default_root_folder",
-            "external_storage_service",
-            "username",
-            "password",
+            "auth_url",
             "authorized_capabilities",
             "authorized_operations",
             "authorized_operation_names",
+            "configured_storage_addons",
+            "credentials",
+            "default_root_folder",
+            "external_storage_service",
         ]

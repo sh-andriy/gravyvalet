@@ -82,16 +82,20 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         ]
 
     @property
+    def credentials_issuer(self):
+        return self.external_storage_service.credentials_issuer
+
+    @property
     def auth_url(self) -> str:
-        state_token = self.external_account.credentials.state_token
+        state_token = self.credentials.state_token
         if not state_token:
             return None
-        auth_uri = self.external_storage_service.auth_uri
+        auth_uri = self.credentials_issuer.auth_uri
+        oauth_id = self.credentials_issuer.oauth_client_id
         authorized_scopes = self.authorized_scopes
         redirect_uri = self.external_storage_service.callback_url
-        oauth_key = self.external_account.credentials.oauth_key
         return build_auth_url(
-            auth_uri, oauth_key, state_token, authorized_scopes, redirect_uri
+            auth_uri, oauth_id, state_token, authorized_scopes, redirect_uri
         )
 
     def iter_authorized_operations(self) -> Iterator[AddonOperationImp]:

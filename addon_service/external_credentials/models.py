@@ -6,7 +6,7 @@ from addon_service.common.exceptions import InvalidCredentials
 
 
 _CREDENTIALS_VALUE_FIELDS = [
-    "user_name",
+    "username",
     "pwd",
     "service_host",
     "access_key",
@@ -39,8 +39,6 @@ class ExternalCredentials(AddonsServiceBaseModel):
     oauth2_refresh_token = models.CharField(blank=True, null=True)
     oauth2_refresh_date = models.DateTimeField(blank=True, null=True)
     oauth2_refresh_expiration = models.DateTimeField(blank=True, null=True)
-
-    # State token
     state_token = models.CharField(blank=True, null=True)
 
     class Meta:
@@ -53,6 +51,10 @@ class ExternalCredentials(AddonsServiceBaseModel):
         self._validate_credentials()
 
     def _validate_credentials(self):
+        credentials_format = self.credentials_issuer.credentials_format
+        if credentials_format is CredentialsFormats.OAUTH2 and self.state_token is not None:
+            return True
+
         assigned_fields = {
             field_name
             for field_name in _CREDENTIALS_VALUE_FIELDS
@@ -67,9 +69,9 @@ class ExternalCredentials(AddonsServiceBaseModel):
             case CredentialsFormats.S3_LIKE:
                 required_fields = {"access_key", "secret_key"}
             case CredentialsFormats.USER_PASS:
-                required_fields = {"user_name", "pwd"}
+                required_fields = {"username", "pwd"}
             case CredentialsFormats.USER_PASS_HOST:
-                required_fields = {"user_name", "pwd", "service_host"}
+                required_fields = {"username", "pwd", "service_host"}
             case _:
                 raise ValueError("CredentialsIssuer has unsupported credentials_format")
 

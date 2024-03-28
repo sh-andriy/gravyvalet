@@ -1,7 +1,7 @@
-from addon_service.common.credentials import CredentialsFormats
 from django.core.exceptions import ValidationError
 
 from addon_service.addon_imp.known import get_imp_by_number
+from addon_service.common.credentials import CredentialsFormats
 from addon_service.common.invocation import InvocationStatus
 from addon_toolkit import AddonCapabilities
 from addon_toolkit.storage import StorageAddonProtocol

@@ -52,7 +52,10 @@ class ExternalCredentials(AddonsServiceBaseModel):
 
     def _validate_credentials(self):
         credentials_format = self.credentials_issuer.credentials_format
-        if credentials_format is CredentialsFormats.OAUTH2 and self.state_token is not None:
+        if (
+            credentials_format is CredentialsFormats.OAUTH2
+            and self.state_token is not None
+        ):
             return True
 
         assigned_fields = {

@@ -93,7 +93,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         )
         return AuthorizedStorageAccount.objects.create(
             external_storage_service=external_storage_service,
-            account_owner = account_owner,
+            account_owner=account_owner,
             authorized_capabilities=authorized_capabilities,
             credentials=credentials,
         )

@@ -51,5 +51,7 @@ class UserReference(AddonsServiceBaseModel):
         """
         This represents the user "being merged into", the "merge_with" is the old account that is deactivated.
         """
-        AuthorizedStorageAccount.objects.filter(account_owner=merge_with).update(account_owner=self)
+        AuthorizedStorageAccount.objects.filter(account_owner=merge_with).update(
+            account_owner=self
+        )
         merge_with.deactivate()

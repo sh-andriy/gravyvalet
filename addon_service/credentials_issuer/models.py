@@ -26,5 +26,8 @@ class CredentialsIssuer(AddonsServiceBaseModel):
 
     def full_clean(self, *args, **kwargs):
         super().full_clean(*args, **kwargs)
-        if self.credentials_format is CredentialsFormats.OAUTH2 and not self.oauth_client_id:
+        if (
+            self.credentials_format is CredentialsFormats.OAUTH2
+            and not self.oauth_client_id
+        ):
             raise ValidationError("OAuth2 Apps must register their client ID")

@@ -10,12 +10,12 @@ from addon_service import models as db
 from addon_service.authorized_storage_account.views import (
     AuthorizedStorageAccountViewSet,
 )
+from addon_service.common.oauth import build_auth_url
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,
     get_test_request,
 )
-from addon_service.utils.oauth import build_auth_url
 
 
 class TestAuthorizedStorageAccountAPI(APITestCase):

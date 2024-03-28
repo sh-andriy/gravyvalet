@@ -6,7 +6,7 @@ from django.db import models
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.enums.validators import validate_addon_capability
-from addon_service.utils.oauth import build_auth_url
+from addon_service.common.oauth import build_auth_url
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
@@ -83,22 +83,15 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     @property
     def auth_url(self) -> str:
         state_token = self.external_account.credentials.state_token
-        oauth_secret = self.external_account.credentials.oauth_secret
+        if not state_token:
+            return None
         auth_uri = self.external_storage_service.auth_uri
         authorized_scopes = self.authorized_scopes
-        # Having a state_token means Oauth2 authentication process is ongoing
-        if state_token:
-            redirect_uri = self.external_storage_service.callback_url
-            oauth_key = self.external_account.credentials.oauth_key
-            return build_auth_url(
-                auth_uri, oauth_key, state_token, authorized_scopes, redirect_uri
-            )
-        # Having a oauth_secret means Oauth1 authentication process is ongoing
-        if oauth_secret:
-            return auth_uri
-
-        # No state_token or oauth_secret means no ongoing Oauth authentication
-        return None
+        redirect_uri = self.external_storage_service.callback_url
+        oauth_key = self.external_account.credentials.oauth_key
+        return build_auth_url(
+            auth_uri, oauth_key, state_token, authorized_scopes, redirect_uri
+        )
 
     def iter_authorized_operations(self) -> Iterator[AddonOperationImp]:
         _addon_imp: AddonImp = self.external_storage_service.addon_imp.imp

@@ -10,7 +10,6 @@ from addon_service import models as db
 from addon_service.authorized_storage_account.views import (
     AuthorizedStorageAccountViewSet,
 )
-from addon_service.common.credentials import CredentialsFormats
 from addon_service.common.oauth import build_auth_url
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
@@ -61,15 +60,12 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
     def test_post(self):
         external_service = _factories.ExternalStorageServiceFactory()
-        external_service.int_credentials_format = CredentialsFormats.USER_PASS
-        external_service.save()
         self.assertFalse(external_service.authorized_storage_accounts.exists())
         payload = {
             "data": {
                 "type": "authorized-storage-accounts",
                 "attributes": {
                     "authorized_capabilities": ["ACCESS"],
-                    "credentials": {"username": "somebody", "pwd": "unsafe"},
                 },
                 "relationships": {
                     "external_storage_service": {

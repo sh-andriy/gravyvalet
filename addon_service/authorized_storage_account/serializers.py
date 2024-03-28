@@ -1,9 +1,4 @@
 from secrets import token_urlsafe
-from urllib.parse import (
-    urlencode,
-    urlparse,
-    urlunparse,
-)
 
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
@@ -49,7 +44,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         child=serializers.CharField(),
         read_only=True,
     )
-    auth_url = serializers.SerializerMethodField(method_name="get_auth_url")
+    auth_url = serializers.CharField(read_only=True)
     account_owner = ReadOnlyResourceRelatedField(
         many=False,
         queryset=UserReference.objects.all(),
@@ -83,32 +78,6 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         "configured_storage_addons": "addon_service.serializers.ConfiguredStorageAddonSerializer",
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
-
-    def get_auth_url(self, obj):
-        state_token = obj.external_account.credentials.state_token
-        oauth_secret = obj.external_account.credentials.oauth_secret
-        auth_uri = obj.external_storage_service.auth_uri
-        authorized_scopes = obj.authorized_scopes
-        # Having a state_token, that means Oauth2 authentication process is ongoing
-        if state_token:
-            callback_url = obj.external_storage_service.callback_url
-            oauth_key = obj.external_account.credentials.oauth_key
-            query_params = {
-                "response_type": "code",
-                "client_id": oauth_key,
-                "state": state_token,
-                "scope": authorized_scopes.join(",") if authorized_scopes else None,
-                "redirect_uri": callback_url,
-            }
-            return urlunparse(
-                urlparse(auth_uri)._replace(query=urlencode(query_params))
-            )
-        # Having a oauth_secret, that means Oauth1 authentication process is ongoing
-        if oauth_secret:
-            return auth_uri
-
-        # No state_token or oauth_secret means no ongoing Oauth authentication
-        return None
 
     def create(self, validated_data):
         session_user_uri = self.context["request"].session.get("user_reference_uri")

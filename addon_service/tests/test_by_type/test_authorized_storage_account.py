@@ -430,9 +430,9 @@ class TestAuthorizedStorageAccountViewSet(TestCase):
                 "auth_url",
             },
         )
-        self.assertEqual(
+        self.assertCountEqual(
             _content["data"]["attributes"]["authorized_capabilities"],
-            ["ACCESS"],
+            ["ACCESS", "UPDATE"],
         )
         self.assertEqual(
             set(_content["data"]["relationships"].keys()),

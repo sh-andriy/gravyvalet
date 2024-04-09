@@ -78,7 +78,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         model = db.AuthorizedStorageAccount
 
     default_root_folder = "/"
-    authorized_capabilities = factory.List([AddonCapabilities.ACCESS])
+    authorized_capabilities = AddonCapabilities.ACCESS | AddonCapabilities.UPDATE
 
     @classmethod
     def _create(
@@ -112,6 +112,6 @@ class ConfiguredStorageAddonFactory(DjangoModelFactory):
         model = db.ConfiguredStorageAddon
 
     root_folder = "/"
-    connected_capabilities = factory.List([AddonCapabilities.ACCESS])
+    connected_capabilities = AddonCapabilities.ACCESS
     base_account = factory.SubFactory(AuthorizedStorageAccountFactory)
     authorized_resource = factory.SubFactory(ResourceReferenceFactory)

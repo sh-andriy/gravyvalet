@@ -1,11 +1,11 @@
 from typing import Iterator
 
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
+from addon_service.common.enums import utils as enum_utils
 from addon_service.common.enums.validators import validate_addon_capability
 from addon_toolkit import (
     AddonCapabilities,
@@ -29,8 +29,8 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     root_folder = models.CharField(blank=True)
 
-    int_connected_capabilities = ArrayField(
-        models.IntegerField(validators=[validate_addon_capability])
+    int_connected_capabilities = models.IntegerField(
+        validators=[validate_addon_capability]
     )
 
     base_account = models.ForeignKey(
@@ -55,17 +55,14 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     @property
     def connected_capabilities(self) -> list[AddonCapabilities]:
         """get the enum representation of int_connected_capabilities"""
-        return [
-            AddonCapabilities(_int_capability)
-            for _int_capability in self.int_connected_capabilities
-        ]
+        return [member for member in AddonCapabilities(self.int_connected_capabilities)]
 
     @connected_capabilities.setter
     def connected_capabilities(self, new_capabilities: list[AddonCapabilities]):
         """set int_connected_capabilities without caring it's int"""
-        self.int_connected_capabilities = [
-            AddonCapabilities(_cap).value for _cap in new_capabilities
-        ]
+        self.int_connected_capabilities = enum_utils.combine_flags(
+            new_capabilities
+        ).value
 
     @property
     def account_owner(self):

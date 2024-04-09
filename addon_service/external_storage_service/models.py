@@ -26,6 +26,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
     max_upload_mb = models.IntegerField(null=False)
     auth_callback_url = models.URLField(null=False, default="")
     supported_scopes = ArrayField(models.CharField(), null=True, blank=True)
+    api_url_base = models.URLField(blank=True)
 
     oauth2_client_config = models.ForeignKey(
         "addon_service.OAuth2ClientConfig",
@@ -40,6 +41,21 @@ class ExternalStorageService(AddonsServiceBaseModel):
 
     class JSONAPIMeta:
         resource_name = "external-storage-services"
+
+    @staticmethod
+    def get_or_create_hosted_service_entry(*, base_service, api_url_base):
+        if base_service.api_url_base:
+            raise ValueError("Cannot create a hosted version of public service")
+        try:
+            return ExternalStorageService.objects.get(api_url_base=api_url_base)
+        except ExternalStorageService.DoesNotExist:
+            pass
+
+        base_service.pk = None
+        base_service._state.adding = True
+        base_service.api_url_base = api_url_base
+        base_service.save()
+        return base_service
 
     @property
     def addon_imp(self) -> AddonImpModel:

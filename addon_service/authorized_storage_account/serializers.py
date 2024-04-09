@@ -63,6 +63,8 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         dataclass_model=AddonOperationModel,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
+
+    api_url_base = serializers.URLField(write_only=True, required=False)
     credentials = JSONField(write_only=True, required=False)
 
     included_serializers = {
@@ -77,11 +79,23 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         account_owner, _ = UserReference.objects.get_or_create(
             user_uri=session_user_uri
         )
+
+        external_service = validated_data["external_storage_service"]
+        if validated_data.get("api_url_base"):
+            print("api_url_base specified")
+            external_service = (
+                ExternalStorageService.get_or_create_hosted_service_entry(
+                    base_service=external_service,
+                    api_url_base=validated_data["api_url_base"],
+                )
+            )
+
         authorized_account = AuthorizedStorageAccount(
-            external_storage_service=validated_data["external_storage_service"],
+            external_storage_service=external_service,
             account_owner=account_owner,
             authorized_capabilities=validated_data.get("authorized_capabilities"),
         )
+
         if authorized_account.credentials_format is CredentialsFormats.OAUTH2:
             authorized_account.initiate_oauth2_flow(
                 validated_data.get("authorized_scopes")
@@ -96,6 +110,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         fields = [
             "url",
             "account_owner",
+            "api_url_base",
             "auth_url",
             "authorized_capabilities",
             "authorized_operations",

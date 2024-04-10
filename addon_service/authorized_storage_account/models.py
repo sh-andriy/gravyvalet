@@ -10,7 +10,7 @@ from django.db import (
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.enums import utils as enum_utils
+from addon_service.common.enums import combine_flags
 from addon_service.common.enums.validators import validate_addon_capability
 from addon_service.credentials import (
     CredentialsFormats,
@@ -87,17 +87,14 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         return None
 
     @property
-    def authorized_capabilities(self) -> list[AddonCapabilities]:
+    def authorized_capabilities(self) -> AddonCapabilities:
         """get the enum representation of int_authorized_capabilities"""
-        joint_capabilities = AddonCapabilities(self.int_authorized_capabilities)
-        return [capability for capability in joint_capabilities]
+        return AddonCapabilities(self.int_authorized_capabilities)
 
     @authorized_capabilities.setter
     def authorized_capabilities(self, new_capabilities: list[AddonCapabilities]):
         """set int_authorized_capabilities without caring it's int"""
-        self.int_authorized_capabilities = enum_utils.combine_flags(
-            new_capabilities
-        ).value
+        self.int_authorized_capabilities = combine_flags(new_capabilities).value
 
     @property
     def owner_uri(self) -> str:

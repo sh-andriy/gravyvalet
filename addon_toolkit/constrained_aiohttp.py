@@ -9,7 +9,7 @@ from urllib.parse import (
     urlsplit,
 )
 
-import aiohttp  # type: ignore[import-not-found]
+import aiohttp
 
 from addon_toolkit.constrained_http import (
     HttpRequestInfo,

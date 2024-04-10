@@ -8,11 +8,15 @@ def validate_api_base_url(account):
     service = account.external_service
     if account._api_base_url and not service.configurable_api_root:
         raise ValidationError(
-            "Cannot specify an api_base_url for Public-only service {service.name}"
+            {
+                "api_base_url": f"Cannot specify an api_base_url for Public-only service {service.name}"
+            }
         )
     if ServiceTypes.PUBLIC not in service.service_type and not account.api_base_url:
         raise ValidationError(
-            f"Must specify an api_base_url for Hosted-only service {service.name}"
+            {
+                "api_base_url": f"Must specify an api_base_url for Hosted-only service {service.name}"
+            }
         )
 
 
@@ -24,9 +28,13 @@ def validate_oauth_state(account):
         return
     if bool(account.credentials) == bool(account.oauth2_token_metadata.state_token):
         raise ValidationError(
-            "OAuth2 accounts must assign exactly one of state_token and access_token"
+            {
+                "credentials": "OAuth2 accounts must assign exactly one of state_token and access_token"
+            }
         )
     if account.credentials and not account.oauth2_token_metadata.refresh_token:
         raise ValidationError(
-            "OAuth2 accounts with an access token must have a refresh token"
+            {
+                "credentials": "OAuth2 accounts with an access token must have a refresh token"
+            }
         )

@@ -66,7 +66,7 @@ class ConfiguredStorageAddonAPITests(BaseAPITest):
         response = self.client.get(self.detail_url())
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
-            response.json()["data"]["attributes"]["root_folder"],
+            response.data["root_folder"],
             self._configured_storage_addon.root_folder,
         )
 

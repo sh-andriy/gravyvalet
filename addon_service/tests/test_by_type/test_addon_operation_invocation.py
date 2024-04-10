@@ -153,8 +153,7 @@ class TestAddonOperationInvocationRelatedView(TestCase):
             related_field="base_account",
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
         self.assertEqual(
-            _content["data"]["id"],
-            str(self._invocation.base_account_id),
+            _resp.data["id"],
+            self._invocation.base_account_id,
         )

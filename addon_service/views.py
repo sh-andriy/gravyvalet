@@ -8,6 +8,7 @@ from addon_service.addon_operation_invocation.views import (
 from addon_service.authorized_storage_account.views import (
     AuthorizedStorageAccountViewSet,
 )
+from addon_service.common.views import OauthCallbackView
 from addon_service.configured_storage_addon.views import ConfiguredStorageAddonViewSet
 from addon_service.external_storage_service.views import ExternalStorageServiceViewSet
 from addon_service.resource_reference.views import ResourceReferenceViewSet
@@ -23,4 +24,5 @@ __all__ = (
     "AddonOperationInvocationViewSet",
     "AddonOperationViewSet",
     "UserReferenceViewSet",
+    "OauthCallbackView",
 )

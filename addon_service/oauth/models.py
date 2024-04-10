@@ -15,6 +15,7 @@ class OAuth2ClientConfig(AddonsServiceBaseModel):
     auth_uri = models.URLField(null=False)
     # The registered ID of the OAuth client
     client_id = models.CharField(null=True)
+    client_secret = models.CharField(null=True)
 
     class Meta:
         verbose_name = "OAuth2 Client Config"

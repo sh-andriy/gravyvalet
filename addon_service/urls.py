@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework.routers import (
     Route,
     SimpleRouter,
@@ -62,3 +63,5 @@ _register_viewset(views.UserReferenceViewSet)
 __all__ = ("urlpatterns",)
 
 urlpatterns = _router.urls
+
+urlpatterns += [path(r"callback/", views.OauthCallbackView.as_view(), name="callback")]

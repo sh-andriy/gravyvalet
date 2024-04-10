@@ -28,6 +28,7 @@ class OAuth2ClientConfigFactory(DjangoModelFactory):
 
     auth_uri = factory.Sequence(lambda n: f"{settings.AUTH_URI_ID}{n}")
     client_id = factory.Faker("word")
+    client_secret = factory.Faker("word")
 
 
 class AddonOperationInvocationFactory(DjangoModelFactory):

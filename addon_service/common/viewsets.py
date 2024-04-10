@@ -28,6 +28,16 @@ class RetrieveWriteViewSet(
     drf_mixins.CreateModelMixin,
     drf_mixins.RetrieveModelMixin,
     drf_mixins.UpdateModelMixin,
+    GenericViewSet,
+):
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+
+class RetrieveWriteDeleteViewSet(
+    _DrfJsonApiHelpers,
+    drf_mixins.CreateModelMixin,
+    drf_mixins.RetrieveModelMixin,
+    drf_mixins.UpdateModelMixin,
     drf_mixins.DestroyModelMixin,
     GenericViewSet,
 ):

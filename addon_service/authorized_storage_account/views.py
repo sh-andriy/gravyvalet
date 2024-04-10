@@ -2,13 +2,13 @@ from addon_service.common.permissions import (
     IsAuthenticated,
     SessionUserIsOwner,
 )
-from addon_service.common.viewsets import RetrieveWriteViewSet
+from addon_service.common.viewsets import RetrieveWriteDeleteViewSet
 
 from .models import AuthorizedStorageAccount
 from .serializers import AuthorizedStorageAccountSerializer
 
 
-class AuthorizedStorageAccountViewSet(RetrieveWriteViewSet):
+class AuthorizedStorageAccountViewSet(RetrieveWriteDeleteViewSet):
     queryset = AuthorizedStorageAccount.objects.all()
     serializer_class = AuthorizedStorageAccountSerializer
 

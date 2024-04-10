@@ -3,6 +3,7 @@ import dataclasses
 import secrets
 from collections import defaultdict
 from http import HTTPStatus
+from typing import Any
 from unittest.mock import patch
 from urllib.parse import (
     parse_qs,
@@ -46,7 +47,7 @@ class MockOSF:
     @contextlib.contextmanager
     def mocking(self):
         with patch(
-            "app.authentication.make_auth_request",
+            "app.authentication.GVCombinedAuthentication.authenticate",
             side_effect=self._mock_user_check,
         ), patch(
             "addon_service.common.permissions.authenticate_resource",
@@ -83,9 +84,16 @@ class MockOSF:
             return ["read"]
         return []
 
-    def _mock_user_check(self, *args, **kwargs):
-        caller_uri = self._get_assumed_caller(cookies=kwargs.get("cookies"))
-        return {"data": {"links": {"iri": caller_uri}}}
+    def _mock_user_check(self, request) -> tuple[Any, Any] | None:
+        # replaces `authenticate` on a custom rest_framework authenticator:
+        # https://www.django-rest-framework.org/api-guide/authentication/#custom-authentication
+        caller_uri = self._get_assumed_caller(cookies=request.COOKIES)
+        request.session["user_reference_uri"] = caller_uri
+        return (
+            (None, None)  # success! return a tuple (values here yet unused)
+            if caller_uri
+            else None  # failure! return None
+        )
 
     def _mock_resource_check(self, request, uri, required_permission, *args, **kwargs):
         caller = self._get_assumed_caller(cookies=request.COOKIES)

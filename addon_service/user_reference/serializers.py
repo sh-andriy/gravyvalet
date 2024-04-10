@@ -32,6 +32,7 @@ class UserReferenceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = UserReference
         fields = [
+            "id",
             "url",
             "user_uri",
             "authorized_storage_accounts",

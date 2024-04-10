@@ -5,7 +5,6 @@ from django.db import models
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.enums import combine_flags
 from addon_service.common.enums.validators import validate_addon_capability
 from addon_toolkit import (
     AddonCapabilities,
@@ -58,9 +57,9 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
         return AddonCapabilities(self.int_connected_capabilities)
 
     @connected_capabilities.setter
-    def connected_capabilities(self, new_capabilities: list[AddonCapabilities]):
+    def connected_capabilities(self, new_capabilities: AddonCapabilities):
         """set int_connected_capabilities without caring it's int"""
-        self.int_connected_capabilities = combine_flags(new_capabilities).value
+        self.int_connected_capabilities = new_capabilities.value
 
     @property
     def account_owner(self):

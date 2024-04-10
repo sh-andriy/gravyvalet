@@ -2,6 +2,8 @@ import enum
 
 from rest_framework_json_api import serializers
 
+from .flags import combine_flags
+
 
 class _BaseEnumNameChoiceField(serializers.ChoiceField):
     enum_cls: type[enum.Enum]
@@ -39,9 +41,9 @@ class EnumNameMultipleChoiceField(
     so if you use this for updates, make sure your model supports that
     """
 
-    def to_internal_value(self, data) -> list[enum.Enum]:
+    def to_internal_value(self, data) -> enum.Flag:
         _names: set = super().to_internal_value(data)
-        return [self.enum_cls[_name] for _name in _names]
+        return combine_flags([self.enum_cls[_name] for _name in _names])
 
     def to_representation(self, value):
         _member_list = super().to_representation(value)

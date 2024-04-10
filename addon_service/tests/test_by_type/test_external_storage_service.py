@@ -126,7 +126,7 @@ class TestExternalStorageServiceViewSet(TestCase):
                 "max_concurrent_downloads",
                 "max_upload_mb",
                 "credentials_format",
-                "service_name",
+                "name",
             },
         )
         self.assertEqual(

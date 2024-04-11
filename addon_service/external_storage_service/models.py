@@ -41,16 +41,16 @@ class ExternalStorageService(AddonsServiceBaseModel):
         code = request.GET.get("code")
 
         query_params = {
-            "redirect_uri": self.oauth2_client_config.auth_uri,
-            "client_id": self.oauth2_client_config.client_id,
-            "grant_type": "authorization_code",
-            "code": code,
+            'redirect_uri': self.auth_callback_url,
+            'client_id': self.oauth2_client_config.client_id,
+            'client_secret': self.oauth2_client_config.client_secret,
+            'grant_type': 'authorization_code',
+            'code': code
         }
-        query_params_encoded = urllib.parse.urlencode(query_params)
-        url = self.auth_callback_url + '?' + query_params_encoded
+        url = urllib.parse.urljoin(self.api_base_url, 'oauth2/token/')
 
         with httpx.Client() as client:
-            resp = client.post(url)
+            resp = client.post(url, data=query_params)
 
         resp.raise_for_status()
         return resp.json()

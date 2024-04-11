@@ -1,41 +1,51 @@
 from django.shortcuts import redirect
-from rest_framework.views import View
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.views import APIView
 
 from addon_service.models import (
     AuthorizedStorageAccount,
-    ExternalCredentials,
     ExternalStorageService,
     OAuth2TokenMetadata,
+    UserReference,
+    ExternalCredentials
 )
 
 
-class OauthCallbackView(View):
+class OauthCallbackView(APIView):
     """
     Handles oauth callbacks for the GV
     """
 
-    authentication_classes = ()  # TODO: many options but safest just to whitelist providers I think
-    permission_classes = ()
-
     def get(self, request):
         state = request.GET.get("state")
-        external_storage_service = ExternalStorageService.objects.get(id=state)
+        ess_id, user_uri = state.split(",")
+        external_storage_service = ExternalStorageService.objects.get(id=ess_id)
         data = external_storage_service.get_oauth_data_from_callback(request)
 
-        external_credentials = ExternalCredentials.objects.create(credentials_blob=data)
+        if isinstance(data["scope"], str):
+            data["scope"] = [data["scope"]]
 
-        OAuth2TokenMetadata.objects.create(
-            token_source=external_credentials,
+        OAuth2TokenMetadata.objects.update_or_create(
             state_token=state,
-            refresh_token=data["refresh_token"],
-            authorized_scopes=data["scopes"],
-            auth_token_expiration=data["auth_token_expiration"],
+            defaults={
+                "refresh_token": data["access_token"],
+                "authorized_scopes": data["scope"],
+                "access_token_expiration": timezone.now() + timedelta(seconds=data["expires_in"]),
+            }
         )
 
-        AuthorizedStorageAccount.objects.create(
+        user_reference, _ = UserReference.objects.get_or_create(
+            user_uri=user_uri
+        )
+
+        AuthorizedStorageAccount.objects.update_or_create(
             external_storage_service=external_storage_service,
-            account_owner=request.user,
-            _credentials=data,
+            account_owner=user_reference,
+            int_authorized_capabilities=[1],  # TODO: What should go here?
+            defaults={
+                "_credentials": ExternalCredentials.from_api_blob(data),
+            }
         )
 
-        return redirect(state)
+        return redirect(external_storage_service.api_base_url)

@@ -1,14 +1,15 @@
+from datetime import timedelta
+
 from django.shortcuts import redirect
 from django.utils import timezone
-from datetime import timedelta
 from rest_framework.views import APIView
 
 from addon_service.models import (
     AuthorizedStorageAccount,
+    ExternalCredentials,
     ExternalStorageService,
     OAuth2TokenMetadata,
     UserReference,
-    ExternalCredentials
 )
 
 
@@ -31,13 +32,12 @@ class OauthCallbackView(APIView):
             defaults={
                 "refresh_token": data["access_token"],
                 "authorized_scopes": data["scope"],
-                "access_token_expiration": timezone.now() + timedelta(seconds=data["expires_in"]),
-            }
+                "access_token_expiration": timezone.now()
+                + timedelta(seconds=data["expires_in"]),
+            },
         )
 
-        user_reference, _ = UserReference.objects.get_or_create(
-            user_uri=user_uri
-        )
+        user_reference, _ = UserReference.objects.get_or_create(user_uri=user_uri)
 
         AuthorizedStorageAccount.objects.update_or_create(
             external_storage_service=external_storage_service,
@@ -45,7 +45,7 @@ class OauthCallbackView(APIView):
             int_authorized_capabilities=[1],  # TODO: What should go here?
             defaults={
                 "_credentials": ExternalCredentials.from_api_blob(data),
-            }
+            },
         )
 
         return redirect(external_storage_service.api_base_url)

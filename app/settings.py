@@ -148,3 +148,7 @@ STATIC_URL = "/static/"
 EXCHANGE_NAME = (
     "account_status_changes"  # Assuming this is the exchange name used for publishing
 )
+
+import base64
+
+STATE_KEY = base64.b64encode(b'1' * 32)

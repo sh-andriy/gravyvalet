@@ -1,5 +1,4 @@
 from functools import cached_property
-from secrets import token_urlsafe
 from typing import Iterator
 
 from django.contrib.postgres.fields import ArrayField
@@ -23,6 +22,9 @@ from addon_toolkit import (
     AddonImp,
     AddonOperationImp,
 )
+from cryptography.fernet import Fernet
+from app.settings import STATE_KEY
+cipher_suite = Fernet(STATE_KEY)
 
 
 class AuthorizedStorageAccount(AddonsServiceBaseModel):
@@ -141,6 +143,15 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             redirect_uri=self.external_service.auth_callback_url,
         )
 
+    @property
+    def state_url_safe(self):
+        # Encrypt the state token using AES encryption
+        state_token_plain = f"{self.external_storage_service.id},{self.owner_uri}".encode()  # Convert to bytes
+        encrypted_token = cipher_suite.encrypt(state_token_plain)
+        print(encrypted_token.decode())
+        return encrypted_token.decode()  # Convert bytes to string before returning
+
+
     @transaction.atomic
     def initiate_oauth2_flow(self, authorized_scopes=None):
         if self.credentials_format is not CredentialsFormats.OAUTH2:
@@ -149,18 +160,12 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         # Since the token is UNIQUE in the database, this will result in a ValidationError
         # Keep on trying if that happens (or maybe find a smrter solution)
         while True:
-            try:
-                self.oauth2_token_metadata = OAuth2TokenMetadata.objects.create(
-                    authorized_scopes=authorized_scopes
-                    or self.external_service.supported_scopes,
-                    state_token=token_urlsafe(16),
-                )
-            except ValidationError as e:
-                if "state_token" in e.error_dict:
-                    continue
-            else:
-                self.save()
-                return
+            self.oauth2_token_metadata = OAuth2TokenMetadata.objects.create(
+                authorized_scopes=self.external_service.supported_scopes,
+                state_token=self.state_url_safe,
+            )
+            self.save()
+            return
 
     @transaction.atomic
     def set_credentials(self, api_credentials_blob):

@@ -39,4 +39,4 @@ def validate_storage_imp_number(value):
         if _imp.addon_protocol.protocol_cls is not StorageAddonProtocol:
             raise ValidationError(f"expected storage imp (got {_imp})")
     else:
-        print(f'zero imp ESS for tests ')
+        print(f"zero imp ESS for tests ")

@@ -45,6 +45,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
             "client_id": self.oauth2_client_config.client_id,
             "client_secret": self.oauth2_client_config.client_secret,
             "grant_type": "authorization_code",
+            "response_type": "code",
             "code": code,
         }
         url = urllib.parse.urljoin(self.api_base_url, "oauth2/token/")

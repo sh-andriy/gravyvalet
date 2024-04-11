@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.shortcuts import redirect
+from django.shortcuts import redirect, reverse
 from django.utils import timezone
 from rest_framework.views import APIView
 
@@ -23,15 +23,15 @@ class OauthCallbackView(APIView):
         ess_id, user_uri = state.split(",")
         external_storage_service = ExternalStorageService.objects.get(id=ess_id)
         data = external_storage_service.get_oauth_data_from_callback(request)
-
-        if isinstance(data["scope"], str):
-            data["scope"] = [data["scope"]]
+        scope = data.get("scope", ["default_scope"])
+        if isinstance(scope, str):
+            scope = list(scope)
 
         OAuth2TokenMetadata.objects.update_or_create(
             state_token=state,
             defaults={
-                "refresh_token": data["access_token"],
-                "authorized_scopes": data["scope"],
+                "refresh_token": data.get("refresh_token") or data["access_token"],
+                "authorized_scopes": scope,
                 "access_token_expiration": timezone.now()
                 + timedelta(seconds=data["expires_in"]),
             },
@@ -48,4 +48,6 @@ class OauthCallbackView(APIView):
             },
         )
 
-        return redirect(external_storage_service.api_base_url)
+        return redirect(
+            reverse("user-references-detail", kwargs={"pk": user_reference.pk})
+        )

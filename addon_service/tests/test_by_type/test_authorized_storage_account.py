@@ -219,6 +219,17 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
         )
         self.assertEqual(_resp.status_code, 400)
 
+    def test_post__api_base_url__invalid__bad_url(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.HOSTED
+        )
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(external_service=service, api_root="not.a.url"),
+            format="vnd.api+json",
+        )
+        self.assertEqual(_resp.status_code, 400)
+
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
             self._detail_path: {"post"},

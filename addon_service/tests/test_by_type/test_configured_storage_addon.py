@@ -178,3 +178,33 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
                 authorized_resource__resource_uri=new_resource_uri
             ).exists()
         )
+
+
+class TestWBConfigRetrieval(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls._configured_storage_addon = test_factories.ConfiguredStorageAddonFactory()
+        cls._user = cls._configured_storage_addon.account_owner
+        cls._authorized_account = cls._configured_storage_addon.base_account
+        token_metadata = cls._authorized_account.oauth2_token_metadata
+        token_metadata.state_token = None
+        token_metadata.refresh_token = "refresh"
+        token_metadata.save()
+        cls._authorized_account.set_credentials({"access_token": "access"})
+
+    def test_get_waterbutler_config(self):
+        response = self.client.get(
+            reverse(
+                "configured-storage-addons-waterbutler-config",
+                kwargs={
+                    "pk": self._configured_storage_addon.pk,
+                },
+            )
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        with self.subTest("Confirm Credentials"):
+            self.assertEqual(response.data["credentials"], {"token": "access"})
+        with self.subTest("Confirm Settings"):
+            root_folder = self._configured_storage_addon.root_folder
+            self.assertEqual(response.data["settings"], {"folder": root_folder})

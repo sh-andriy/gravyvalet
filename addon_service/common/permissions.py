@@ -61,3 +61,10 @@ class SessionUserMayAccessInvocation(permissions.BasePermission):
 class SessionUserMayInvokeThruAddon(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         raise NotImplementedError  # TODO: check invoked operation is allowed
+
+
+class OSFOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if __debug__:
+            return True
+        return False  # TODO: check hmac signed certs `n stuff

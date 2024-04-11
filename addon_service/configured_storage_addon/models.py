@@ -93,6 +93,10 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
             for _operation_imp in self.iter_connected_operations()
         ]
 
+    @property
+    def credentials(self):
+        return self.base_account.credentials
+
     def iter_connected_operations(self) -> Iterator[AddonOperationImp]:
         _connected_caps = self.connected_capabilities
         for _operation_imp in self.base_account.iter_authorized_operations():

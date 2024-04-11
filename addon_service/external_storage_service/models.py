@@ -1,6 +1,3 @@
-import urllib.parse
-
-import httpx
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -36,25 +33,6 @@ class ExternalStorageService(AddonsServiceBaseModel):
         on_delete=models.CASCADE,
         related_name="external_storage_services",
     )
-
-    def get_oauth_data_from_callback(self, request):
-        code = request.GET.get("code")
-
-        query_params = {
-            "redirect_uri": self.auth_callback_url,
-            "client_id": self.oauth2_client_config.client_id,
-            "client_secret": self.oauth2_client_config.client_secret,
-            "grant_type": "authorization_code",
-            "response_type": "code",
-            "code": code,
-        }
-        url = urllib.parse.urljoin(self.api_base_url, "oauth2/token/")
-
-        with httpx.Client() as client:
-            resp = client.post(url, data=query_params)
-
-        resp.raise_for_status()
-        return resp.json()
 
     class Meta:
         verbose_name = "External Storage Service"

@@ -207,4 +207,10 @@ class TestWBConfigRetrieval(APITestCase):
             self.assertEqual(response.data["credentials"], {"token": "access"})
         with self.subTest("Confirm Settings"):
             root_folder = self._configured_storage_addon.root_folder
-            self.assertEqual(response.data["settings"], {"folder": root_folder})
+            self.assertEqual(
+                response.data["settings"],
+                {
+                    "folder": root_folder,
+                    "service": self._configured_storage_addon.external_service.service_name,
+                },
+            )

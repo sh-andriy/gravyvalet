@@ -36,6 +36,7 @@ def _serialize_waterbutler_settings(configured_storage_addon):
     """An ugly compatibility layer between GravyValet and WaterButler."""
     return {
         "folder": configured_storage_addon.root_folder,
+        # This is required for WB to support multiple connected addons for the same service
         "service": _get_wb_provider_name_from_service_name(
             configured_storage_addon.external_service
         ),
@@ -43,6 +44,8 @@ def _serialize_waterbutler_settings(configured_storage_addon):
 
 
 def _get_wb_provider_name_from_service_name(external_storage_service):
-    match external_storage_service.name:
+    match external_storage_service.service_name:
         case "boxdotcom":
             return "box"
+        case _:
+            return external_storage_service.service_name

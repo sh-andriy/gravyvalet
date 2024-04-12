@@ -11,14 +11,10 @@ from addon_service.common.permissions import (
     SessionUserIsReferencedResourceAdmin,
 )
 from addon_service.common.viewsets import RetrieveWriteViewSet
-from addon_service.credentials import utils as credentials_utils
+from addon_service.common.waterbutler_compat import WaterButlerConfigurationSerializer
 
 from .models import ConfiguredStorageAddon
-from .serializers import (
-    ConfiguredStorageAddonSerializer,
-    WaterButlerConfigurationSerializer,
-)
-from .utils import serialize_waterbutler_settings
+from .serializers import ConfiguredStorageAddonSerializer
 
 
 class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
@@ -51,12 +47,6 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
     )
     def get_wb_config(self, request, pk=None):
         addon = self.get_object()
-        serializer_data = {
-            "credentials": credentials_utils.format_credentials_for_waterbutler(
-                addon.credentials
-            ),
-            "settings": serialize_waterbutler_settings(addon),
-        }
-        serialized_config = WaterButlerConfigurationSerializer(data=serializer_data)
-        serialized_config.is_valid()
-        return Response(serialized_config.data)
+        return Response(
+            WaterButlerConfigurationSerializer(configured_storage_addon=addon).data
+        )

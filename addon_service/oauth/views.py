@@ -1,11 +1,13 @@
-from django.shortcuts import redirect
+from http import HTTPStatus
+
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from addon_service.models import OAuth2TokenMetadata
 from addon_service.oauth import utils as oauth_utils
 
 
-class OauthCallbackView(APIView):
+class Oauth2CallbackView(APIView):
     """
     Handles oauth callbacks for the GV
 
@@ -19,4 +21,4 @@ class OauthCallbackView(APIView):
         oauth_utils.perform_oauth2_token_exchange(
             account, authorization_code=request.GET["code"]
         )
-        return redirect("/")
+        return Response(status_code=HTTPStatus.OK)

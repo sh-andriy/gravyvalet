@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 
 from addon_service.common.base_model import AddonsServiceBaseModel
 
@@ -39,6 +42,18 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
     access_token_expiration = models.DateTimeField(null=True, blank=True)
     # The scopes associated with the access token stored in Credentials
     authorized_scopes = ArrayField(models.CharField(), null=False)
+
+    def update_from_token_endpoint_response(self, response_json):
+        self.state_token = (
+            None  # This should never be set following a successful token exchange
+        )
+        self.refresh_token = response_json.get("refresh_token")
+        self.access_token_expiration = timezone.now() + timedelta(
+            seconds=response_json["expires_in"]
+        )
+        if "scopes" in response_json:
+            self.authorized_scopes = response_json["scopes"]
+        self.save()
 
     class Meta:
         verbose_name = "OAuth2 Token Metadata"

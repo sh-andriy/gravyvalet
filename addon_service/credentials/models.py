@@ -45,14 +45,11 @@ class ExternalCredentials(AddonsServiceBaseModel):
             return None
         return self.authorized_accounts[0].external_service.credentials_format
 
-    def _update(self, api_blob, oauth_token_blob):
+    def _update(self, api_blob):
         """Update credentials based on API.
         This should only be called from Authorized*Account.set_credentials()
         """
-        if api_blob:
-            self.credentials_blob = dict(api_blob)
-        elif oauth_token_blob:
-            self.credentials_blob = {"access_token", oauth_token_blob["access_token"]}
+        self.credentials_blob = dict(api_blob)
         self.save()
 
     def as_data(self):

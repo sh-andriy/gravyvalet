@@ -1,12 +1,23 @@
 import contextlib
+import dataclasses
+import secrets
 from collections import defaultdict
+from http import HTTPStatus
 from unittest.mock import patch
+from urllib.parse import (
+    parse_qs,
+    urljoin,
+    urlparse,
+)
 
 from django.conf import settings
 from django.contrib.sessions.backends.db import SessionStore
+from django.urls import reverse
 from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
 from rest_framework_json_api.utils import get_resource_type_from_model
+
+from addon_service.common.aiohttp_session import get_aiohttp_client_session
 
 
 class MockOSF:
@@ -82,6 +93,83 @@ class MockOSF:
         if required_permission.lower() not in permissions:
             raise drf_exceptions.PermissionDenied
         return uri  # mimicking behavior from the check being mocked
+
+
+class MockExternalService:
+    ROUTES = tuple(
+        ("token_endpoint", "oauth/token"),
+    )
+
+    def __init__(self, external_service, client):
+        self.auth_url = external_service.auth_uri
+        api_base_url = external_service.api_base_url
+        self._static_access_token = None
+        self._static_refresh_token = None
+        self.local_routes = {
+            urlparse(urljoin(api_base_url, subpath)).path: endpoint_name
+            for endpoint_name, subpath in self.ROUTES
+        }
+
+    def set_internal_client(self, client):
+        """Attach a DRF APIClient for making requests internally"""
+        self._internal_client = client
+
+    def configure_static_tokens(self, access=None, refresh=None):
+        self._static_access_token = access
+        self._static_refresh_token = refresh
+
+    @contextlib.contextmanager
+    def mocking(self):
+        client_session = get_aiohttp_client_session()
+        with patch.object(
+            client_session,
+            "get",
+            side_effect=self._route_get,
+        ), patch.object(
+            client_session,
+            "post",
+            side_effect=self._route_post,
+        ):
+            yield self
+
+    def _route_get(self, url, *args, **kwargs):
+        if url.startswith(self.auth_url):
+            state_token = parse_qs(urlparse(url).query)["state"]
+            self._initiate_oauth_exchange(state_token=state_token)
+
+        raise RuntimeError(f"Received unrecognized endpoint {url}")
+
+    def _initiate_oauth_exchange(self, state_token):
+        self._internal_client.get(
+            reverse("oauth2-callback"), {"state": state_token, "code": "authgrant"}
+        )
+        return _MockResponse()
+
+    def _route_post(self, url, *args, **kwargs):
+        endpoint_name = self.local_routes.get(urlparse(url).path)
+        match endpoint_name:
+            case "token_endpoint":
+                return _MockResponse(
+                    status_code=HTTPStatus.CREATED,
+                    data={
+                        "access_token": self._static_access_token
+                        or secrets.token_hex(12),
+                        "refresh_token": self._static_refresh_token
+                        or secrets.token_hex(12),
+                        "expires_in": 3600,
+                    },
+                )
+            case _:
+                raise RuntimeError(f"Received unrecognized endpoint {url}")
+
+
+@dataclasses.dataclass
+class _MockResponse:
+    status_code: HTTPStatus = HTTPStatus.OK
+    data: dict | None
+
+    def json(self):
+        return self.data
 
 
 # TODO: use this more often in tests

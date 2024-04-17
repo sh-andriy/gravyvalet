@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from asgiref.sync import async_to_sync
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,8 +18,10 @@ class Oauth2CallbackView(APIView):
     def get(self, request):
         state = request.GET.get("state")
         token_metadata = OAuth2TokenMetadata.objects.get(state_token=state)
-        account = token_metadata.authorized_storage_accounts.first()
-        oauth_utils.perform_oauth2_token_exchange(
-            account, authorization_code=request.GET["code"]
+        token_response_json = async_to_sync(oauth_utils.request_access_token)(
+            token_metadata, authorization_code=request.GET["code"]
+        )
+        oauth_utils.update_from_token_endpoint_response(
+            token_metadata, token_response_json
         )
         return Response(status_code=HTTPStatus.OK)

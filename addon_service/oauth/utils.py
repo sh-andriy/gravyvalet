@@ -1,3 +1,4 @@
+from datetime import timedelta
 from http import HTTPStatus
 from secrets import token_urlsafe
 from urllib.parse import (
@@ -7,7 +8,10 @@ from urllib.parse import (
     urlunparse,
 )
 
-import httpx
+from django.db import transaction
+from django.utils import timezone
+
+from addon_service.common.aiohttp_session import get_aiohttp_client_session
 
 
 def build_auth_url(
@@ -29,30 +33,21 @@ def generate_state_token(token_length=16):
     return token_urlsafe(token_length)
 
 
-def perform_oauth_token_exchange(account, authorization_code=None, refresh_token=None):
-    with httpx.Client as client:
-        token_response = client.post(
-            _build_token_exchange_url(
-                account=account,
-                authorization_code=authorization_code,
-                refresh_token=refresh_token,
-            )
+async def request_access_token(token_metadata, authorization_code=None):
+    client = get_aiohttp_client_session()
+    async with client.post(
+        _build_token_exchange_url(
+            token_metadata=token_metadata,
+            authorization_code=authorization_code,
         )
-    if not HTTPStatus(token_response.status_code).is_success():
-        raise RuntimeError  # TODO: something smarter here
-
-    response_json = token_response.json()
-    account.oauth2_token_metadata.update_from_token_endpoint_response(response_json)
-    account.set_credentials(token_response_blob=response_json)
+    ) as token_response:
+        if not HTTPStatus(token_response.status_code).is_success():
+            raise RuntimeError  # TODO: something smarter here
+        return await token_response.json()
 
 
-def _build_token_exchange_url(account, authorization_code=None, refresh_token=None):
-    if bool(authorization_code) == bool(refresh_token):
-        raise ValueError(
-            "Must specify exactly one of authorization_code or refresh_token"
-        )
-
-    oauth2_client_config = account.external_service.oauth2_client_config
+def _build_token_exchange_url(token_metadata, authorization_code=None):
+    oauth2_client_config = token_metadata.client_config
     params = {
         "grant_type": "authorization_code" if authorization_code else "refresh_token",
         "client_id": oauth2_client_config.client_id,
@@ -62,10 +57,24 @@ def _build_token_exchange_url(account, authorization_code=None, refresh_token=No
         params["code"] = authorization_code
         params["redirect_uri"] = oauth2_client_config.auth_callback_url
     else:
-        params["refresh_token"] = refresh_token
+        params["refresh_token"] = token_metadata.refresh_token
 
+    api_url = token_metadata.linked_accounts[0].api_base_url
     return urlunparse(
-        urlparse(urljoin(account.api_base_url, "oauth/token"))._replace(
-            query=urlencode(params)
-        )
+        urlparse(urljoin(api_url, "oauth/token"))._replace(query=urlencode(params))
     )
+
+
+@transaction.atomic
+def update_from_token_endpoint_response(token_metadata, response_json):
+    token_metadata.update(
+        state_token=None,
+        refresh_token=response_json.get("refresh_token"),
+        access_token_expiration=timezone.now()
+        + timedelta(seconds=response_json["expires_in"]),
+    )
+    if "scopes" in response_json:
+        token_metadata.update(authorized_scopes=response_json["scopes"])
+
+    for account in token_metadata.linked_accounts:
+        account.set_credentials({"access_token": response_json["access_token"]})

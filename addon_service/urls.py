@@ -62,8 +62,7 @@ _register_viewset(views.UserReferenceViewSet)
 
 __all__ = ("urlpatterns",)
 
-urlpatterns = _router.urls
-
-urlpatterns += [
+urlpatterns = [
+    *_router.urls,
     path(r"oauth/callback/", views.Oauth2CallbackView.as_view(), name="oauth2-callback")
 ]

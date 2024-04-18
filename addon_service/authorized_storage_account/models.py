@@ -148,7 +148,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     @api_base_url.setter
     def api_base_url(self, value):
         self._api_base_url = value
-        self.save()  # validation happens here
 
     @transaction.atomic
     def initiate_oauth2_flow(self, authorized_scopes=None):

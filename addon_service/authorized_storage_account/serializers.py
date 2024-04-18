@@ -80,7 +80,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             user_uri=session_user_uri
         )
         try:
-            authorized_account = AuthorizedStorageAccount(
+            authorized_account = AuthorizedStorageAccount.objects.create(
                 external_storage_service=validated_data["external_storage_service"],
                 account_owner=account_owner,
                 authorized_capabilities=validated_data.get("authorized_capabilities"),

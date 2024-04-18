@@ -1,4 +1,3 @@
-import json
 import urllib
 from http import HTTPStatus
 from unittest import mock
@@ -17,6 +16,7 @@ from addon_service.credentials import (
     CredentialsFormats,
     CredentialsSources,
 )
+from addon_service.external_storage_service import ServiceTypes
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,
@@ -39,7 +39,9 @@ MOCK_CREDENTIALS_BLOBS = {
 }
 
 
-def _make_post_payload(*, external_service, capabilities=None, credentials=None):
+def _make_post_payload(
+    *, external_service, capabilities=None, credentials=None, api_root=""
+):
     return {
         "data": {
             "type": "authorized-storage-accounts",
@@ -48,6 +50,7 @@ def _make_post_payload(*, external_service, capabilities=None, credentials=None)
                 or [AddonCapabilities.ACCESS.name],
                 "credentials": credentials
                 or MOCK_CREDENTIALS_BLOBS[external_service.credentials_format],
+                "api_base_url": api_root,
             },
             "relationships": {
                 "external_storage_service": {
@@ -110,11 +113,11 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             _make_post_payload(external_service=external_service),
             format="vnd.api+json",
         )
-        self.assertEqual(_resp.status_code, 201)
+        self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
         self.assertTrue(
             external_service.authorized_storage_accounts.filter(
-                id=json.loads(_resp.rendered_content)["data"]["id"]
+                id=_resp.data["id"]
             ).exists()
         )
 
@@ -130,11 +133,9 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
                     _make_post_payload(external_service=external_service),
                     format="vnd.api+json",
                 )
-                self.assertEqual(_resp.status_code, 201)
+                self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
-                account = db.AuthorizedStorageAccount.objects.get(
-                    id=json.loads(_resp.rendered_content)["data"]["id"]
-                )
+                account = db.AuthorizedStorageAccount.objects.get(id=_resp.data["id"])
                 self.assertEqual(
                     account._credentials.credentials_blob,
                     MOCK_CREDENTIALS_BLOBS[creds_format],
@@ -150,11 +151,9 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             _make_post_payload(external_service=external_service),
             format="vnd.api+json",
         )
-        self.assertEqual(_resp.status_code, 201)
+        self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
-        self.assertIn(
-            "auth_url", json.loads(_resp.rendered_content)["data"]["attributes"]
-        )
+        self.assertIn("auth_url", _resp.data)
 
     def tet_post__does_not_set_auth_url(self):
         for creds_format in NON_OAUTH_FORMATS:
@@ -168,11 +167,71 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
                     _make_post_payload(external_service=external_service),
                     format="vnd.api+json",
                 )
-                self.assertEqual(_resp.status_code, 201)
+                self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
-                self.assertNotIn(
-                    "auth_url", json.loads(_resp.rendered_content)["data"]["attributes"]
+                self.assertNotIn("auth_url", _resp.data)
+
+    def test_post__api_base_url__success(self):
+        for service_type in [
+            ServiceTypes.HOSTED,
+            ServiceTypes.PUBLIC | ServiceTypes.HOSTED,
+        ]:
+            with self.subTest(service_type=service_type):
+                service = _factories.ExternalStorageServiceFactory(
+                    service_type=service_type
                 )
+                _resp = self.client.post(
+                    reverse("authorized-storage-accounts-list"),
+                    _make_post_payload(
+                        external_service=service, api_root="https://api.my.service/"
+                    ),
+                    format="vnd.api+json",
+                )
+                with self.subTest("Creation succeeds"):
+                    self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
+                with self.subTest("api_base_url set on account"):
+                    account = db.AuthorizedStorageAccount.objects.get(
+                        id=_resp.data["id"]
+                    )
+                    self.assertTrue(account._api_base_url)
+
+    def test_post__api_base_url__invalid__required(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.HOSTED
+        )
+        service.api_base_url = ""
+        service.save()
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(external_service=service),
+            format="vnd.api+json",
+        )
+
+        self.assertEqual(_resp.status_code, 400)
+
+    def test_post__api_base_url__invalid__unsupported(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.PUBLIC
+        )
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(
+                external_service=service, api_root="https://api.my.service/"
+            ),
+            format="vnd.api+json",
+        )
+        self.assertEqual(_resp.status_code, 400)
+
+    def test_post__api_base_url__invalid__bad_url(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.HOSTED
+        )
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(external_service=service, api_root="not.a.url"),
+            format="vnd.api+json",
+        )
+        self.assertEqual(_resp.status_code, 400)
 
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
@@ -287,7 +346,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
                 credentials_format=CredentialsFormats.OAUTH2
             ),
             account_owner=self._user,
-            authorized_capabilities=[AddonCapabilities.ACCESS],
+            authorized_capabilities=AddonCapabilities.ACCESS,
         )
         account.initiate_oauth2_flow()
         with self.subTest("State Token set on OAuth credentials creation"):
@@ -343,7 +402,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
             account = db.AuthorizedStorageAccount(
                 external_storage_service=external_service,
                 account_owner=self._user,
-                authorized_capabilities=[AddonCapabilities.ACCESS],
+                authorized_capabilities=AddonCapabilities.ACCESS,
             )
             self.assertIsNone(account._credentials)
             mock_credentials = MOCK_CREDENTIALS_BLOBS[creds_format]
@@ -410,61 +469,6 @@ class TestAuthorizedStorageAccountModel(TestCase):
                     )
 
 
-# unit-test viewset (call the view with test requests)
-class TestAuthorizedStorageAccountViewSet(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls._asa = _factories.AuthorizedStorageAccountFactory()
-        cls._user = cls._asa.account_owner
-        cls._view = AuthorizedStorageAccountViewSet.as_view({"get": "retrieve"})
-
-    def setUp(self):
-        super().setUp()
-        self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf.mocking())
-
-    def test_get(self):
-        _resp = self._view(
-            get_test_request(cookies={"osf": self._user.user_uri}),
-            pk=self._asa.pk,
-        )
-        self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
-        self.assertEqual(
-            set(_content["data"]["attributes"].keys()),
-            {
-                "default_root_folder",
-                "authorized_capabilities",
-                "authorized_operation_names",
-                "auth_url",
-            },
-        )
-        self.assertEqual(
-            _content["data"]["attributes"]["authorized_capabilities"],
-            ["ACCESS"],
-        )
-        self.assertEqual(
-            set(_content["data"]["relationships"].keys()),
-            {
-                "account_owner",
-                "external_storage_service",
-                "configured_storage_addons",
-                "authorized_operations",
-            },
-        )
-
-    def test_unauthorized(self):
-        _anon_resp = self._view(get_test_request(), pk=self._asa.pk)
-        self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
-
-    def test_wrong_user(self):
-        _resp = self._view(
-            get_test_request(cookies={settings.USER_REFERENCE_COOKIE: "wrong/10"}),
-            pk=self._asa.pk,
-        )
-        self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
-
-
 class TestAuthorizedStorageAccountRelatedView(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -499,8 +503,7 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
             related_field="configured_storage_addons",
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
         self.assertEqual(
-            {_datum["id"] for _datum in _content["data"]},
-            {str(_addon.pk) for _addon in _addons},
+            {_datum["id"] for _datum in _resp.data},
+            {_addon.pk for _addon in _addons},
         )

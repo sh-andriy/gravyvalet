@@ -62,6 +62,7 @@ class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ConfiguredStorageAddon
         fields = [
+            "id",
             "url",
             "root_folder",
             "base_account",

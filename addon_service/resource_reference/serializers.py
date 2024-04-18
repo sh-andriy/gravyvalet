@@ -30,6 +30,7 @@ class ResourceReferenceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ResourceReference
         fields = [
+            "id",
             "url",
             "resource_uri",
             "configured_storage_addons",

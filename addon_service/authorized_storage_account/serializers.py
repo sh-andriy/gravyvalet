@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as ModelValidationError
 from rest_framework.serializers import JSONField
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
@@ -46,6 +47,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         read_only=True,
     )
     auth_url = serializers.CharField(read_only=True)
+    api_base_url = serializers.URLField(allow_blank=True, required=False)
     account_owner = ReadOnlyResourceRelatedField(
         many=False,
         queryset=UserReference.objects.all(),
@@ -80,11 +82,16 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         account_owner, _ = UserReference.objects.get_or_create(
             user_uri=session_user_uri
         )
-        authorized_account = AuthorizedStorageAccount(
-            external_storage_service=validated_data["external_storage_service"],
-            account_owner=account_owner,
-            authorized_capabilities=validated_data.get("authorized_capabilities"),
-        )
+        try:
+            authorized_account = AuthorizedStorageAccount.objects.create(
+                external_storage_service=validated_data["external_storage_service"],
+                account_owner=account_owner,
+                authorized_capabilities=validated_data.get("authorized_capabilities"),
+                api_base_url=validated_data.get("api_base_url", ""),
+            )
+        except ModelValidationError as e:
+            raise serializers.ValidationError(e)
+
         if authorized_account.credentials_format is CredentialsFormats.OAUTH2:
             authorized_account.initiate_oauth2_flow(
                 validated_data.get("authorized_scopes")
@@ -103,6 +110,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             "id",
             "url",
             "account_owner",
+            "api_base_url",
             "auth_url",
             "authorized_capabilities",
             "authorized_operations",

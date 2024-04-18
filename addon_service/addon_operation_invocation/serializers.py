@@ -24,6 +24,7 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
     class Meta:
         model = AddonOperationInvocation
         fields = [
+            "id",
             "url",
             "invocation_status",
             "operation_kwargs",

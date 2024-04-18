@@ -50,18 +50,23 @@ class TestUserReferenceAPI(APITestCase):
         _resp = self.client.get(self._detail_path)
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
         _content = json.loads(_resp.rendered_content)
-        self.assertEqual(
-            set(_content["data"]["attributes"].keys()),
-            {
-                "user_uri",
-            },
-        )
-        self.assertEqual(
-            set(_content["data"]["relationships"].keys()),
-            {
-                "authorized_storage_accounts",
-            },
-        )
+        with self.subTest("Confirm expected attributes"):
+            self.assertEqual(
+                _resp.data.keys(),
+                {
+                    "id",
+                    "url",
+                    "user_uri",
+                },
+            )
+        with self.subTest("Confirm expected relationships"):
+            self.assertEqual(
+                # ToMany relationships do not appear in response.data
+                _content["data"]["relationships"].keys(),
+                {
+                    "authorized_storage_accounts",
+                },
+            )
 
     def test_methods_not_allowed(self):
         _methods_not_allowed = {

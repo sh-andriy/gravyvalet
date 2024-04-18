@@ -1,8 +1,9 @@
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.urls import reverse
-from rest_framework import APITestCase
+from rest_framework.test import APITestCase
 
-from addon_service.common.aiohttp_session import get_aiohttp_client_session
+from addon_service.common.aiohttp_session import get_aiohttp_client_session_sync
 from addon_service.credentials import CredentialsFormats
 from addon_service.models import AuthorizedStorageAccount
 from addon_service.tests import (
@@ -67,16 +68,16 @@ class TestOAuth2Flow(APITestCase):
 
         with self.subTest("Account Initial Conditions"):
             self.assertIsNotNone(_account.auth_url)
-            self.assertIsNone(_account.oath2_token_metadata.refresh_token)
+            self.assertIsNone(_account.oauth2_token_metadata.refresh_token)
             self.assertIsNone(_account.credentials)
 
         self._mock_service.set_internal_client(self.client)
-        aiohttp_client_session = get_aiohttp_client_session()
+        aiohttp_client_session = get_aiohttp_client_session_sync()
         with self._mock_service.mocking():
-            async with aiohttp_client_session.get(self._account.auth_url) as _auth_resp:
-                await _auth_resp.status_code
+            async_to_sync(aiohttp_client_session.get)(_account.auth_url)
 
         _account.refresh_from_db()
+        del _account.credentials  # clear cache
         with self.subTest("Credentials set post-exchange"):
             self.assertEqual(_account.credentials.access_token, MOCK_ACCESS_TOKEN)
         with self.subTest("Refresh token set post-exchange"):

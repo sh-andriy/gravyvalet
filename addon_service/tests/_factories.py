@@ -27,6 +27,7 @@ class OAuth2ClientConfigFactory(DjangoModelFactory):
         model = db.OAuth2ClientConfig
 
     auth_uri = factory.Sequence(lambda n: f"{settings.AUTH_URI_ID}{n}")
+    auth_callback_url = "https://osf.io/auth/callback"
     client_id = factory.Faker("word")
     client_secret = factory.Faker("word")
 
@@ -54,7 +55,6 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     service_name = factory.Faker("word")
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
-    auth_callback_url = "https://osf.io/auth/callback"
     api_base_url = factory.Sequence(lambda n: f"http://api.example/{n}")
     int_addon_imp = get_imp_by_name("BLARG").imp_number
     oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)

@@ -77,6 +77,10 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         return self.external_storage_service
 
     @property
+    def api_base_url(self):
+        return self.external_service.api_base_url
+
+    @property
     def credentials_format(self):
         return self.external_service.credentials_format
 
@@ -138,7 +142,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             client_id=self.external_service.oauth2_client_config.client_id,
             state_token=state_token,
             authorized_scopes=self.oauth2_token_metadata.authorized_scopes,
-            redirect_uri=self.external_service.auth_callback_url,
+            redirect_uri=self.external_service.oauth2_client_config.auth_callback_url,
         )
 
     @transaction.atomic

@@ -94,6 +94,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     class Meta:
         model = AuthorizedStorageAccount
         fields = [
+            "id",
             "url",
             "account_owner",
             "auth_url",

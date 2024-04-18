@@ -251,7 +251,9 @@ class TestAuthorizedStorageAccountModel(TestCase):
             "state": [self._asa.oauth2_token_metadata.state_token],
             "client_id": [self._asa.external_service.oauth2_client_config.client_id],
             "scope": self._asa.oauth2_token_metadata.authorized_scopes,
-            "redirect_uri": [self._asa.external_service.auth_callback_url],
+            "redirect_uri": [
+                self._asa.external_service.oauth2_client_config.auth_callback_url
+            ],
             "response_type": ["code"],
         }
         self.assertEqual(expected_query_params, urllib.parse.parse_qs(parsed_url.query))

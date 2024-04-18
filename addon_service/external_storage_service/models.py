@@ -24,7 +24,6 @@ class ExternalStorageService(AddonsServiceBaseModel):
     )
     max_concurrent_downloads = models.IntegerField(null=False)
     max_upload_mb = models.IntegerField(null=False)
-    auth_callback_url = models.URLField(null=False, default="")
     supported_scopes = ArrayField(models.CharField(), null=True, blank=True)
     api_base_url = models.URLField(null=False)
 

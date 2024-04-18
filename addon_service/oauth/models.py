@@ -19,6 +19,7 @@ class OAuth2ClientConfig(AddonsServiceBaseModel):
 
     # The base uri for initiating OAuth2 credentials exchanges
     auth_uri = models.URLField(null=False)
+    auth_callback_url = models.URLField(null=False)
     # The registered ID of the OAuth client
     client_id = models.CharField(null=True)
     client_secret = models.CharField(null=True)
@@ -52,7 +53,7 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
 
     @property
     def client_details(self):
-        return self.linked_accounts[0].external_service.oauth2_client_details
+        return self.linked_accounts[0].external_service.oauth2_client_config
 
     def update_from_token_endpoint_response(self, response_json):
         # State token should never be set following a successful token exchange

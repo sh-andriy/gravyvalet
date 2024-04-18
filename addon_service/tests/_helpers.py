@@ -10,6 +10,7 @@ from urllib.parse import (
     urlparse,
 )
 
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.sessions.backends.db import SessionStore
 from django.urls import reverse
@@ -17,7 +18,7 @@ from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
 from rest_framework_json_api.utils import get_resource_type_from_model
 
-from addon_service.common.aiohttp_session import get_aiohttp_client_session
+from addon_service.common.aiohttp_session import get_aiohttp_client_session_sync
 
 
 class MockOSF:
@@ -96,18 +97,16 @@ class MockOSF:
 
 
 class MockExternalService:
-    ROUTES = tuple(
-        ("token_endpoint", "oauth/token"),
-    )
+    ROUTES = (("token_endpoint", "oauth/token"),)
 
-    def __init__(self, external_service, client):
+    def __init__(self, external_service):
         self.auth_url = external_service.auth_uri
         api_base_url = external_service.api_base_url
         self._static_access_token = None
         self._static_refresh_token = None
-        self.local_routes = {
+        self._local_routes = {
             urlparse(urljoin(api_base_url, subpath)).path: endpoint_name
-            for endpoint_name, subpath in self.ROUTES
+            for (endpoint_name, subpath) in self.ROUTES
         }
 
     def set_internal_client(self, client):
@@ -120,7 +119,7 @@ class MockExternalService:
 
     @contextlib.contextmanager
     def mocking(self):
-        client_session = get_aiohttp_client_session()
+        client_session = get_aiohttp_client_session_sync()
         with patch.object(
             client_session,
             "get",
@@ -132,21 +131,21 @@ class MockExternalService:
         ):
             yield self
 
-    def _route_get(self, url, *args, **kwargs):
+    async def _route_get(self, url, *args, **kwargs):
         if url.startswith(self.auth_url):
             state_token = parse_qs(urlparse(url).query)["state"]
-            self._initiate_oauth_exchange(state_token=state_token)
+            await self._initiate_oauth_exchange(state_token=state_token)
+        else:
+            raise RuntimeError(f"Received unrecognized endpoint {url}")
 
-        raise RuntimeError(f"Received unrecognized endpoint {url}")
-
-    def _initiate_oauth_exchange(self, state_token):
-        self._internal_client.get(
+    async def _initiate_oauth_exchange(self, state_token):
+        await sync_to_async(self._internal_client.get)(
             reverse("oauth2-callback"), {"state": state_token, "code": "authgrant"}
         )
         return _MockResponse()
 
-    def _route_post(self, url, *args, **kwargs):
-        endpoint_name = self.local_routes.get(urlparse(url).path)
+    async def _route_post(self, url, *args, **kwargs):
+        endpoint_name = self._local_routes.get(urlparse(url).path)
         match endpoint_name:
             case "token_endpoint":
                 return _MockResponse(
@@ -166,7 +165,7 @@ class MockExternalService:
 @dataclasses.dataclass
 class _MockResponse:
     status_code: HTTPStatus = HTTPStatus.OK
-    data: dict | None
+    data: dict | None = None
 
     def json(self):
         return self.data

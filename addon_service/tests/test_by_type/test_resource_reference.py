@@ -128,19 +128,17 @@ class TestResourceReferenceViewSet(TestCase):
             pk=self._resource.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
-        self.assertEqual(
-            set(_content["data"]["attributes"].keys()),
-            {
-                "resource_uri",
-            },
-        )
-        self.assertEqual(
-            set(_content["data"]["relationships"].keys()),
-            {
-                "configured_storage_addons",
-            },
-        )
+        with self.subTest("Confirm expected attributes"):
+            self.assertEqual(
+                # ToMany relationships do not show up in response.data
+                _resp.data.keys(),
+                {"id", "url", "resource_uri"},
+            )
+        with self.subTest("Confirm expected relationships"):
+            self.assertEqual(
+                json.loads(_resp.rendered_content)["data"]["relationships"].keys(),
+                {"configured_storage_addons"},
+            )
 
     def test_unauthorized__private_resource(self):
         self._mock_osf.configure_resource_visibility(

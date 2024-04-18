@@ -1,4 +1,3 @@
-import json
 from http import HTTPStatus
 
 from django.core.exceptions import ValidationError
@@ -118,23 +117,27 @@ class TestExternalStorageServiceViewSet(TestCase):
             pk=self._ess.pk,
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
-        self.assertEqual(
-            set(_content["data"]["attributes"].keys()),
-            {
-                "auth_uri",
-                "max_concurrent_downloads",
-                "max_upload_mb",
-                "credentials_format",
-                "service_name",
-            },
-        )
-        self.assertEqual(
-            set(_content["data"]["relationships"].keys()),
-            {
-                "addon_imp",
-            },
-        )
+
+        with self.subTest("Confirm expected keys"):
+            self.assertEqual(
+                _resp.data.keys(),
+                {
+                    "auth_uri",
+                    "max_concurrent_downloads",
+                    "max_upload_mb",
+                    "credentials_format",
+                    "name",
+                    "id",
+                    "addon_imp",
+                    "url",
+                },
+            )
+        with self.subTest("Confirm expected relationships"):
+            relationship_fields = {
+                key for key, value in _resp.data.items() if isinstance(value, dict)
+            }
+            self.assertEqual(relationship_fields, {"addon_imp"})
+            self.assertEqual
 
     def test_unauthorized(self):
         """Is public resource Unauth is OK!"""

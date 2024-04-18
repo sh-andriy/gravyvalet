@@ -2,7 +2,6 @@ from functools import cached_property
 from secrets import token_urlsafe
 from typing import Iterator
 
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import (
     models,
@@ -24,6 +23,11 @@ from addon_toolkit import (
     AddonOperationImp,
 )
 
+from .validators import (
+    validate_api_base_url,
+    validate_oauth_state,
+)
+
 
 class AuthorizedStorageAccount(AddonsServiceBaseModel):
     """Model for descirbing a user's account on an ExternalStorageService.
@@ -33,10 +37,11 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     """
 
     account_name = models.CharField(null=False, blank=True, default="")
-    int_authorized_capabilities = ArrayField(
-        models.IntegerField(validators=[validate_addon_capability])
+    int_authorized_capabilities = models.IntegerField(
+        validators=[validate_addon_capability]
     )
     default_root_folder = models.CharField(blank=True)
+    _api_base_url = models.URLField(blank=True)
 
     external_storage_service = models.ForeignKey(
         "addon_service.ExternalStorageService",
@@ -87,19 +92,14 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         return None
 
     @property
-    def authorized_capabilities(self) -> list[AddonCapabilities]:
+    def authorized_capabilities(self) -> AddonCapabilities:
         """get the enum representation of int_authorized_capabilities"""
-        return [
-            AddonCapabilities(_int_capability)
-            for _int_capability in self.int_authorized_capabilities
-        ]
+        return AddonCapabilities(self.int_authorized_capabilities)
 
     @authorized_capabilities.setter
-    def authorized_capabilities(self, new_capabilities: list[AddonCapabilities]):
+    def authorized_capabilities(self, new_capabilities: AddonCapabilities):
         """set int_authorized_capabilities without caring it's int"""
-        self.int_authorized_capabilities = [
-            AddonCapabilities(_cap).value for _cap in new_capabilities
-        ]
+        self.int_authorized_capabilities = new_capabilities.value
 
     @property
     def owner_uri(self) -> str:
@@ -141,6 +141,14 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             redirect_uri=self.external_service.auth_callback_url,
         )
 
+    @property
+    def api_base_url(self):
+        return self._api_base_url or self.external_service.api_base_url
+
+    @api_base_url.setter
+    def api_base_url(self, value):
+        self._api_base_url = value
+
     @transaction.atomic
     def initiate_oauth2_flow(self, authorized_scopes=None):
         if self.credentials_format is not CredentialsFormats.OAUTH2:
@@ -180,18 +188,5 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     def clean(self, *args, **kwargs):
         super().clean(*args, **kwargs)
-        if (
-            self.credentials_format is not CredentialsFormats.OAUTH2
-            or not self.oauth2_token_metadata
-        ):
-            return
-
-        # Is this too heavy weight?
-        if bool(self.credentials) == bool(self.oauth2_token_metadata.state_token):
-            raise ValidationError(
-                "OAuth2 accounts must assign exactly one of state_token and access_token"
-            )
-        if self.credentials and not self.oauth2_token_metadata.refresh_token:
-            raise ValidationError(
-                "OAuth2 accounts with an access token must have a refresh token"
-            )
+        validate_api_base_url(self)
+        validate_oauth_state(self)

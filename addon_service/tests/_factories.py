@@ -5,6 +5,7 @@ from factory.django import DjangoModelFactory
 from addon_service import models as db
 from addon_service.addon_imp.known import get_imp_by_name
 from addon_service.credentials import CredentialsFormats
+from addon_service.external_storage_service import ServiceTypes
 from addon_toolkit import AddonCapabilities
 
 
@@ -50,25 +51,31 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     class Meta:
         model = db.ExternalStorageService
 
-    service_name = factory.Faker("word")
+    name = factory.Faker("word")
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
     auth_callback_url = "https://osf.io/auth/callback"
-    api_base_url = factory.Sequence(lambda n: f"http://api.example/{n}")
     int_addon_imp = get_imp_by_name("BLARG").imp_number
     oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)
     supported_scopes = ["service.url/grant_all"]
 
     @classmethod
-    def _create(cls, model_class, credentials_format=None, *args, **kwargs):
-        int_credentials_format = (
-            credentials_format.value
-            if credentials_format
-            else CredentialsFormats.OAUTH2.value
-        )
+    def _create(
+        cls,
+        model_class,
+        credentials_format=CredentialsFormats.OAUTH2,
+        service_type=ServiceTypes.PUBLIC,
+        *args,
+        **kwargs,
+    ):
+        api_base_url = ""
+        if ServiceTypes.PUBLIC in service_type:
+            api_base_url = "https://api.example.url"
         return super()._create(
             model_class=model_class,
-            int_credentials_format=int_credentials_format,
+            int_credentials_format=credentials_format.value,
+            int_service_type=service_type.value,
+            api_base_url=api_base_url,
             *args,
             **kwargs,
         )
@@ -79,7 +86,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         model = db.AuthorizedStorageAccount
 
     default_root_folder = "/"
-    authorized_capabilities = factory.List([AddonCapabilities.ACCESS])
+    authorized_capabilities = AddonCapabilities.ACCESS | AddonCapabilities.UPDATE
 
     @classmethod
     def _create(
@@ -113,6 +120,6 @@ class ConfiguredStorageAddonFactory(DjangoModelFactory):
         model = db.ConfiguredStorageAddon
 
     root_folder = "/"
-    connected_capabilities = factory.List([AddonCapabilities.ACCESS])
+    connected_capabilities = AddonCapabilities.ACCESS
     base_account = factory.SubFactory(AuthorizedStorageAccountFactory)
     authorized_resource = factory.SubFactory(ResourceReferenceFactory)

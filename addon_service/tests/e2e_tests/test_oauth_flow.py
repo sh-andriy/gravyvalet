@@ -46,6 +46,7 @@ class TestOAuth2Flow(APITestCase):
         cls._service = _factories.ExternalStorageServiceFactory()
 
     def setUp(self):
+        super().setUp()
         self.addCleanup(close_client_session_sync)
         self._mock_service = _helpers.MockExternalService(self._service)
         self._mock_service.configure_static_tokens(

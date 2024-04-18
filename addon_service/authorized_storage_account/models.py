@@ -167,13 +167,10 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                 return
 
     @transaction.atomic
-    def set_credentials(self, credentials_blob=None):
-        if self._credentials:
-            self._credentials._update(credentials_blob)
-        else:
-            self._credentials = ExternalCredentials.objects.create(
-                credentials_blob=dict(credentials_blob)
-            )
+    def set_credentials(self, credentials_blob, credentials_source):
+        if not self._credentials:
+            self._credentials = ExternalCredentials()
+        self._credentials._update(credentials_blob, credentials_source)
         if "credentials" in vars(self):  # clear cached property if present
             del self.credentials
         self.save()

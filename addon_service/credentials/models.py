@@ -3,6 +3,8 @@ from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
 
+from .serializers import deserialize_credentials
+
 
 class ExternalCredentials(AddonsServiceBaseModel):
     # TODO: Settle on encryption solution
@@ -45,11 +47,13 @@ class ExternalCredentials(AddonsServiceBaseModel):
             return None
         return self.authorized_accounts[0].external_service.credentials_format
 
-    def _update(self, api_blob):
+    def _update(self, credentials_blob, credentials_source):
         """Update credentials based on API.
         This should only be called from Authorized*Account.set_credentials()
         """
-        self.credentials_blob = dict(api_blob)
+        self.credentials_blob = deserialize_credentials(
+            credentials_blob, credentials_source
+        )
         self.save()
 
     def as_data(self):

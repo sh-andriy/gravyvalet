@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from addon_service.common.aiohttp_session import get_aiohttp_client_session_sync
+from addon_service.credentials import CredentialsSources
 
 
 def build_auth_url(
@@ -76,4 +77,7 @@ def update_token_metadata_from_endpoint_response(token_metadata, response_json):
 
     token_metadata.save()
     for account in token_metadata.linked_accounts:
-        account.set_credentials({"access_token": response_json["access_token"]})
+        account.set_credentials(
+            {"access_token": response_json["access_token"]},
+            credentials_source=CredentialsSources.OAUTH2_TOKEN_ENDPOINT,
+        )

@@ -1,4 +1,7 @@
-from enum import Enum
+from enum import (
+    Enum,
+    auto,
+)
 
 from addon_toolkit import credentials
 
@@ -22,3 +25,8 @@ class CredentialsFormats(Enum):
             case CredentialsFormats.USERNAME_PASSWORD:
                 return credentials.UsernamePasswordCredentials
         raise ValueError(f"No dataclass support for credentials type {self.name}")
+
+
+class CredentialsSources(Enum):
+    OSF_API = auto()
+    OAUTH2_TOKEN_ENDPOINT = auto()

@@ -13,7 +13,10 @@ from addon_service.common.serializer_fields import (
     DataclassRelatedLinkField,
     ReadOnlyResourceRelatedField,
 )
-from addon_service.credentials import CredentialsFormats
+from addon_service.credentials import (
+    CredentialsFormats,
+    CredentialsSources,
+)
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
@@ -87,7 +90,10 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
                 validated_data.get("authorized_scopes")
             )
         else:
-            authorized_account.set_credentials(validated_data.get("credentials"))
+            authorized_account.set_credentials(
+                validated_data.get("credentials"),
+                credentials_source=CredentialsSources.OSF_API,
+            )
 
         return authorized_account
 

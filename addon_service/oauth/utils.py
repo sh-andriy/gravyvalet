@@ -40,7 +40,6 @@ def request_access_token(token_metadata, authorization_code=None):
         token_metadata=token_metadata, authorization_code=authorization_code
     )
     token_response = async_to_sync(client.post)(token_endpoint_url)
-    #    async with client.post(token_endpoint_url) as token_response:
     if not HTTPStatus(token_response.status_code).is_success:
         raise RuntimeError  # TODO: something smarter here
     return token_response.json()

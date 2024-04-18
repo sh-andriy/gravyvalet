@@ -3,7 +3,10 @@ from django.conf import settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from addon_service.common.aiohttp_session import get_aiohttp_client_session_sync
+from addon_service.common.aiohttp_session import (
+    close_client_session_sync,
+    get_aiohttp_client_session_sync,
+)
 from addon_service.credentials import CredentialsFormats
 from addon_service.models import AuthorizedStorageAccount
 from addon_service.tests import (
@@ -43,6 +46,7 @@ class TestOAuth2Flow(APITestCase):
         cls._service = _factories.ExternalStorageServiceFactory()
 
     def setUp(self):
+        self.addCleanup(close_client_session_sync)
         self._mock_service = _helpers.MockExternalService(self._service)
         self._mock_service.configure_static_tokens(
             access=MOCK_ACCESS_TOKEN, refresh=MOCK_REFRESH_TOKEN

@@ -1,4 +1,5 @@
 import aiohttp
+from asgiref.sync import async_to_sync
 
 
 __all__ = ("get_aiohttp_client_session", "close_client_session")
@@ -22,3 +23,7 @@ async def close_client_session() -> None:
     if __SINGLETON_CLIENT_SESSION is not None:
         await __SINGLETON_CLIENT_SESSION.close()
         __SINGLETON_CLIENT_SESSION = None
+
+
+get_aiohttp_client_session_sync = async_to_sync(get_aiohttp_client_session)
+close_client_session_sync = async_to_sync(close_client_session)

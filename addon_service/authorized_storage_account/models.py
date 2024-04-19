@@ -1,4 +1,3 @@
-from functools import cached_property
 from secrets import token_urlsafe
 from typing import Iterator
 
@@ -85,11 +84,23 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     def credentials_format(self):
         return self.external_service.credentials_format
 
-    @cached_property
+    @property
     def credentials(self):
         if self._credentials:
             return self._credentials.as_data()
         return None
+
+    @credentials.setter
+    def credentials(self, credentials_data):
+        creds_type = type(credentials_data)
+        if creds_type is not self.credentials_format.dataclass:
+            raise ValidationError(
+                f"Expectd credentials of type type {self.credentials_format.dataclass}."
+                f"Got credentials of type {creds_type}."
+            )
+        if not self._credentials:
+            self._credentials = ExternalCredentials()
+        self._credentials._update(credentials_data)
 
     @property
     def authorized_capabilities(self) -> AddonCapabilities:
@@ -138,7 +149,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             client_id=self.external_service.oauth2_client_config.client_id,
             state_token=state_token,
             authorized_scopes=self.oauth2_token_metadata.authorized_scopes,
-            redirect_uri=self.external_service.auth_callback_url,
+            redirect_uri=self.external_service.oauth2_client_config.auth_callback_url,
         )
 
     @property
@@ -169,16 +180,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             else:
                 self.save()
                 return
-
-    @transaction.atomic
-    def set_credentials(self, api_credentials_blob):
-        if self._credentials:
-            self._credentials._update(api_credentials_blob)
-        else:
-            self._credentials = ExternalCredentials.from_api_blob(api_credentials_blob)
-        if "credentials" in vars(self):  # clear cached property if present
-            del self.credentials
-        self.save()
 
     def iter_authorized_operations(self) -> Iterator[AddonOperationImp]:
         _addon_imp: AddonImp = self.external_storage_service.addon_imp.imp

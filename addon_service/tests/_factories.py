@@ -28,7 +28,10 @@ class OAuth2ClientConfigFactory(DjangoModelFactory):
         model = db.OAuth2ClientConfig
 
     auth_uri = factory.Sequence(lambda n: f"{settings.AUTH_URI_ID}{n}")
+    auth_callback_url = "https://osf.io/auth/callback"
+    token_endpoint_url = "https://api.example.com/oauth/token"
     client_id = factory.Faker("word")
+    client_secret = factory.Faker("word")
 
 
 class AddonOperationInvocationFactory(DjangoModelFactory):
@@ -54,7 +57,6 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     name = factory.Faker("word")
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
-    auth_callback_url = "https://osf.io/auth/callback"
     int_addon_imp = get_imp_by_name("BLARG").imp_number
     oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)
     supported_scopes = ["service.url/grant_all"]
@@ -70,7 +72,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     ):
         api_base_url = ""
         if ServiceTypes.PUBLIC in service_type:
-            api_base_url = "https://api.example.url"
+            api_base_url = "https://api.example.url/v1"
         return super()._create(
             model_class=model_class,
             int_credentials_format=credentials_format.value,
@@ -94,7 +96,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         model_class,
         external_storage_service=None,
         account_owner=None,
-        credentials_dict=None,
+        credentials=None,
         credentials_format=CredentialsFormats.OAUTH2,
         authorized_scopes=None,
         *args,
@@ -111,7 +113,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         if credentials_format is CredentialsFormats.OAUTH2:
             account.initiate_oauth2_flow(authorized_scopes)
         else:
-            account.set_credentials(credentials_dict)
+            account.credentials = credentials
         return account
 
 

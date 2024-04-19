@@ -1,7 +1,10 @@
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
+
+from .validators import ensure_shared_client
 
 
 class OAuth2ClientConfig(AddonsServiceBaseModel):
@@ -13,8 +16,11 @@ class OAuth2ClientConfig(AddonsServiceBaseModel):
 
     # The base uri for initiating OAuth2 credentials exchanges
     auth_uri = models.URLField(null=False)
+    auth_callback_url = models.URLField(null=False)
+    token_endpoint_url = models.URLField(null=False)
     # The registered ID of the OAuth client
     client_id = models.CharField(null=True)
+    client_secret = models.CharField(null=True)
 
     class Meta:
         verbose_name = "OAuth2 Client Config"
@@ -38,6 +44,29 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
     access_token_expiration = models.DateTimeField(null=True, blank=True)
     # The scopes associated with the access token stored in Credentials
     authorized_scopes = ArrayField(models.CharField(), null=False)
+
+    @property
+    def linked_accounts(self):
+        return tuple(self.authorized_storage_accounts.all())
+
+    @property
+    def client_details(self):
+        return self.linked_accounts[0].external_service.oauth2_client_config
+
+    def clean_fields(self, *args, **kwargs):
+        super().clean_fields(*args, **kwargs)
+        if not self.pk:
+            return
+
+        ensure_shared_client(self)
+        if self.state_token and self.refresh_token:
+            raise ValidationError(
+                "Error on OAuth2 Flow: state token and refresh token both present."
+            )
+        if not (self.state_token or self.refresh_token):
+            raise ValidationError(
+                "Error in OAuth2 Flow: Neither state token nor refresh token present."
+            )
 
     class Meta:
         verbose_name = "OAuth2 Token Metadata"

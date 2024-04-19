@@ -29,6 +29,7 @@ class OAuth2ClientConfigFactory(DjangoModelFactory):
 
     auth_uri = factory.Sequence(lambda n: f"{settings.AUTH_URI_ID}{n}")
     auth_callback_url = "https://osf.io/auth/callback"
+    token_endpoint_url = "https://api.example.com/oauth/token"
     client_id = factory.Faker("word")
     client_secret = factory.Faker("word")
 
@@ -71,7 +72,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     ):
         api_base_url = ""
         if ServiceTypes.PUBLIC in service_type:
-            api_base_url = "https://api.example.url"
+            api_base_url = "https://api.example.url/v1"
         return super()._create(
             model_class=model_class,
             int_credentials_format=credentials_format.value,

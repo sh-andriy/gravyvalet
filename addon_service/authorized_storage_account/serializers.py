@@ -81,7 +81,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         )
         external_service = validated_data["external_storage_service"]
         try:
-            authorized_account = AuthorizedStorageAccount(
+            authorized_account = AuthorizedStorageAccount.objects.create(
                 external_storage_service=external_service,
                 account_owner=account_owner,
                 authorized_capabilities=validated_data.get("authorized_capabilities"),
@@ -96,8 +96,11 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             )
         else:
             authorized_account.credentials = validated_data["credentials"]
+        try:
+            authorized_account.save()
+        except ModelValidationError as e:
+            raise serializers.ValidationError(e)
 
-        authorized_account.save()
         return authorized_account
 
     class Meta:

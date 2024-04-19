@@ -17,6 +17,7 @@ class OAuth2ClientConfig(AddonsServiceBaseModel):
     # The base uri for initiating OAuth2 credentials exchanges
     auth_uri = models.URLField(null=False)
     auth_callback_url = models.URLField(null=False)
+    token_endpoint_url = models.URLField(null=False)
     # The registered ID of the OAuth client
     client_id = models.CharField(null=True)
     client_secret = models.CharField(null=True)

@@ -3,7 +3,6 @@ from http import HTTPStatus
 from secrets import token_urlsafe
 from urllib.parse import (
     urlencode,
-    urljoin,
     urlparse,
     urlunparse,
 )
@@ -59,9 +58,10 @@ def _build_token_exchange_url(token_metadata, authorization_code=None):
     else:
         params["refresh_token"] = token_metadata.refresh_token
 
-    api_url = token_metadata.linked_accounts[0].api_base_url
     return urlunparse(
-        urlparse(urljoin(api_url, "oauth/token"))._replace(query=urlencode(params))
+        urlparse(oauth2_client_config.token_endpoint_url)._replace(
+            query=urlencode(params)
+        )
     )
 
 

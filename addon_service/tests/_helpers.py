@@ -6,7 +6,6 @@ from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import (
     parse_qs,
-    urljoin,
     urlparse,
 )
 
@@ -97,16 +96,16 @@ class MockOSF:
 
 
 class MockExternalService:
-    ROUTES = (("token_endpoint", "oauth/token"),)
-
     def __init__(self, external_service):
-        self.auth_url = external_service.auth_uri
-        api_base_url = external_service.api_base_url
         self._static_access_token = None
         self._static_refresh_token = None
+        if external_service.oauth2_client_config is not None:
+            self._auth_url = external_service.auth_uri
+            self._token_endpoint_url = (
+                external_service.oauth2_client_config.token_endpoint_url
+            )
         self._local_routes = {
-            urlparse(urljoin(api_base_url, subpath)).path: endpoint_name
-            for (endpoint_name, subpath) in self.ROUTES
+            external_service.oauth2_client_config.token_endpoint_url: "token_endpoint"
         }
 
     def set_internal_client(self, client):
@@ -132,7 +131,7 @@ class MockExternalService:
             yield self
 
     async def _route_get(self, url, *args, **kwargs):
-        if url.startswith(self.auth_url):
+        if url.startswith(self._auth_url):
             state_token = parse_qs(urlparse(url).query)["state"]
             await self._initiate_oauth_exchange(state_token=state_token)
         else:
@@ -145,21 +144,18 @@ class MockExternalService:
         return _MockResponse()
 
     async def _route_post(self, url, *args, **kwargs):
-        endpoint_name = self._local_routes.get(urlparse(url).path)
-        match endpoint_name:
-            case "token_endpoint":
-                return _MockResponse(
-                    status_code=HTTPStatus.CREATED,
-                    data={
-                        "access_token": self._static_access_token
-                        or secrets.token_hex(12),
-                        "refresh_token": self._static_refresh_token
-                        or secrets.token_hex(12),
-                        "expires_in": 3600,
-                    },
-                )
-            case _:
-                raise RuntimeError(f"Received unrecognized endpoint {url}")
+        print(self._token_endpoint_url)
+        if url.startswith(self._token_endpoint_url):
+            return _MockResponse(
+                status_code=HTTPStatus.CREATED,
+                data={
+                    "access_token": self._static_access_token or secrets.token_hex(12),
+                    "refresh_token": self._static_refresh_token
+                    or secrets.token_hex(12),
+                    "expires_in": 3600,
+                },
+            )
+        raise RuntimeError(f"Received unrecognized endpoint {url}")
 
 
 @dataclasses.dataclass

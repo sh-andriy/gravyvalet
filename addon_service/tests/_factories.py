@@ -4,10 +4,7 @@ from factory.django import DjangoModelFactory
 
 from addon_service import models as db
 from addon_service.addon_imp.known import get_imp_by_name
-from addon_service.credentials import (
-    CredentialsFormats,
-    CredentialsSources,
-)
+from addon_service.credentials import CredentialsFormats
 from addon_service.external_storage_service import ServiceTypes
 from addon_toolkit import AddonCapabilities
 
@@ -98,7 +95,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         model_class,
         external_storage_service=None,
         account_owner=None,
-        credentials_dict=None,
+        credentials=None,
         credentials_format=CredentialsFormats.OAUTH2,
         authorized_scopes=None,
         *args,
@@ -115,9 +112,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         if credentials_format is CredentialsFormats.OAUTH2:
             account.initiate_oauth2_flow(authorized_scopes)
         else:
-            account.set_credentials(
-                credentials_dict, credentials_source=CredentialsSources.OSF_API
-            )
+            account.credentials = credentials
         return account
 
 

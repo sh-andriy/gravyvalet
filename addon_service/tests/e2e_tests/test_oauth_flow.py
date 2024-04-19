@@ -82,7 +82,6 @@ class TestOAuth2Flow(APITestCase):
             async_to_sync(aiohttp_client_session.get)(_account.auth_url)
 
         _account.refresh_from_db()
-        del _account.credentials  # clear cache
         with self.subTest("Credentials set post-exchange"):
             self.assertEqual(_account.credentials.access_token, MOCK_ACCESS_TOKEN)
         with self.subTest("Refresh token set post-exchange"):

@@ -1,4 +1,3 @@
-from functools import cached_property
 from secrets import token_urlsafe
 from typing import Iterator
 
@@ -85,11 +84,23 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     def credentials_format(self):
         return self.external_service.credentials_format
 
-    @cached_property
+    @property
     def credentials(self):
         if self._credentials:
             return self._credentials.as_data()
         return None
+
+    @credentials.setter
+    def credentials(self, credentials_data):
+        creds_type = type(credentials_data)
+        if creds_type is not self.credentials_format.dataclass:
+            raise ValidationError(
+                f"Expectd credentials of type type {self.credentials_format.dataclass}."
+                f"Got credentials of type {creds_type}."
+            )
+        if not self._credentials:
+            self._credentials = ExternalCredentials()
+        self._credentials._update(credentials_data)
 
     @property
     def authorized_capabilities(self) -> AddonCapabilities:
@@ -169,15 +180,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             else:
                 self.save()
                 return
-
-    @transaction.atomic
-    def set_credentials(self, credentials_blob, credentials_source):
-        if not self._credentials:
-            self._credentials = ExternalCredentials()
-        self._credentials._update(credentials_blob, credentials_source)
-        if "credentials" in vars(self):  # clear cached property if present
-            del self.credentials
-        self.save()
 
     def iter_authorized_operations(self) -> Iterator[AddonOperationImp]:
         _addon_imp: AddonImp = self.external_storage_service.addon_imp.imp

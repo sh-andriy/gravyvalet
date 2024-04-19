@@ -12,10 +12,7 @@ from addon_service import models as db
 from addon_service.authorized_storage_account.views import (
     AuthorizedStorageAccountViewSet,
 )
-from addon_service.credentials import (
-    CredentialsFormats,
-    CredentialsSources,
-)
+from addon_service.credentials import CredentialsFormats
 from addon_service.external_storage_service import ServiceTypes
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
@@ -23,33 +20,41 @@ from addon_service.tests._helpers import (
     get_test_request,
 )
 from addon_toolkit import AddonCapabilities
+from addon_toolkit.credentials import (
+    AccessKeySecretKeyCredentials,
+    AccessTokenCredentials,
+    UsernamePasswordCredentials,
+)
 
 
 VALID_CREDENTIALS_FORMATS = set(CredentialsFormats) - {CredentialsFormats.UNSPECIFIED}
 NON_OAUTH_FORMATS = VALID_CREDENTIALS_FORMATS - {CredentialsFormats.OAUTH2}
 
-MOCK_CREDENTIALS_BLOBS = {
-    CredentialsFormats.OAUTH2: {},
-    CredentialsFormats.PERSONAL_ACCESS_TOKEN: {"access_token": "token"},
-    CredentialsFormats.ACCESS_KEY_SECRET_KEY: {
-        "access_key": "access",
-        "secret_key": "secret",
-    },
-    CredentialsFormats.USERNAME_PASSWORD: {"username": "me", "password": "unsafe"},
+MOCK_CREDENTIALS = {
+    CredentialsFormats.OAUTH2: None,
+    CredentialsFormats.PERSONAL_ACCESS_TOKEN: AccessTokenCredentials(
+        access_token="token"
+    ),
+    CredentialsFormats.ACCESS_KEY_SECRET_KEY: AccessKeySecretKeyCredentials(
+        access_key="access",
+        secret_key="secret",
+    ),
+    CredentialsFormats.USERNAME_PASSWORD: UsernamePasswordCredentials(
+        username="me",
+        password="unsafe",
+    ),
 }
 
 
 def _make_post_payload(
     *, external_service, capabilities=None, credentials=None, api_root=""
 ):
-    return {
+    capabilities = capabilities or [AddonCapabilities.ACCESS.name]
+    payload = {
         "data": {
             "type": "authorized-storage-accounts",
             "attributes": {
-                "authorized_capabilities": capabilities
-                or [AddonCapabilities.ACCESS.name],
-                "credentials": credentials
-                or MOCK_CREDENTIALS_BLOBS[external_service.credentials_format],
+                "authorized_capabilities": capabilities,
                 "api_base_url": api_root,
             },
             "relationships": {
@@ -62,6 +67,10 @@ def _make_post_payload(
             },
         }
     }
+    credentials = credentials or MOCK_CREDENTIALS[external_service.credentials_format]
+    if credentials:
+        payload["data"]["attributes"]["credentials"] = credentials.asdict()
+    return payload
 
 
 class TestAuthorizedStorageAccountAPI(APITestCase):
@@ -123,25 +132,25 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
     def test_post__sets_credentials(self):
         for creds_format in NON_OAUTH_FORMATS:
+            external_service = _factories.ExternalStorageServiceFactory()
+            external_service.int_credentials_format = creds_format.value
+            external_service.save()
+
+            _resp = self.client.post(
+                reverse("authorized-storage-accounts-list"),
+                _make_post_payload(external_service=external_service),
+                format="vnd.api+json",
+            )
+            self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
+
+            account = db.AuthorizedStorageAccount.objects.get(id=_resp.data["id"])
             with self.subTest(creds_format=creds_format):
-                external_service = _factories.ExternalStorageServiceFactory()
-                external_service.int_credentials_format = creds_format.value
-                external_service.save()
-
-                _resp = self.client.post(
-                    reverse("authorized-storage-accounts-list"),
-                    _make_post_payload(external_service=external_service),
-                    format="vnd.api+json",
-                )
-                self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
-
-                account = db.AuthorizedStorageAccount.objects.get(id=_resp.data["id"])
                 self.assertEqual(
                     account._credentials.credentials_blob,
-                    MOCK_CREDENTIALS_BLOBS[creds_format],
+                    MOCK_CREDENTIALS[creds_format].asdict(),
                 )
 
-    def tet_post__sets_auth_url(self):
+    def test_post__sets_auth_url(self):
         external_service = _factories.ExternalStorageServiceFactory(
             credentials_format=CredentialsFormats.OAUTH2
         )
@@ -251,25 +260,27 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
 # unit-test data model
 class TestAuthorizedStorageAccountModel(TestCase):
-    UPDATED_CREDENTIALS_BLOBS = {
-        CredentialsFormats.PERSONAL_ACCESS_TOKEN: {"access_token": "new_token"},
-        CredentialsFormats.ACCESS_KEY_SECRET_KEY: {
-            "access_key": "secret",
-            "secret_key": "access",
-        },
-        CredentialsFormats.USERNAME_PASSWORD: {
-            "username": "you",
-            "password": "moresafe",
-        },
+    UPDATED_CREDENTIALS = {
+        CredentialsFormats.PERSONAL_ACCESS_TOKEN: AccessTokenCredentials(
+            access_token="new_token"
+        ),
+        CredentialsFormats.ACCESS_KEY_SECRET_KEY: AccessKeySecretKeyCredentials(
+            access_key="secret",
+            secret_key="access",
+        ),
+        CredentialsFormats.USERNAME_PASSWORD: UsernamePasswordCredentials(
+            username="you",
+            password="moresafe",
+        ),
     }
-    INVALID_CREDENTIALS_BLOBS = {
-        CredentialsFormats.PERSONAL_ACCESS_TOKEN: MOCK_CREDENTIALS_BLOBS[
+    INVALID_CREDENTIALS = {
+        CredentialsFormats.PERSONAL_ACCESS_TOKEN: MOCK_CREDENTIALS[
             CredentialsFormats.USERNAME_PASSWORD
         ],
-        CredentialsFormats.ACCESS_KEY_SECRET_KEY: MOCK_CREDENTIALS_BLOBS[
+        CredentialsFormats.ACCESS_KEY_SECRET_KEY: MOCK_CREDENTIALS[
             CredentialsFormats.PERSONAL_ACCESS_TOKEN
         ],
-        CredentialsFormats.USERNAME_PASSWORD: MOCK_CREDENTIALS_BLOBS[
+        CredentialsFormats.USERNAME_PASSWORD: MOCK_CREDENTIALS[
             CredentialsFormats.ACCESS_KEY_SECRET_KEY
         ],
     }
@@ -331,7 +342,6 @@ class TestAuthorizedStorageAccountModel(TestCase):
 
     def test_auth_url__no_active_state_token(self):
         self.assertIsNotNone(self._asa.auth_url)
-        del self._asa.credentials  # clear cached_property
         oauth_meta = self._asa.oauth2_token_metadata
         oauth_meta.state_token = None
         oauth_meta.refresh_token = "refresh"
@@ -380,17 +390,15 @@ class TestAuthorizedStorageAccountModel(TestCase):
         with self.subTest("Colliding Tokens not stored in DB"):
             self.assertEqual(db.OAuth2TokenMetadata.objects.count(), 2)
 
-    # set_credentials
+    # set credentials
 
     def test_set_credentials__oauth__fails_if_state_token_exists(self):
         account = _factories.AuthorizedStorageAccountFactory(
             credentials_format=CredentialsFormats.OAUTH2,
         )
+        account.credentials = AccessTokenCredentials(access_token="nope")
         with self.assertRaises(ValidationError):
-            account.set_credentials(
-                {"access_token": "nope"},
-                credentials_source=CredentialsSources.OAUTH2_TOKEN_ENDPOINT,
-            )
+            account.save()
         account.refresh_from_db()  # Confirm transaction rollback
         self.assertIsNone(account._credentials)
 
@@ -405,14 +413,12 @@ class TestAuthorizedStorageAccountModel(TestCase):
                 authorized_capabilities=AddonCapabilities.ACCESS,
             )
             self.assertIsNone(account._credentials)
-            mock_credentials = MOCK_CREDENTIALS_BLOBS[creds_format]
-            account.set_credentials(
-                credentials_blob=mock_credentials,
-                credentials_source=CredentialsSources.OSF_API,
-            )
+            mock_credentials = MOCK_CREDENTIALS[creds_format]
+            account.credentials = mock_credentials
+            account.save()
             with self.subTest(creds_format=creds_format):
                 self.assertEqual(
-                    account._credentials.credentials_blob, mock_credentials
+                    account._credentials.credentials_blob, mock_credentials.asdict()
                 )
 
     def test_set_credentials__create__oauth(self):
@@ -426,10 +432,8 @@ class TestAuthorizedStorageAccountModel(TestCase):
         token_metadata.refresh_token = "refresh"
         token_metadata.save()
 
-        account.set_credentials(
-            {"access_token": "yep"},
-            credentials_source=CredentialsSources.OAUTH2_TOKEN_ENDPOINT,
-        )
+        account.credentials = AccessTokenCredentials(access_token="yep")
+        account.save()
         account.refresh_from_db()  # Confirm that changes were committed
         self.assertEqual(account.credentials.access_token, "yep")
 
@@ -437,19 +441,18 @@ class TestAuthorizedStorageAccountModel(TestCase):
         for creds_format in NON_OAUTH_FORMATS:
             account = _factories.AuthorizedStorageAccountFactory(
                 credentials_format=creds_format,
-                credentials_dict=MOCK_CREDENTIALS_BLOBS[creds_format],
+                credentials=MOCK_CREDENTIALS[creds_format],
             )
             original_creds_id = account._credentials.id
-            updated_credentials = self.UPDATED_CREDENTIALS_BLOBS[creds_format]
-            account.set_credentials(
-                credentials_blob=updated_credentials,
-                credentials_source=CredentialsSources.OSF_API,
-            )
+            updated_credentials = self.UPDATED_CREDENTIALS[creds_format]
+            account.credentials = updated_credentials
+            account.save()
             account.refresh_from_db()
             with self.subTest(creds_format=creds_format):
                 with self.subTest("Credentials values updated"):
                     self.assertEqual(
-                        account._credentials.credentials_blob, updated_credentials
+                        account._credentials.credentials_blob,
+                        updated_credentials.asdict(),
                     )
                 with self.subTest("Credentials updated in place"):
                     self.assertEqual(account._credentials.id, original_creds_id)
@@ -459,14 +462,11 @@ class TestAuthorizedStorageAccountModel(TestCase):
             with self.subTest(creds_format=creds_format):
                 account = _factories.AuthorizedStorageAccountFactory(
                     credentials_format=creds_format,
-                    credentials_dict=MOCK_CREDENTIALS_BLOBS[creds_format],
+                    credentials=MOCK_CREDENTIALS[creds_format],
                 )
-                invalid_credentials = self.INVALID_CREDENTIALS_BLOBS[creds_format]
+                invalid_credentials = self.INVALID_CREDENTIALS[creds_format]
                 with self.assertRaises(ValidationError):
-                    account.set_credentials(
-                        credentials_blob=invalid_credentials,
-                        credentials_source=CredentialsSources.OSF_API,
-                    )
+                    account.credentials = invalid_credentials
 
 
 class TestAuthorizedStorageAccountRelatedView(TestCase):

@@ -7,7 +7,6 @@ from .validators import validate_credentials_format
 __all__ = (
     "CredentialsField",
     "CredentialsFormats",
-    "CredentialsSerializers",
     "ExternalCredentials",
     "validate_credentials_format",
 )

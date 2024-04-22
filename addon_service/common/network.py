@@ -14,7 +14,6 @@ from asgiref.sync import sync_to_async
 
 from addon_service import models as db
 from addon_service.common import exceptions
-from addon_service.oauth import utils as oauth_utils
 from addon_toolkit.constrained_network import (
     HttpRequestInfo,
     HttpRequestor,
@@ -71,7 +70,7 @@ class GravyvaletHttpRequestor(HttpRequestor):
             async with self._try_send(request) as _response:
                 yield _response
         except exceptions.ExpiredAccessToken:
-            await _PrivateNetworkInfo.get(self).refresh_oauth_access_token()
+            await _PrivateNetworkInfo.get(self).account.refresh_oauth_access_token()
             # if this one fails, don't try refreshing again
             async with self._try_send(request) as _response:
                 yield _response
@@ -171,28 +170,3 @@ class _PrivateNetworkInfo(_PrivateInfo):
                 f'relative url may not alter the base url (maybe with dot segments "/../"? got "{relative_url}")'
             )
         return _full_url
-
-    @sync_to_async
-    def _get_oauth_models(self) -> tuple[db.OAuth2ClientConfig, db.OAuth2TokenMetadata]:
-        # wrap db access in `sync_to_async`
-        return (
-            self.account.external_service.oauth2_client_config,
-            self.account.oauth2_token_metadata,
-        )
-
-    @sync_to_async
-    def _refresh_account(self) -> None:
-        # wrap db access in `sync_to_async`
-        self.account.refresh_from_db()
-
-    async def refresh_oauth_access_token(self) -> None:
-        _oauth_client_config, _oauth_token_metadata = await self._get_oauth_models()
-        _fresh_token_result = await oauth_utils.get_refreshed_access_token(
-            token_endpoint_url=_oauth_client_config.token_endpoint_url,
-            refresh_token=_oauth_token_metadata.refresh_token,
-            auth_callback_url=_oauth_client_config.auth_callback_url,
-            client_id=_oauth_client_config.client_id,
-            client_secret=_oauth_client_config.client_secret,
-        )
-        await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
-        await self._refresh_account()

@@ -1,3 +1,7 @@
+from asgiref.sync import (
+    async_to_sync,
+    sync_to_async,
+)
 from django.core.exceptions import ValidationError
 from django.db import (
     models,
@@ -10,10 +14,10 @@ from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
 from addon_service.common.validators import validate_addon_capability
 from addon_service.credentials import ExternalCredentials
-from addon_service.oauth.models import OAuth2TokenMetadata
-from addon_service.oauth.utils import (
-    build_auth_url,
-    generate_state_nonce,
+from addon_service.oauth import utils as oauth_utils
+from addon_service.oauth.models import (
+    OAuth2ClientConfig,
+    OAuth2TokenMetadata,
 )
 from addon_toolkit import (
     AddonCapabilities,
@@ -29,6 +33,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     """
 
     account_name = models.CharField(null=False, blank=True, default="")
+    external_account_id = models.CharField(null=False, blank=True, default="")
     int_authorized_capabilities = models.IntegerField(
         validators=[validate_addon_capability]
     )
@@ -142,7 +147,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         state_token = self.oauth2_token_metadata.state_token
         if not state_token:
             return None
-        return build_auth_url(
+        return oauth_utils.build_auth_url(
             auth_uri=self.external_service.oauth2_client_config.auth_uri,
             client_id=self.external_service.oauth2_client_config.client_id,
             state_token=state_token,
@@ -170,7 +175,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             authorized_scopes=(
                 authorized_scopes or self.external_service.supported_scopes
             ),
-            state_nonce=generate_state_nonce(),
+            state_nonce=oauth_utils.generate_state_nonce(),
         )
         self.save()
 
@@ -212,3 +217,25 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                     "credentials": "OAuth2 accounts with an access token must have a refresh token"
                 }
             )
+
+    async def refresh_oauth_access_token(self) -> None:
+        _oauth_client_config, _oauth_token_metadata = await self._get_oauth_models()
+        _fresh_token_result = await oauth_utils.get_refreshed_access_token(
+            token_endpoint_url=_oauth_client_config.token_endpoint_url,
+            refresh_token=_oauth_token_metadata.refresh_token,
+            auth_callback_url=_oauth_client_config.auth_callback_url,
+            client_id=_oauth_client_config.client_id,
+            client_secret=_oauth_client_config.client_secret,
+        )
+        await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
+        await sync_to_async(self.refresh_from_db)()
+
+    refresh_oauth_access_token__blocking = async_to_sync(refresh_oauth_access_token)
+
+    @sync_to_async
+    def _get_oauth_models(self) -> tuple[OAuth2ClientConfig, OAuth2TokenMetadata]:
+        # wrap db access in `sync_to_async`
+        return (
+            self.external_service.oauth2_client_config,
+            self.oauth2_token_metadata,
+        )

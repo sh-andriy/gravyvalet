@@ -3,6 +3,7 @@ from http import HTTPMethod
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.permissions import (
     IsAuthenticated,
     IsValidHMACSignedRequest,
@@ -46,6 +47,6 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteDeleteViewSet):
     )
     def get_wb_config(self, request, pk=None):
         addon = self.get_object()
-        return Response(
-            WaterButlerConfigurationSerializer(configured_storage_addon=addon).data
-        )
+        if addon.external_service.credentials_format is CredentialsFormats.OAUTH2:
+            addon.base_account.refresh_oauth_access_token__blocking()
+        return Response(WaterButlerConfigurationSerializer(addon).data)

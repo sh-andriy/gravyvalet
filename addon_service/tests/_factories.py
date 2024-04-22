@@ -87,6 +87,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
     class Meta:
         model = db.AuthorizedStorageAccount
 
+    account_name = factory.Faker("word")
     default_root_folder = "/"
     authorized_capabilities = AddonCapabilities.ACCESS | AddonCapabilities.UPDATE
 

@@ -102,7 +102,9 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
 
     @sync_to_async
     @transaction.atomic
-    def update_with_fresh_token(self, fresh_token_result: FreshTokenResult):
+    def update_with_fresh_token(
+        self, fresh_token_result: FreshTokenResult
+    ):  # -> tuple[AuthorizedStorageAccount, ...]
         # update this record's fields
         self.state_nonce = None  # one-time-use, now used
         self.refresh_token = fresh_token_result.refresh_token
@@ -119,9 +121,11 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
         _credentials = AccessTokenCredentials(
             access_token=fresh_token_result.access_token
         )
-        for _account in tuple(self.linked_accounts):
+        _accounts = tuple(self.linked_accounts)
+        for _account in _accounts:
             _account.credentials = _credentials
             _account.save()
+        return _accounts
 
     class Meta:
         verbose_name = "OAuth2 Token Metadata"

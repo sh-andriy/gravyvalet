@@ -68,6 +68,27 @@ class TestUserReferenceAPI(APITestCase):
                 },
             )
 
+    def test_list__success(self):
+        _resp = self.client.get(
+            self._list_path, {"filter[user_uri]": self._user.user_uri}
+        )
+        self.assertEqual(_resp.status_code, HTTPStatus.OK)
+
+    def test_list__no_filter(self):
+        _resp = self.client.get(self._list_path)
+        self.assertEqual(_resp.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_list__wrong_filter(self):
+        _resp = self.client.get(self._list_path, {"filter[id]": self._user.id})
+        self.assertEqual(_resp.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_list__wrong_user(self):
+        other_user = _factories.UserReferenceFactory()
+        _resp = self.client.get(
+            self._list_path, {"filter[user_uri]": other_user.user_uri}
+        )
+        self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
+
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
             self._detail_path: {"patch", "put", "post"},

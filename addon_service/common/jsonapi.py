@@ -36,12 +36,12 @@ class JSONAPIQueryParam:
         """Parses a query parameter name into its family and bracketed members.
 
         >>> JSONAPIQueryParam.parse_param_name('filter')
-        ('filter, ())
+        ('filter', ())
 
         >>> JSONAPIQueryParam.parse_param_name('filter[field]')
-        ('filter', ('field',)
+        ('filter', ('field',))
 
-        >>> JSONAPiQueryParam.parse_param_name('filter[nested][field]')
+        >>> JSONAPIQueryParam.parse_param_name('filter[nested][field]')
         ('filter', ('nested', 'field'))
         """
         if not cls._param_name_is_valid(query_param_name):
@@ -57,10 +57,10 @@ class JSONAPIQueryParam:
         >>> JSONAPIQueryParam._param_name_is_valid('filter')
         True
 
-        >>> JSONAPIQueryPAram._param_name_is_valid('filter[so][many][nested][fields]')
+        >>> JSONAPIQueryParam._param_name_is_valid('filter[so][many][nested][fields]')
         True
 
-        >>> JSONAPiQueryParam._param_name_is_valid('_filter')
+        >>> JSONAPIQueryParam._param_name_is_valid('_filter')
         False
 
         >>> JSONAPIQueryParam._param_name_is_valid('fi&lter')

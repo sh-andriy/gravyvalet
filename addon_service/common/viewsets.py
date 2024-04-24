@@ -6,7 +6,6 @@ from rest_framework.exceptions import (
     PermissionDenied,
 )
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import (
     GenericViewSet,
     ViewSet,
@@ -18,7 +17,7 @@ from rest_framework_json_api.views import (
     RelatedMixin,
 )
 
-from .jsonapi import extract_filter_expressions
+from .filtering import RestrictedListEndpointFilterBackend
 
 
 class _DrfJsonApiHelpers(AutoPrefetchMixin, PreloadIncludesMixin, RelatedMixin):
@@ -27,18 +26,14 @@ class _DrfJsonApiHelpers(AutoPrefetchMixin, PreloadIncludesMixin, RelatedMixin):
 
 class RestrictedReadOnlyViewSet(ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
-        filters = extract_filter_expressions(self.request.GET)
-        if self.required_list_filter not in filters:
-            raise ValidationError(
-                f"Request is missing required filter {self.required_list_filter}"
-            )
-        qs = self.get_queryset().filter(**filters)
+        self.filter_backends = [RestrictedListEndpointFilterBackend]
+
+        qs = self.filter_queryset(self.get_queryset())
         try:
             self.check_object_permissions(self.request, qs.get())
         except qs.model.DoesNotExist:
             raise NotFound("Provided filter returned no results.")
         except qs.model.MultipleObjectsReturned:
-            print("multiple objects returned?")
             raise PermissionDenied(
                 "Filters to this endpoint must be uniquely identifying"
             )

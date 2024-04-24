@@ -23,7 +23,9 @@ class JSONAPIQueryParam:
     MEMBER_REGEX: ClassVar[Pattern] = re.compile(r"\[(?P<name>[^[\]]*)\]")
 
     @classmethod
-    def from_key_value_pair(cls, query_param_name, query_param_values):
+    def from_key_value_pair(
+        cls, query_param_name: str, query_param_values: Iterable[str]
+    ) -> "JSONAPIQueryParam":
         family, members = cls.parse_param_name(query_param_name)
         if not isinstance(query_param_values, tuple):
             query_param_values = tuple(query_param_values)
@@ -44,12 +46,8 @@ class JSONAPIQueryParam:
         """
         if not cls._param_name_is_valid(query_param_name):
             raise ValueError(f"Invalid query param name: {query_param_name}")
-        family_match = cls.FAMILY_REGEX.match(query_param_name)
-        family = family_match.group()
-        member_slice_start = (
-            family_match.end()
-        )  # precommits got very confused when this was inlined
-        members = cls.MEMBER_REGEX.findall(query_param_name[member_slice_start:])
+        family = cls.FAMILY_REGEX.match(query_param_name).group()
+        members = cls.MEMBER_REGEX.findall(query_param_name)
         return (family, tuple(members))
 
     @classmethod
@@ -74,6 +72,7 @@ class JSONAPIQueryParam:
         >>> JSONAPIQueryParam._param_name_is_valid('filter[field]extra')
         False
         """
+        # Full match is FAMILY followed by 0 or more MEMBERS followed by end of input
         full_match_regex = re.compile(
             f"{cls.FAMILY_REGEX.pattern}({cls.MEMBER_REGEX.pattern})*$"
         )
@@ -87,9 +86,7 @@ class JSONAPIQueryParam:
         return f"{self.family}{bracketed_members}={values}"
 
 
-QueryParamFamilies = dict[
-    str, Iterable[JSONAPIQueryParam]  # keyed by query_param family
-]
+QueryParamFamilies = dict[str, Iterable[JSONAPIQueryParam]]
 
 
 def group_query_params_by_family(

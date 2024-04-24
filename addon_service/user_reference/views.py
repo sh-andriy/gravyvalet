@@ -11,4 +11,4 @@ class UserReferenceViewSet(RestrictedReadOnlyViewSet):
     permission_classes = [
         SessionUserIsOwner,
     ]
-    required_list_filter = "user_uri"
+    required_list_filter_fields = ("user_uri",)

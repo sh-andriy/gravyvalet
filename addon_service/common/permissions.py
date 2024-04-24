@@ -12,7 +12,7 @@ class IsAuthenticated(permissions.BasePermission):
         return request.session.get("user_reference_uri") is not None
 
 
-class SessionUserIsOwner(IsAuthenticated):
+class SessionUserIsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         session_user_uri = request.session.get("user_reference_uri")
         if session_user_uri:

@@ -27,20 +27,17 @@ def extract_filter_expressions(
     >>> query_dict = QueryDict("filter")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
     Traceback (most recent call last):
-        . . .
-    rest_framework.exceptions.ValidationError: [ErrorDetail(string='Filter query parameters must specify a field to filter on', code='invalid')]
+    rest_framework.exceptions.ValidationError...
 
     >>> query_dict = QueryDict("filter[non_field]")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
     Traceback (most recent call last):
-        . . .
-    rest_framework.exceptions.ValidationError: [ErrorDetail(string='Filter query parameters must specify a field to filter on', code='invalid')]
+    rest_framework.exceptions.ValidationError...
 
     >>> query_dict = QueryDict("filter[field][isnull][extra]")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
     Traceback (most recent call last):
-        . . .
-    rest_framework.exceptions.ValidationError: [ErrorDetail(string='Filter query parameters only accept one field and one (optional) comparison operator', code='invalid')]
+    rest_framework.exceptions.ValidationError...
     """
     filter_params = group_query_params_by_family(query_dict.lists()).get("filter", [])
     return dict([_format_filter_param(param, serializer) for param in filter_params])

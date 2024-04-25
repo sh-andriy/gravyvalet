@@ -4,7 +4,7 @@ from rest_framework.serializers import ValidationError
 from .jsonapi import group_query_params_by_family
 
 
-def extract_filter_expressions(query_dict) -> dict[str, str]:
+def extract_filter_expressions(query_dict, serializer) -> dict[str, str]:
     """Extract the "filter" family of expressions from the query dict and format them for use.
 
     Since no formal JSON:API scheme exists for complex filter operations, we will
@@ -20,19 +20,34 @@ def extract_filter_expressions(query_dict) -> dict[str, str]:
     would return just the Google Drive addons for a given resource.
     """
     filter_params = group_query_params_by_family(query_dict.lists()).get("filter", [])
-    return {"__".join(param.args): param.value for param in filter_params}
+    return {
+        _format_filter_expression(param.args, serializer): param.value
+        for param in filter_params
+    }
+
+
+def _format_filter_expression(query_args, serializer):
+    operation = None
+    field = query_args[0]
+    if len(query_args) == 2:
+        operation = query_args[1]
+    return field if operation is None else f"{field}__{operation}"
 
 
 class AddonServiceFilteringBackend(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
-        filter_expressions = extract_filter_expressions(request.query_params)
+        filter_expressions = extract_filter_expressions(
+            request.query_params, view.get_serializer()
+        )
         return queryset.filter(**filter_expressions)
 
 
 class RestrictedListEndpointFilterBackend(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         required_filters = set(view.required_list_filter_fields)
-        filter_expressions = extract_filter_expressions(request.query_params)
+        filter_expressions = extract_filter_expressions(
+            request.query_params, view.get_serializer()
+        )
         missing_filters = required_filters - filter_expressions.keys()
         if missing_filters:
             raise ValidationError(

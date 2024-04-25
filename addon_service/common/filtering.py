@@ -20,7 +20,7 @@ def extract_filter_expressions(query_dict) -> dict[str, str]:
     would return just the Google Drive addons for a given resource.
     """
     filter_params = group_query_params_by_family(query_dict.lists()).get("filter", [])
-    return {"__".join(param.members): ",".join(param.values) for param in filter_params}
+    return {"__".join(param.args): param.value for param in filter_params}
 
 
 class AddonServiceFilteringBackend(filters.BaseFilterBackend):

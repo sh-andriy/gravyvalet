@@ -74,6 +74,13 @@ class TestUserReferenceAPI(APITestCase):
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
 
+    def test_list__multiple_filters_okay(self):
+        _resp = self.client.get(
+            self._list_path,
+            {"filter[user_uri]": self._user.user_uri, "filter[id]": self._user.id},
+        )
+        self.assertEqual(_resp.status_code, HTTPStatus.OK)
+
     def test_list__no_filter(self):
         _resp = self.client.get(self._list_path)
         self.assertEqual(_resp.status_code, HTTPStatus.BAD_REQUEST)

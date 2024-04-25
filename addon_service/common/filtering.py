@@ -7,26 +7,20 @@ from .jsonapi import group_query_params_by_family
 def extract_filter_expressions(query_dict, serializer) -> dict[str, str]:
     """Extract the "filter" family of expressions from the query dict and format them for use.
 
-    Since no formal JSON:API scheme exists for complex filter operations, we will
-    Assumes that nested brackets are used to represent the equivalent of a `__` in Django,
-    i.e. a nested lookup or a named, non-equality comparison operation.
-
-    For example:
-    addons.osf.io/v1/user_references/{key}/authorized_storage_accounts/?filter=[created][lt]=YYYYYMMDD
-    would return only the authorized storage accounts for a given user that are older than the provided date
-
-    Similarly
-    /v1/resource_references/{key}/configured_storage_addons/?filter[base_account][external_strorage_service][name]=GoogleDrive
-    would return just the Google Drive addons for a given resource.
+    Since no formal JSON:API scheme exists for complex filter operations, we have settled on the following norm:
+    Filter params can have either one or two arguments.
+    The first argument MUST be a field on the serialized output of the endpoint
+    The second arugment is an OPTIONAL comparison operator (i.e. `icontains`, `lte`, etc.)
     """
     filter_params = group_query_params_by_family(query_dict.lists()).get("filter", [])
     return {
-        _format_filter_expression(param.args, serializer): param.value
+        _format_filter_args(param.args, serializer): param.value
         for param in filter_params
     }
 
 
-def _format_filter_expression(query_args, serializer):
+def _format_filter_args(query_args, serializer):
+    """Parse and format the query args into a kwarg key suitable for Django filtering."""
     try:
         field = serializer.fields[query_args[0]].source
     except (IndexError, KeyError):

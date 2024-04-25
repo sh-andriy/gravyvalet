@@ -20,7 +20,7 @@ def extract_filter_expressions(
     >>> class DemoSerializer(serializers.Serializer):
     ...   field = serializers.CharField()
     ...   renamed_field = serializers.IntegerField(source="original")
-    >>> query_dict = QueryDict("filter[field]=value&filter[renamed_field][lt]=4")
+    >>> query_dict = QueryDict("filter[field]=value&filter[renamed_field][lt]=4&notafilter=zzz")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
     {'field': 'value', 'original__lt': 4}
 

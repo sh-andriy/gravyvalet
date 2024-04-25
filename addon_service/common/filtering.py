@@ -61,9 +61,30 @@ def _format_filter_param(query_param, serializer):
             raise serializers.ValidationError(
                 "Filter query parameters only accept one field and one (optional) comparison operator"
             )
+    _validate_operation(operation, serializer, field)
     filter_name = field.source if operation is None else f"{field.source}__{operation}"
     filter_value = field.to_internal_value(query_param.value)
     return (filter_name, filter_value)
+
+
+def _validate_operation(operation_string, serializer, field):
+    """
+    >>> from addon_service.serializers import UserReferenceSerializer
+    >>> uri_field = UserReferenceSerializer().fields["user_uri"]
+    >>> _validate_operation("isnull", UserReferenceSerializer, uri_field)
+    True
+    >>> _validate_operation("invalid", UserReferenceSerializer, uri_field)
+    Traceback (most recent call last):
+    rest_framework.exceptions.ValidationError...
+    """
+    if not operation_string or not hasattr(serializer, "Meta"):
+        return True
+    model = serializer.Meta.model
+    if operation_string not in model._meta.get_field(field.source).get_lookups():
+        raise serializers.ValidationError(
+            f"{operation_string} is not a valid comparison operation for field {field.field_name}"
+        )
+    return True
 
 
 class AddonServiceFilteringBackend(filters.BaseFilterBackend):

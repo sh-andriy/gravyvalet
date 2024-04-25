@@ -27,10 +27,23 @@ def extract_filter_expressions(query_dict, serializer) -> dict[str, str]:
 
 
 def _format_filter_expression(query_args, serializer):
-    operation = None
-    field = serializer.fields[query_args[0]].source
-    if len(query_args) == 2:
-        operation = query_args[1]
+    try:
+        field = serializer.fields[query_args[0]].source
+    except (IndexError, KeyError):
+        raise ValidationError(
+            "Filter query parameters must specify a field to filter on"
+        )
+
+    match len(query_args):
+        case 1:
+            operation = None
+        case 2:
+            operation = query_args[1]
+        case _:
+            raise ValidationError(
+                "Filter query parameters only accept one field and one (optional) comparison operator"
+            )
+
     return field if operation is None else f"{field}__{operation}"
 
 

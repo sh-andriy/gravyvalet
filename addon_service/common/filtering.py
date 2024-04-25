@@ -17,12 +17,15 @@ def extract_filter_expressions(
     The first argument MUST be a field on the serialized output of the endpoint
     The second arugment is an OPTIONAL comparison operator (i.e. `icontains`, `lte`, etc.)
 
+    >>> from addon_service.models import UserReference
     >>> class DemoSerializer(serializers.Serializer):
-    ...   field = serializers.CharField()
-    ...   renamed_field = serializers.IntegerField(source="original")
-    >>> query_dict = QueryDict("filter[field]=value&filter[renamed_field][lt]=4&notafilter=zzz")
+    ...   user_uri = serializers.CharField()
+    ...   renamed_id = serializers.IntegerField(source="id")
+    ...   class Meta:
+    ...     model = UserReference
+    >>> query_dict = QueryDict("filter[user_uri]=value&filter[renamed_id][lt]=4&notafilter=zzz")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
-    {'field': 'value', 'original__lt': 4}
+    {'user_uri': 'value', 'id__lt': 4}
 
     >>> query_dict = QueryDict("filter")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
@@ -34,7 +37,12 @@ def extract_filter_expressions(
     Traceback (most recent call last):
     rest_framework.exceptions.ValidationError...
 
-    >>> query_dict = QueryDict("filter[field][isnull][extra]")
+    >>> query_dict = QueryDict("filter[user_uri][isnull][extra]")
+    >>> extract_filter_expressions(query_dict, DemoSerializer())
+    Traceback (most recent call last):
+    rest_framework.exceptions.ValidationError...
+
+    >>> query_dict = QueryDict("filter[user_uri][invalid]")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
     Traceback (most recent call last):
     rest_framework.exceptions.ValidationError...
@@ -61,23 +69,15 @@ def _format_filter_param(query_param, serializer):
             raise serializers.ValidationError(
                 "Filter query parameters only accept one field and one (optional) comparison operator"
             )
-    _validate_operation(operation, serializer, field)
+    if operation:
+        _validate_operation(serializer, field, operation)
     filter_name = field.source if operation is None else f"{field.source}__{operation}"
     filter_value = field.to_internal_value(query_param.value)
     return (filter_name, filter_value)
 
 
-def _validate_operation(operation_string, serializer, field):
-    """
-    >>> from addon_service.serializers import UserReferenceSerializer
-    >>> uri_field = UserReferenceSerializer().fields["user_uri"]
-    >>> _validate_operation("isnull", UserReferenceSerializer, uri_field)
-    True
-    >>> _validate_operation("invalid", UserReferenceSerializer, uri_field)
-    Traceback (most recent call last):
-    rest_framework.exceptions.ValidationError...
-    """
-    if not operation_string or not hasattr(serializer, "Meta"):
+def _validate_operation(serializer, field, operation_string):
+    if not hasattr(serializer, "Meta"):
         return True
     model = serializer.Meta.model
     if operation_string not in model._meta.get_field(field.source).get_lookups():

@@ -28,7 +28,7 @@ def extract_filter_expressions(query_dict, serializer) -> dict[str, str]:
 
 def _format_filter_expression(query_args, serializer):
     operation = None
-    field = query_args[0]
+    field = serializer.fields[query_args[0]].source
     if len(query_args) == 2:
         operation = query_args[1]
     return field if operation is None else f"{field}__{operation}"

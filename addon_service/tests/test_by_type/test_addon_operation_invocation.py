@@ -11,6 +11,7 @@ from addon_service import models
 from addon_service.addon_operation_invocation.views import (
     AddonOperationInvocationViewSet,
 )
+from addon_service.common.aiohttp_session import close_client_session_sync
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,
@@ -30,6 +31,7 @@ class TestAddonOperationInvocationCreate(APITestCase):
 
     def setUp(self):
         super().setUp()
+        self.addCleanup(close_client_session_sync)
         self.client.cookies[settings.USER_REFERENCE_COOKIE] = self._user.user_uri
         self._mock_osf = MockOSF()
         self.enterContext(self._mock_osf.mocking())
@@ -153,8 +155,7 @@ class TestAddonOperationInvocationRelatedView(TestCase):
             related_field="base_account",
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
         self.assertEqual(
-            _content["data"]["id"],
-            str(self._invocation.base_account_id),
+            _resp.data["id"],
+            self._invocation.base_account_id,
         )

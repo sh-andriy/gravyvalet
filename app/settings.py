@@ -29,7 +29,7 @@ ALLOWED_HOSTS = env.ALLOWED_HOSTS
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -38,7 +38,12 @@ INSTALLED_APPS = (
     "rest_framework",
     "rest_framework_json_api",
     "addon_service",
-)
+]
+
+if DEBUG:
+    # run under ASGI locally:
+    INSTALLED_APPS.append("daphne")  # django's reference asgi server
+    ASGI_APPLICATION = "app.asgi.application"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

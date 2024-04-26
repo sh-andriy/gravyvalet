@@ -31,11 +31,12 @@ class ExternalStorageServiceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ExternalStorageService
         fields = [
+            "id",
             "addon_imp",
             "auth_uri",
             "credentials_format",
             "max_concurrent_downloads",
             "max_upload_mb",
-            "service_name",
+            "name",
             "url",
         ]

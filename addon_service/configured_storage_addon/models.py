@@ -1,6 +1,5 @@
 from typing import Iterator
 
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -29,8 +28,8 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     root_folder = models.CharField(blank=True)
 
-    int_connected_capabilities = ArrayField(
-        models.IntegerField(validators=[validate_addon_capability])
+    int_connected_capabilities = models.IntegerField(
+        validators=[validate_addon_capability]
     )
 
     base_account = models.ForeignKey(
@@ -53,19 +52,14 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
         resource_name = "configured-storage-addons"
 
     @property
-    def connected_capabilities(self) -> list[AddonCapabilities]:
+    def connected_capabilities(self) -> AddonCapabilities:
         """get the enum representation of int_connected_capabilities"""
-        return [
-            AddonCapabilities(_int_capability)
-            for _int_capability in self.int_connected_capabilities
-        ]
+        return AddonCapabilities(self.int_connected_capabilities)
 
     @connected_capabilities.setter
-    def connected_capabilities(self, new_capabilities: list[AddonCapabilities]):
+    def connected_capabilities(self, new_capabilities: AddonCapabilities):
         """set int_connected_capabilities without caring it's int"""
-        self.int_connected_capabilities = [
-            AddonCapabilities(_cap).value for _cap in new_capabilities
-        ]
+        self.int_connected_capabilities = new_capabilities.value
 
     @property
     def account_owner(self):

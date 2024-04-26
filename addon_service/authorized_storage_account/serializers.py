@@ -1,4 +1,4 @@
-from rest_framework.serializers import JSONField
+from django.core.exceptions import ValidationError as ModelValidationError
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
     HyperlinkedRelatedField,
@@ -8,17 +8,18 @@ from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common import view_names
-from addon_service.common.enums.serializers import EnumNameMultipleChoiceField
-from addon_service.common.serializer_fields import (
-    DataclassRelatedLinkField,
-    ReadOnlyResourceRelatedField,
-)
 from addon_service.credentials import CredentialsFormats
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
     ExternalStorageService,
     UserReference,
+)
+from addon_service.serializer_fields import (
+    CredentialsField,
+    DataclassRelatedLinkField,
+    EnumNameMultipleChoiceField,
+    ReadOnlyResourceRelatedField,
 )
 from addon_toolkit import AddonCapabilities
 
@@ -43,6 +44,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         read_only=True,
     )
     auth_url = serializers.CharField(read_only=True)
+    api_base_url = serializers.URLField(allow_blank=True, required=False)
     account_owner = ReadOnlyResourceRelatedField(
         many=False,
         queryset=UserReference.objects.all(),
@@ -63,7 +65,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         dataclass_model=AddonOperationModel,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
-    credentials = JSONField(write_only=True, required=False)
+    credentials = CredentialsField(write_only=True, required=False)
 
     included_serializers = {
         "account_owner": "addon_service.serializers.UserReferenceSerializer",
@@ -77,25 +79,37 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         account_owner, _ = UserReference.objects.get_or_create(
             user_uri=session_user_uri
         )
-        authorized_account = AuthorizedStorageAccount(
-            external_storage_service=validated_data["external_storage_service"],
-            account_owner=account_owner,
-            authorized_capabilities=validated_data.get("authorized_capabilities"),
-        )
-        if authorized_account.credentials_format is CredentialsFormats.OAUTH2:
+        external_service = validated_data["external_storage_service"]
+        try:
+            authorized_account = AuthorizedStorageAccount.objects.create(
+                external_storage_service=external_service,
+                account_owner=account_owner,
+                authorized_capabilities=validated_data.get("authorized_capabilities"),
+                api_base_url=validated_data.get("api_base_url", ""),
+            )
+        except ModelValidationError as e:
+            raise serializers.ValidationError(e)
+
+        if external_service.credentials_format is CredentialsFormats.OAUTH2:
             authorized_account.initiate_oauth2_flow(
                 validated_data.get("authorized_scopes")
             )
         else:
-            authorized_account.set_credentials(validated_data.get("credentials"))
+            authorized_account.credentials = validated_data["credentials"]
+        try:
+            authorized_account.save()
+        except ModelValidationError as e:
+            raise serializers.ValidationError(e)
 
         return authorized_account
 
     class Meta:
         model = AuthorizedStorageAccount
         fields = [
+            "id",
             "url",
             "account_owner",
+            "api_base_url",
             "auth_url",
             "authorized_capabilities",
             "authorized_operations",

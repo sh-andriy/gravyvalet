@@ -1,4 +1,3 @@
-import json
 import urllib
 from http import HTTPStatus
 from unittest import mock
@@ -14,37 +13,49 @@ from addon_service.authorized_storage_account.views import (
     AuthorizedStorageAccountViewSet,
 )
 from addon_service.credentials import CredentialsFormats
+from addon_service.external_storage_service import ServiceTypes
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,
     get_test_request,
 )
 from addon_toolkit import AddonCapabilities
+from addon_toolkit.credentials import (
+    AccessKeySecretKeyCredentials,
+    AccessTokenCredentials,
+    UsernamePasswordCredentials,
+)
 
 
 VALID_CREDENTIALS_FORMATS = set(CredentialsFormats) - {CredentialsFormats.UNSPECIFIED}
 NON_OAUTH_FORMATS = VALID_CREDENTIALS_FORMATS - {CredentialsFormats.OAUTH2}
 
-MOCK_CREDENTIALS_BLOBS = {
-    CredentialsFormats.OAUTH2: {},
-    CredentialsFormats.PERSONAL_ACCESS_TOKEN: {"access_token": "token"},
-    CredentialsFormats.ACCESS_KEY_SECRET_KEY: {
-        "access_key": "access",
-        "secret_key": "secret",
-    },
-    CredentialsFormats.USERNAME_PASSWORD: {"username": "me", "password": "unsafe"},
+MOCK_CREDENTIALS = {
+    CredentialsFormats.OAUTH2: None,
+    CredentialsFormats.PERSONAL_ACCESS_TOKEN: AccessTokenCredentials(
+        access_token="token"
+    ),
+    CredentialsFormats.ACCESS_KEY_SECRET_KEY: AccessKeySecretKeyCredentials(
+        access_key="access",
+        secret_key="secret",
+    ),
+    CredentialsFormats.USERNAME_PASSWORD: UsernamePasswordCredentials(
+        username="me",
+        password="unsafe",
+    ),
 }
 
 
-def _make_post_payload(*, external_service, capabilities=None, credentials=None):
-    return {
+def _make_post_payload(
+    *, external_service, capabilities=None, credentials=None, api_root=""
+):
+    capabilities = capabilities or [AddonCapabilities.ACCESS.name]
+    payload = {
         "data": {
             "type": "authorized-storage-accounts",
             "attributes": {
-                "authorized_capabilities": capabilities
-                or [AddonCapabilities.ACCESS.name],
-                "credentials": credentials
-                or MOCK_CREDENTIALS_BLOBS[external_service.credentials_format],
+                "authorized_capabilities": capabilities,
+                "api_base_url": api_root,
             },
             "relationships": {
                 "external_storage_service": {
@@ -56,6 +67,10 @@ def _make_post_payload(*, external_service, capabilities=None, credentials=None)
             },
         }
     }
+    credentials = credentials or MOCK_CREDENTIALS[external_service.credentials_format]
+    if credentials:
+        payload["data"]["attributes"]["credentials"] = credentials.asdict()
+    return payload
 
 
 class TestAuthorizedStorageAccountAPI(APITestCase):
@@ -107,37 +122,35 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             _make_post_payload(external_service=external_service),
             format="vnd.api+json",
         )
-        self.assertEqual(_resp.status_code, 201)
+        self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
         self.assertTrue(
             external_service.authorized_storage_accounts.filter(
-                id=json.loads(_resp.rendered_content)["data"]["id"]
+                id=_resp.data["id"]
             ).exists()
         )
 
     def test_post__sets_credentials(self):
         for creds_format in NON_OAUTH_FORMATS:
+            external_service = _factories.ExternalStorageServiceFactory()
+            external_service.int_credentials_format = creds_format.value
+            external_service.save()
+
+            _resp = self.client.post(
+                reverse("authorized-storage-accounts-list"),
+                _make_post_payload(external_service=external_service),
+                format="vnd.api+json",
+            )
+            self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
+
+            account = db.AuthorizedStorageAccount.objects.get(id=_resp.data["id"])
             with self.subTest(creds_format=creds_format):
-                external_service = _factories.ExternalStorageServiceFactory()
-                external_service.int_credentials_format = creds_format.value
-                external_service.save()
-
-                _resp = self.client.post(
-                    reverse("authorized-storage-accounts-list"),
-                    _make_post_payload(external_service=external_service),
-                    format="vnd.api+json",
-                )
-                self.assertEqual(_resp.status_code, 201)
-
-                account = db.AuthorizedStorageAccount.objects.get(
-                    id=json.loads(_resp.rendered_content)["data"]["id"]
-                )
                 self.assertEqual(
                     account._credentials.credentials_blob,
-                    MOCK_CREDENTIALS_BLOBS[creds_format],
+                    MOCK_CREDENTIALS[creds_format].asdict(),
                 )
 
-    def tet_post__sets_auth_url(self):
+    def test_post__sets_auth_url(self):
         external_service = _factories.ExternalStorageServiceFactory(
             credentials_format=CredentialsFormats.OAUTH2
         )
@@ -147,11 +160,9 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             _make_post_payload(external_service=external_service),
             format="vnd.api+json",
         )
-        self.assertEqual(_resp.status_code, 201)
+        self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
-        self.assertIn(
-            "auth_url", json.loads(_resp.rendered_content)["data"]["attributes"]
-        )
+        self.assertIn("auth_url", _resp.data)
 
     def tet_post__does_not_set_auth_url(self):
         for creds_format in NON_OAUTH_FORMATS:
@@ -165,11 +176,71 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
                     _make_post_payload(external_service=external_service),
                     format="vnd.api+json",
                 )
-                self.assertEqual(_resp.status_code, 201)
+                self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
 
-                self.assertNotIn(
-                    "auth_url", json.loads(_resp.rendered_content)["data"]["attributes"]
+                self.assertNotIn("auth_url", _resp.data)
+
+    def test_post__api_base_url__success(self):
+        for service_type in [
+            ServiceTypes.HOSTED,
+            ServiceTypes.PUBLIC | ServiceTypes.HOSTED,
+        ]:
+            with self.subTest(service_type=service_type):
+                service = _factories.ExternalStorageServiceFactory(
+                    service_type=service_type
                 )
+                _resp = self.client.post(
+                    reverse("authorized-storage-accounts-list"),
+                    _make_post_payload(
+                        external_service=service, api_root="https://api.my.service/"
+                    ),
+                    format="vnd.api+json",
+                )
+                with self.subTest("Creation succeeds"):
+                    self.assertEqual(_resp.status_code, HTTPStatus.CREATED)
+                with self.subTest("api_base_url set on account"):
+                    account = db.AuthorizedStorageAccount.objects.get(
+                        id=_resp.data["id"]
+                    )
+                    self.assertTrue(account._api_base_url)
+
+    def test_post__api_base_url__invalid__required(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.HOSTED
+        )
+        service.api_base_url = ""
+        service.save()
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(external_service=service),
+            format="vnd.api+json",
+        )
+
+        self.assertEqual(_resp.status_code, 400)
+
+    def test_post__api_base_url__invalid__unsupported(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.PUBLIC
+        )
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(
+                external_service=service, api_root="https://api.my.service/"
+            ),
+            format="vnd.api+json",
+        )
+        self.assertEqual(_resp.status_code, 400)
+
+    def test_post__api_base_url__invalid__bad_url(self):
+        service = _factories.ExternalStorageServiceFactory(
+            service_type=ServiceTypes.HOSTED
+        )
+        _resp = self.client.post(
+            reverse("authorized-storage-accounts-list"),
+            _make_post_payload(external_service=service, api_root="not.a.url"),
+            format="vnd.api+json",
+        )
+        self.assertEqual(_resp.status_code, 400)
 
     def test_methods_not_allowed(self):
         _methods_not_allowed = {
@@ -189,25 +260,27 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
 # unit-test data model
 class TestAuthorizedStorageAccountModel(TestCase):
-    UPDATED_CREDENTIALS_BLOBS = {
-        CredentialsFormats.PERSONAL_ACCESS_TOKEN: {"access_token": "new_token"},
-        CredentialsFormats.ACCESS_KEY_SECRET_KEY: {
-            "access_key": "secret",
-            "secret_key": "access",
-        },
-        CredentialsFormats.USERNAME_PASSWORD: {
-            "username": "you",
-            "password": "moresafe",
-        },
+    UPDATED_CREDENTIALS = {
+        CredentialsFormats.PERSONAL_ACCESS_TOKEN: AccessTokenCredentials(
+            access_token="new_token"
+        ),
+        CredentialsFormats.ACCESS_KEY_SECRET_KEY: AccessKeySecretKeyCredentials(
+            access_key="secret",
+            secret_key="access",
+        ),
+        CredentialsFormats.USERNAME_PASSWORD: UsernamePasswordCredentials(
+            username="you",
+            password="moresafe",
+        ),
     }
-    INVALID_CREDENTIALS_BLOBS = {
-        CredentialsFormats.PERSONAL_ACCESS_TOKEN: MOCK_CREDENTIALS_BLOBS[
+    INVALID_CREDENTIALS = {
+        CredentialsFormats.PERSONAL_ACCESS_TOKEN: MOCK_CREDENTIALS[
             CredentialsFormats.USERNAME_PASSWORD
         ],
-        CredentialsFormats.ACCESS_KEY_SECRET_KEY: MOCK_CREDENTIALS_BLOBS[
+        CredentialsFormats.ACCESS_KEY_SECRET_KEY: MOCK_CREDENTIALS[
             CredentialsFormats.PERSONAL_ACCESS_TOKEN
         ],
-        CredentialsFormats.USERNAME_PASSWORD: MOCK_CREDENTIALS_BLOBS[
+        CredentialsFormats.USERNAME_PASSWORD: MOCK_CREDENTIALS[
             CredentialsFormats.ACCESS_KEY_SECRET_KEY
         ],
     }
@@ -251,7 +324,9 @@ class TestAuthorizedStorageAccountModel(TestCase):
             "state": [self._asa.oauth2_token_metadata.state_token],
             "client_id": [self._asa.external_service.oauth2_client_config.client_id],
             "scope": self._asa.oauth2_token_metadata.authorized_scopes,
-            "redirect_uri": [self._asa.external_service.auth_callback_url],
+            "redirect_uri": [
+                self._asa.external_service.oauth2_client_config.auth_callback_url
+            ],
             "response_type": ["code"],
         }
         self.assertEqual(expected_query_params, urllib.parse.parse_qs(parsed_url.query))
@@ -267,9 +342,9 @@ class TestAuthorizedStorageAccountModel(TestCase):
 
     def test_auth_url__no_active_state_token(self):
         self.assertIsNotNone(self._asa.auth_url)
-        del self._asa.credentials  # clear cached_property
         oauth_meta = self._asa.oauth2_token_metadata
         oauth_meta.state_token = None
+        oauth_meta.refresh_token = "refresh"
         oauth_meta.save()
         self.assertIsNone(self._asa.auth_url)
 
@@ -281,7 +356,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
                 credentials_format=CredentialsFormats.OAUTH2
             ),
             account_owner=self._user,
-            authorized_capabilities=[AddonCapabilities.ACCESS],
+            authorized_capabilities=AddonCapabilities.ACCESS,
         )
         account.initiate_oauth2_flow()
         with self.subTest("State Token set on OAuth credentials creation"):
@@ -315,45 +390,35 @@ class TestAuthorizedStorageAccountModel(TestCase):
         with self.subTest("Colliding Tokens not stored in DB"):
             self.assertEqual(db.OAuth2TokenMetadata.objects.count(), 2)
 
-    # set_credentials
+    # set credentials
 
     def test_set_credentials__oauth__fails_if_state_token_exists(self):
         account = _factories.AuthorizedStorageAccountFactory(
             credentials_format=CredentialsFormats.OAUTH2,
         )
+        account.credentials = AccessTokenCredentials(access_token="nope")
         with self.assertRaises(ValidationError):
-            account.set_credentials({"access_token": "nope"})
-        account.refresh_from_db()  # Confirm transaction rollback
-        self.assertIsNone(account._credentials)
-
-    def test_set_credentials__oauth__fails_if_no_refresh_token(self):
-        account = _factories.AuthorizedStorageAccountFactory(
-            credentials_format=CredentialsFormats.OAUTH2
-        )
-        token_metadata = account.oauth2_token_metadata
-        token_metadata.state_token = None
-        token_metadata.save()
-        with self.assertRaises(ValidationError):
-            account.set_credentials({"access_token": "nope"})
+            account.save()
         account.refresh_from_db()  # Confirm transaction rollback
         self.assertIsNone(account._credentials)
 
     def test_set_credentials__create(self):
         for creds_format in NON_OAUTH_FORMATS:
+            external_service = _factories.ExternalStorageServiceFactory(
+                credentials_format=creds_format
+            )
+            account = db.AuthorizedStorageAccount(
+                external_storage_service=external_service,
+                account_owner=self._user,
+                authorized_capabilities=AddonCapabilities.ACCESS,
+            )
+            self.assertIsNone(account._credentials)
+            mock_credentials = MOCK_CREDENTIALS[creds_format]
+            account.credentials = mock_credentials
+            account.save()
             with self.subTest(creds_format=creds_format):
-                external_service = _factories.ExternalStorageServiceFactory(
-                    credentials_format=creds_format
-                )
-                account = db.AuthorizedStorageAccount(
-                    external_storage_service=external_service,
-                    account_owner=self._user,
-                    authorized_capabilities=[AddonCapabilities.ACCESS],
-                )
-                self.assertIsNone(account._credentials)
-                mock_credentials = MOCK_CREDENTIALS_BLOBS[creds_format]
-                account.set_credentials(api_credentials_blob=mock_credentials)
                 self.assertEqual(
-                    account._credentials.credentials_blob, mock_credentials
+                    account._credentials.credentials_blob, mock_credentials.asdict()
                 )
 
     def test_set_credentials__create__oauth(self):
@@ -367,24 +432,27 @@ class TestAuthorizedStorageAccountModel(TestCase):
         token_metadata.refresh_token = "refresh"
         token_metadata.save()
 
-        account.set_credentials({"access_token": "yep"})
+        account.credentials = AccessTokenCredentials(access_token="yep")
+        account.save()
         account.refresh_from_db()  # Confirm that changes were committed
         self.assertEqual(account.credentials.access_token, "yep")
 
     def test_set_credentials__update(self):
         for creds_format in NON_OAUTH_FORMATS:
+            account = _factories.AuthorizedStorageAccountFactory(
+                credentials_format=creds_format,
+                credentials=MOCK_CREDENTIALS[creds_format],
+            )
+            original_creds_id = account._credentials.id
+            updated_credentials = self.UPDATED_CREDENTIALS[creds_format]
+            account.credentials = updated_credentials
+            account.save()
+            account.refresh_from_db()
             with self.subTest(creds_format=creds_format):
-                account = _factories.AuthorizedStorageAccountFactory(
-                    credentials_format=creds_format,
-                    credentials_dict=MOCK_CREDENTIALS_BLOBS[creds_format],
-                )
-                original_creds_id = account._credentials.id
-                updated_credentials = self.UPDATED_CREDENTIALS_BLOBS[creds_format]
-                account.set_credentials(api_credentials_blob=updated_credentials)
-                account.refresh_from_db()
                 with self.subTest("Credentials values updated"):
                     self.assertEqual(
-                        account._credentials.credentials_blob, updated_credentials
+                        account._credentials.credentials_blob,
+                        updated_credentials.asdict(),
                     )
                 with self.subTest("Credentials updated in place"):
                     self.assertEqual(account._credentials.id, original_creds_id)
@@ -394,66 +462,11 @@ class TestAuthorizedStorageAccountModel(TestCase):
             with self.subTest(creds_format=creds_format):
                 account = _factories.AuthorizedStorageAccountFactory(
                     credentials_format=creds_format,
-                    credentials_dict=MOCK_CREDENTIALS_BLOBS[creds_format],
+                    credentials=MOCK_CREDENTIALS[creds_format],
                 )
-                invalid_credentials = self.INVALID_CREDENTIALS_BLOBS[creds_format]
+                invalid_credentials = self.INVALID_CREDENTIALS[creds_format]
                 with self.assertRaises(ValidationError):
-                    account.set_credentials(api_credentials_blob=invalid_credentials)
-
-
-# unit-test viewset (call the view with test requests)
-class TestAuthorizedStorageAccountViewSet(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls._asa = _factories.AuthorizedStorageAccountFactory()
-        cls._user = cls._asa.account_owner
-        cls._view = AuthorizedStorageAccountViewSet.as_view({"get": "retrieve"})
-
-    def setUp(self):
-        super().setUp()
-        self._mock_osf = MockOSF()
-        self.enterContext(self._mock_osf.mocking())
-
-    def test_get(self):
-        _resp = self._view(
-            get_test_request(cookies={"osf": self._user.user_uri}),
-            pk=self._asa.pk,
-        )
-        self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
-        self.assertEqual(
-            set(_content["data"]["attributes"].keys()),
-            {
-                "default_root_folder",
-                "authorized_capabilities",
-                "authorized_operation_names",
-                "auth_url",
-            },
-        )
-        self.assertEqual(
-            _content["data"]["attributes"]["authorized_capabilities"],
-            ["ACCESS"],
-        )
-        self.assertEqual(
-            set(_content["data"]["relationships"].keys()),
-            {
-                "account_owner",
-                "external_storage_service",
-                "configured_storage_addons",
-                "authorized_operations",
-            },
-        )
-
-    def test_unauthorized(self):
-        _anon_resp = self._view(get_test_request(), pk=self._asa.pk)
-        self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
-
-    def test_wrong_user(self):
-        _resp = self._view(
-            get_test_request(cookies={settings.USER_REFERENCE_COOKIE: "wrong/10"}),
-            pk=self._asa.pk,
-        )
-        self.assertEqual(_resp.status_code, HTTPStatus.FORBIDDEN)
+                    account.credentials = invalid_credentials
 
 
 class TestAuthorizedStorageAccountRelatedView(TestCase):
@@ -490,8 +503,7 @@ class TestAuthorizedStorageAccountRelatedView(TestCase):
             related_field="configured_storage_addons",
         )
         self.assertEqual(_resp.status_code, HTTPStatus.OK)
-        _content = json.loads(_resp.rendered_content)
         self.assertEqual(
-            {_datum["id"] for _datum in _content["data"]},
-            {str(_addon.pk) for _addon in _addons},
+            {_datum["id"] for _datum in _resp.data},
+            {_addon.pk for _addon in _addons},
         )

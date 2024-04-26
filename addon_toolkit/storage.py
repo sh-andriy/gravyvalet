@@ -81,15 +81,13 @@ class ItemSampleResult:
 
 @addon_protocol()  # TODO: descriptions with language tags
 class StorageAddonProtocol(typing.Protocol):
-    def __init__(self, config: StorageConfig, network: HttpRequestor):
-        ...
+    def __init__(self, config: StorageConfig, network: HttpRequestor): ...
 
     ###
     # declared operations:
 
     @redirect_operation(capability=AddonCapabilities.ACCESS)
-    def download(self, item_id: str) -> RedirectResult:
-        ...
+    def download(self, item_id: str) -> RedirectResult: ...
 
     #
     #    @immediate_operation(capability=AddonCapabilities.ACCESS)
@@ -109,24 +107,20 @@ class StorageAddonProtocol(typing.Protocol):
     # "tree-read" operations:
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_root_items(self, page_cursor: str = "") -> ItemSampleResult:
-        ...
+    async def get_root_items(self, page_cursor: str = "") -> ItemSampleResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_parent_item_id(self, item_id: str) -> PossibleSingleItemResult:
-        ...
+    async def get_parent_item_id(self, item_id: str) -> PossibleSingleItemResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_item_path(self, item_id: str) -> PathResult:
-        ...
+    async def get_item_path(self, item_id: str) -> PathResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
     async def get_child_items(
         self,
         item_id: str,
         page_cursor: str = "",
-    ) -> ItemSampleResult:
-        ...
+    ) -> ItemSampleResult: ...
 
 
 #

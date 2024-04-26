@@ -95,15 +95,12 @@ class HttpRequestInfo:
 
 class HttpResponseInfo(typing.Protocol):
     @property
-    def http_status(self) -> HTTPStatus:
-        ...
+    def http_status(self) -> HTTPStatus: ...
 
     @property
-    def headers(self) -> Multidict:
-        ...
+    def headers(self) -> Multidict: ...
 
-    async def json_content(self) -> typing.Any:
-        ...
+    async def json_content(self) -> typing.Any: ...
 
     # TODO: streaming (when needed)
 
@@ -119,21 +116,18 @@ class _MethodRequestMethod(typing.Protocol):
         uri_path: str,
         query: Multidict | KeyValuePairs | None = None,
         headers: Multidict | KeyValuePairs | None = None,
-    ) -> contextlib.AbstractAsyncContextManager[HttpResponseInfo]:
-        ...
+    ) -> contextlib.AbstractAsyncContextManager[HttpResponseInfo]: ...
 
 
 class HttpRequestor(typing.Protocol):
     @property
-    def response_info_cls(self) -> type[HttpResponseInfo]:
-        ...
+    def response_info_cls(self) -> type[HttpResponseInfo]: ...
 
     # abstract method for subclasses
     def send(
         self,
         request: HttpRequestInfo,
-    ) -> contextlib.AbstractAsyncContextManager[HttpResponseInfo]:
-        ...
+    ) -> contextlib.AbstractAsyncContextManager[HttpResponseInfo]: ...
 
     @contextlib.asynccontextmanager
     async def request(

@@ -7,6 +7,6 @@ responses
 
 # Syntax checking
 flake8
-black
+black==24.*
 isort
 pre-commit

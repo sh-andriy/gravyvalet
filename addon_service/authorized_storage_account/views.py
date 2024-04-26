@@ -14,7 +14,13 @@ class AuthorizedStorageAccountViewSet(RetrieveWriteViewSet):
 
     def get_permissions(self):
         match self.action:
-            case "retrieve" | "retrieve_related" | "partial_update" | "update" | "destroy":
+            case (
+                "retrieve"
+                | "retrieve_related"
+                | "partial_update"
+                | "update"
+                | "destroy"
+            ):
                 return [IsAuthenticated(), SessionUserIsOwner()]
             case "create":
                 return [IsAuthenticated()]

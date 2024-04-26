@@ -2,6 +2,7 @@
 
 import and add new implementations here to make them available in the api
 """
+
 import enum
 
 from addon_toolkit import AddonImp

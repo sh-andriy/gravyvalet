@@ -144,7 +144,6 @@ class MockExternalService:
         return _MockResponse()
 
     async def _route_post(self, url, *args, **kwargs):
-        print(self._token_endpoint_url)
         if url.startswith(self._token_endpoint_url):
             return _MockResponse(
                 status_code=HTTPStatus.CREATED,

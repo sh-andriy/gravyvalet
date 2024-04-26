@@ -1,10 +1,36 @@
 from django.http.request import QueryDict
 from rest_framework import (
+    fields,
     filters,
     serializers,
 )
 
-from .jsonapi import group_query_params_by_family
+from .jsonapi import (
+    JSONAPIQueryParam,
+    group_query_params_by_family,
+)
+
+
+class AddonServiceFilteringBackend(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        filter_expressions = extract_filter_expressions(
+            request.query_params, view.get_serializer()
+        )
+        return queryset.filter(**filter_expressions)
+
+
+class RestrictedListEndpointFilterBackend(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        required_filters = set(view.required_list_filter_fields)
+        filter_expressions = extract_filter_expressions(
+            request.query_params, view.get_serializer()
+        )
+        missing_filters = required_filters - filter_expressions.keys()
+        if missing_filters:
+            raise serializers.ValidationError(
+                f"Request was missing the following required filters for this endpoint: {missing_filters}"
+            )
+        return queryset.filter(**filter_expressions)
 
 
 def extract_filter_expressions(
@@ -23,6 +49,7 @@ def extract_filter_expressions(
     ...   renamed_id = serializers.IntegerField(source="id")
     ...   class Meta:
     ...     model = UserReference
+
     >>> query_dict = QueryDict("filter[user_uri]=value&filter[renamed_id][lt]=4&notafilter=zzz")
     >>> extract_filter_expressions(query_dict, DemoSerializer())
     {'user_uri': 'value', 'id__lt': 4}
@@ -51,7 +78,9 @@ def extract_filter_expressions(
     return dict([_format_filter_param(param, serializer) for param in filter_params])
 
 
-def _format_filter_param(query_param, serializer):
+def _format_filter_param(
+    query_param: JSONAPIQueryParam, serializer: serializers.Serializer
+) -> tuple[str, str]:
     """Parse and format the query args into a kwarg key suitable for Django filtering."""
     try:
         field = serializer.fields[query_param.args[0]]
@@ -76,7 +105,9 @@ def _format_filter_param(query_param, serializer):
     return (filter_name, filter_value)
 
 
-def _validate_operation(serializer, field, operation_string):
+def _validate_operation(
+    serializer: serializers.Serializer, field: fields.Field, operation_string: str
+) -> bool:
     if not hasattr(serializer, "Meta"):
         return True
     model = serializer.Meta.model
@@ -85,25 +116,3 @@ def _validate_operation(serializer, field, operation_string):
             f"{operation_string} is not a valid comparison operation for field {field.field_name}"
         )
     return True
-
-
-class AddonServiceFilteringBackend(filters.BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        filter_expressions = extract_filter_expressions(
-            request.query_params, view.get_serializer()
-        )
-        return queryset.filter(**filter_expressions)
-
-
-class RestrictedListEndpointFilterBackend(filters.BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        required_filters = set(view.required_list_filter_fields)
-        filter_expressions = extract_filter_expressions(
-            request.query_params, view.get_serializer()
-        )
-        missing_filters = required_filters - filter_expressions.keys()
-        if missing_filters:
-            raise serializers.ValidationError(
-                f"Request was missing the following required filters for this endpoint: {missing_filters}"
-            )
-        return queryset.filter(**filter_expressions)

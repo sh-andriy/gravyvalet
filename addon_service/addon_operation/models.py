@@ -14,7 +14,7 @@ from addon_toolkit.operation import AddonOperationType
 
 # dataclass wrapper for addon_toolkit.AddonOperationImp that sufficiently
 # meets rest_framework_json_api expectations on a model class
-@dataclasses.dataclass(frozen=True, kw_only=True)
+@dataclasses.dataclass(frozen=True)
 class AddonOperationModel(StaticDataclassModel):
     operation_imp: AddonOperationImp
 

@@ -1,11 +1,11 @@
 import dataclasses
-import enum
 import typing
 import unittest
 from http import HTTPMethod
 from unittest.mock import Mock
 
 from addon_toolkit import (
+    AddonCapabilities,
     AddonImp,
     AddonOperationDeclaration,
     AddonOperationImp,
@@ -19,10 +19,6 @@ from addon_toolkit.operation import AddonOperationType
 
 class TestAddonProtocol(unittest.TestCase):
     # the basics of an addon protocol
-    class _MyCapability(enum.Enum):
-        GET_IT = "get-it"
-        PUT_IT = "put-it"
-        UNUSED = "unused"  # for testing when a capability has no operations
 
     ###
     # shared test env (on `self`)
@@ -49,12 +45,12 @@ class TestAddonProtocol(unittest.TestCase):
         class _MyProtocol(typing.Protocol):
             """this _MyProtocol docstring should find its way to browsable docs somewhere"""
 
-            @redirect_operation(capability=cls._MyCapability.GET_IT)
+            @redirect_operation(capability=AddonCapabilities.ACCESS)
             def url_for_get(self, checksum_iri: str) -> RedirectResult:
                 """this url_for_get docstring should find its way to docs"""
                 ...
 
-            @immediate_operation(capability=cls._MyCapability.GET_IT)
+            @immediate_operation(capability=AddonCapabilities.ACCESS)
             async def query_relations(
                 self,
                 checksum_iri: str,
@@ -63,7 +59,7 @@ class TestAddonProtocol(unittest.TestCase):
                 """this query_relations docstring should find its way to docs"""
                 ...
 
-            @redirect_operation(capability=cls._MyCapability.PUT_IT)
+            @redirect_operation(capability=AddonCapabilities.UPDATE)
             def url_for_put(self, checksum_iri: str) -> RedirectResult:
                 """this url_for_put docstring should find its way to docs"""
                 ...
@@ -93,17 +89,17 @@ class TestAddonProtocol(unittest.TestCase):
         # shared operations
         cls._expected_get_op = AddonOperationDeclaration(
             operation_type=AddonOperationType.REDIRECT,
-            capability=cls._MyCapability.GET_IT,
+            capability=AddonCapabilities.ACCESS,
             operation_fn=_MyProtocol.url_for_get,
         )
         cls._expected_put_op = AddonOperationDeclaration(
             operation_type=AddonOperationType.REDIRECT,
-            capability=cls._MyCapability.PUT_IT,
+            capability=AddonCapabilities.UPDATE,
             operation_fn=_MyProtocol.url_for_put,
         )
         cls._expected_query_op = AddonOperationDeclaration(
             operation_type=AddonOperationType.IMMEDIATE,
-            capability=cls._MyCapability.GET_IT,
+            capability=AddonCapabilities.ACCESS,
             operation_fn=_MyProtocol.query_relations,
         )
         cls._my_imp = AddonImp(
@@ -131,7 +127,7 @@ class TestAddonProtocol(unittest.TestCase):
         self.assertEqual(
             set(
                 _protocol_dec.get_operation_declarations(
-                    capabilities=[self._MyCapability.GET_IT]
+                    capabilities=[AddonCapabilities.ACCESS]
                 )
             ),
             {self._expected_get_op, self._expected_query_op},
@@ -139,18 +135,10 @@ class TestAddonProtocol(unittest.TestCase):
         self.assertEqual(
             set(
                 _protocol_dec.get_operation_declarations(
-                    capabilities=[self._MyCapability.PUT_IT]
+                    capabilities=[AddonCapabilities.UPDATE]
                 )
             ),
             {self._expected_put_op},
-        )
-        self.assertEqual(
-            set(
-                _protocol_dec.get_operation_declarations(
-                    capabilities=[self._MyCapability.UNUSED]
-                )
-            ),
-            set(),
         )
 
     def test_get_operation_imps(self) -> None:
@@ -160,27 +148,15 @@ class TestAddonProtocol(unittest.TestCase):
         )
         self.assertEqual(
             set(
-                self._my_imp.get_operation_imps(
-                    capabilities=[self._MyCapability.GET_IT]
-                )
+                self._my_imp.get_operation_imps(capabilities=[AddonCapabilities.ACCESS])
             ),
             {self._expected_get_imp},
         )
         self.assertEqual(
             set(
-                self._my_imp.get_operation_imps(
-                    capabilities=[self._MyCapability.PUT_IT]
-                )
+                self._my_imp.get_operation_imps(capabilities=[AddonCapabilities.UPDATE])
             ),
             {self._expected_put_imp},
-        )
-        self.assertEqual(
-            set(
-                self._my_imp.get_operation_imps(
-                    capabilities=[self._MyCapability.UNUSED]
-                )
-            ),
-            set(),
         )
 
     def test_operation_imp_by_name(self) -> None:

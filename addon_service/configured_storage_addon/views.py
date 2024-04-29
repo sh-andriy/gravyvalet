@@ -4,13 +4,13 @@ from addon_service.common.permissions import (
     SessionUserIsOwner,
     SessionUserIsReferencedResourceAdmin,
 )
-from addon_service.common.viewsets import RetrieveWriteViewSet
+from addon_service.common.viewsets import RetrieveWriteDeleteViewSet
 
 from .models import ConfiguredStorageAddon
 from .serializers import ConfiguredStorageAddonSerializer
 
 
-class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
+class ConfiguredStorageAddonViewSet(RetrieveWriteDeleteViewSet):
     queryset = ConfiguredStorageAddon.objects.active()
     serializer_class = ConfiguredStorageAddonSerializer
 

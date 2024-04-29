@@ -39,6 +39,8 @@ class ExternalStorageService(AddonsServiceBaseModel):
         "addon_service.OAuth2ClientConfig",
         on_delete=models.CASCADE,
         related_name="external_storage_services",
+        null=True,
+        blank=True,
     )
 
     class Meta:

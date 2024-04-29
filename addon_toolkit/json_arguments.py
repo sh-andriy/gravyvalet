@@ -20,11 +20,13 @@ def jsonschema_for_signature_params(signature: inspect.Signature) -> dict:
     >>> def _foo(a: str, b: int = 7): ...
     >>> jsonschema_for_signature_params(inspect.signature(_foo))
     {'type': 'object',
+     'additionalProperties': False,
      'properties': {'a': {'type': 'string'}, 'b': {'type': 'number'}},
      'required': ['a']}
     """
     return {
         "type": "object",
+        "additionalProperties": False,
         "properties": {
             _param_name: jsonschema_for_annotation(_param.annotation)
             for (_param_name, _param) in signature.parameters.items()

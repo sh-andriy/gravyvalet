@@ -1,4 +1,5 @@
 import base64
+import datetime
 from http import HTTPStatus
 
 from django.conf import settings
@@ -246,4 +247,22 @@ class TestWBConfigRetrieval(APITestCase):
         response = self.client.get(
             request_url,
         )
+        self.assertEqual(response.status_code, 403)
+
+    def test_get_waterbutler_config__error__expired_header(self):
+        request_url = reverse(
+            "configured-storage-addons-waterbutler-config",
+            kwargs={
+                "pk": self._configured_storage_addon.pk,
+            },
+        )
+        headers = hmac_utils.make_signed_headers(
+            request_url=request_url,
+            request_method="GET",
+        )
+        headers["X-Message-Expiration"] = datetime.datetime.now(
+            datetime.UTC
+        ) - datetime.timedelta(minutes=5)
+
+        response = self.client.get(request_url, headers=headers)
         self.assertEqual(response.status_code, 403)

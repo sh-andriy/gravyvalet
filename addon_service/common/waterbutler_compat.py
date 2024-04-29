@@ -44,8 +44,8 @@ def _serialize_waterbutler_settings(configured_storage_addon):
 
 
 def _get_wb_provider_name_from_service_name(external_storage_service):
-    match external_storage_service.service_name:
+    match external_storage_service.name:
         case "boxdotcom":
             return "box"
         case _:
-            return external_storage_service.service_name
+            return external_storage_service.name

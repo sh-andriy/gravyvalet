@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from addon_service.common.permissions import (
     IsAuthenticated,
-    OSFOnly,
+    IsValidHMACSignedRequest,
     SessionUserCanViewReferencedResource,
     SessionUserIsOwner,
     SessionUserIsReferencedResourceAdmin,
@@ -30,7 +30,7 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
             case "create":
                 return [IsAuthenticated(), SessionUserIsReferencedResourceAdmin()]
             case "get_wb_config":
-                return [OSFOnly()]
+                return [IsValidHMACSignedRequest()]
             case None:
                 return super().get_permissions()
             case _:
@@ -43,7 +43,6 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteViewSet):
         methods=[HTTPMethod.GET],
         url_name="waterbutler-config",
         url_path="waterbutler-config",
-        permission_classes=[OSFOnly],
     )
     def get_wb_config(self, request, pk=None):
         addon = self.get_object()

@@ -7,12 +7,15 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
+from addon_service.common import hmac as hmac_utils
+from addon_service.credentials import CredentialsFormats
 from addon_service.models import (
     ConfiguredStorageAddon,
     ResourceReference,
 )
 from addon_service.tests import _factories as test_factories
 from addon_service.tests._helpers import MockOSF
+from addon_toolkit.credentials import AccessTokenCredentials
 
 
 class BaseAPITest(APITestCase):
@@ -94,13 +97,11 @@ class ConfiguredStorageAddonModelTests(TestCase):
         )
 
         cls.active_configured_storage_addon = (
-            test_factories.ConfiguredStorageAddonFactory(
-                base_account__account_owner=cls.active_user
-            )
+            test_factories.ConfiguredStorageAddonFactory(account_owner=cls.active_user)
         )
         cls.disabled_configured_storage_addon = (
             test_factories.ConfiguredStorageAddonFactory(
-                base_account__account_owner=cls.disabled_user
+                account_owner=cls.disabled_user
             )
         )
 
@@ -181,25 +182,28 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
 
 
 class TestWBConfigRetrieval(APITestCase):
+
     @classmethod
     def setUpTestData(cls):
-        cls._configured_storage_addon = test_factories.ConfiguredStorageAddonFactory()
+        cls._configured_storage_addon = test_factories.ConfiguredStorageAddonFactory(
+            credentials_format=CredentialsFormats.PERSONAL_ACCESS_TOKEN,
+            credentials=AccessTokenCredentials(access_token="access"),
+        )
         cls._user = cls._configured_storage_addon.account_owner
-        cls._authorized_account = cls._configured_storage_addon.base_account
-        token_metadata = cls._authorized_account.oauth2_token_metadata
-        token_metadata.state_token = None
-        token_metadata.refresh_token = "refresh"
-        token_metadata.save()
-        cls._authorized_account.set_credentials({"access_token": "access"})
 
     def test_get_waterbutler_config(self):
+        request_url = reverse(
+            "configured-storage-addons-waterbutler-config",
+            kwargs={
+                "pk": self._configured_storage_addon.pk,
+            },
+        )
         response = self.client.get(
-            reverse(
-                "configured-storage-addons-waterbutler-config",
-                kwargs={
-                    "pk": self._configured_storage_addon.pk,
-                },
-            )
+            request_url,
+            headers=hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+            ),
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -211,6 +215,35 @@ class TestWBConfigRetrieval(APITestCase):
                 response.data["settings"],
                 {
                     "folder": root_folder,
-                    "service": self._configured_storage_addon.external_service.service_name,
+                    "service": self._configured_storage_addon.external_service.name,
                 },
             )
+
+    def test_get_waterbutler_config__error__invalid_signature(self):
+        request_url = reverse(
+            "configured-storage-addons-waterbutler-config",
+            kwargs={
+                "pk": self._configured_storage_addon.pk,
+            },
+        )
+        response = self.client.get(
+            request_url,
+            headers=hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+                hmac_key="she'sabadbadkey",
+            ),
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_get_waterbutler_config__error__no_headers(self):
+        request_url = reverse(
+            "configured-storage-addons-waterbutler-config",
+            kwargs={
+                "pk": self._configured_storage_addon.pk,
+            },
+        )
+        response = self.client.get(
+            request_url,
+        )
+        self.assertEqual(response.status_code, 403)

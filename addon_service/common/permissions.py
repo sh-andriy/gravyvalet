@@ -1,8 +1,10 @@
+from django.utils import timezone
 from rest_framework import (
     exceptions,
     permissions,
 )
 
+from addon_service.common import hmac as hmac_utils
 from addon_service.models import ResourceReference
 from app.authentication import authenticate_resource
 
@@ -63,8 +65,13 @@ class SessionUserMayInvokeThruAddon(permissions.BasePermission):
         raise NotImplementedError  # TODO: check invoked operation is allowed
 
 
-class OSFOnly(permissions.BasePermission):
+class IsValidHMACSignedRequest(permissions.BasePermission):
     def has_permission(self, request, view):
-        if __debug__:
-            return True
-        return False  # TODO: check hmac signed certs `n stuff
+        expiration = request.headers.get("X-Message-Expiration")
+        if expiration and expiration < timezone.now():
+            raise exceptions.PermissionDenied("HMAC Signed Request is expired")
+        try:
+            hmac_utils.validate_signed_headers(request)
+        except ValueError as e:
+            raise exceptions.PermissionDenied(e)
+        return True

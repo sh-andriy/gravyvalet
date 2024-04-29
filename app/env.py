@@ -11,6 +11,7 @@ POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
 POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
+OSF_HMAC_KEY = os.environ.get("OSF_HMAC_KEY")
 
 # any non-empty value enables debug mode:
 DEBUG = bool(os.environ.get("DEBUG"))

@@ -1,6 +1,5 @@
 import urllib
 from http import HTTPStatus
-from unittest import mock
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -343,7 +342,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
     def test_auth_url__no_active_state_token(self):
         self.assertIsNotNone(self._asa.auth_url)
         oauth_meta = self._asa.oauth2_token_metadata
-        oauth_meta.state_token = None
+        oauth_meta.state_nonce = None
         oauth_meta.refresh_token = "refresh"
         oauth_meta.save()
         self.assertIsNone(self._asa.auth_url)
@@ -366,29 +365,6 @@ class TestAuthorizedStorageAccountModel(TestCase):
                 account.oauth2_token_metadata.authorized_scopes,
                 account.external_service.supported_scopes,
             )
-
-    def test_iniate_oauth2_flow__avoid_duplicate_state_tokens(self):
-        # Avoid factory magic that automatically does OAUTH stuffs
-        new_account = db.AuthorizedStorageAccount.objects.create(
-            external_storage_service=self._asa.external_storage_service,
-            account_owner=self._asa.account_owner,
-            authorized_capabilities=self._asa.authorized_capabilities,
-        )
-        with mock.patch(
-            "addon_service.authorized_storage_account.models.token_urlsafe"
-        ) as mock_token:
-            mock_token.side_effect = [
-                self._asa.oauth2_token_metadata.state_token,
-                "abcde",
-            ]
-            new_account.initiate_oauth2_flow()
-
-        with self.subTest("Multiple attempts at token creation in case of collision"):
-            self.assertEqual(mock_token.call_count, 2)
-            self.assertEqual(new_account.oauth2_token_metadata.state_token, "abcde")
-
-        with self.subTest("Colliding Tokens not stored in DB"):
-            self.assertEqual(db.OAuth2TokenMetadata.objects.count(), 2)
 
     # set credentials
 
@@ -428,7 +404,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
         self.assertIsNone(account._credentials)
 
         token_metadata = account.oauth2_token_metadata
-        token_metadata.state_token = None
+        token_metadata.state_nonce = None
         token_metadata.refresh_token = "refresh"
         token_metadata.save()
 

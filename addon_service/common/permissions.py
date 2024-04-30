@@ -1,4 +1,9 @@
-from django.utils import timezone
+from datetime import (
+    UTC,
+    datetime,
+    timedelta,
+)
+
 from rest_framework import (
     exceptions,
     permissions,
@@ -66,10 +71,21 @@ class SessionUserMayInvokeThruAddon(permissions.BasePermission):
 
 
 class IsValidHMACSignedRequest(permissions.BasePermission):
+
+    REQUEST_EXPIRATION_SECONDS = 110
+
     def has_permission(self, request, view):
-        expiration = request.headers.get("X-Message-Expiration")
-        if expiration and expiration < timezone.now():
+        expiration_time = datetime.now(UTC) - timedelta(
+            seconds=self.REQUEST_EXPIRATION_SECONDS
+        )
+        request_timestamp = request.headers.get("X-Authorization-Timestamp")
+        if not request_timestamp or request_timestamp < expiration_time:
             raise exceptions.PermissionDenied("HMAC Signed Request is expired")
+        elif request_timestamp > datetime.now(UTC):
+            raise exceptions.PermissionDenied(
+                "HMAC Signed Request provided a timestamp from the future"
+            )
+
         try:
             hmac_utils.validate_signed_headers(request)
         except ValueError as e:

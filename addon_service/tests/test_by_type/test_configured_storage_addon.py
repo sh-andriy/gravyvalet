@@ -1,6 +1,11 @@
 import base64
-import datetime
+from datetime import (
+    UTC,
+    datetime,
+    timedelta,
+)
 from http import HTTPStatus
+from unittest import mock
 
 from django.conf import settings
 from django.test import TestCase
@@ -235,7 +240,7 @@ class TestWBConfigRetrieval(APITestCase):
                 hmac_key="she'sabadbadkey",
             ),
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_get_waterbutler_config__error__no_headers(self):
         request_url = reverse(
@@ -247,7 +252,7 @@ class TestWBConfigRetrieval(APITestCase):
         response = self.client.get(
             request_url,
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_get_waterbutler_config__error__expired_header(self):
         request_url = reverse(
@@ -256,13 +261,29 @@ class TestWBConfigRetrieval(APITestCase):
                 "pk": self._configured_storage_addon.pk,
             },
         )
-        headers = hmac_utils.make_signed_headers(
-            request_url=request_url,
-            request_method="GET",
-        )
-        headers["X-Message-Expiration"] = datetime.datetime.now(
-            datetime.UTC
-        ) - datetime.timedelta(minutes=5)
-
+        five_minutes_ago = datetime.now(UTC) - timedelta(minutes=5)
+        with mock.patch("addon_service.common.hmac.datetime") as mock_datetime:
+            mock_datetime.now.return_value = five_minutes_ago
+            headers = hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+            )
         response = self.client.get(request_url, headers=headers)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_get_waterbutler_config__error__future_header(self):
+        request_url = reverse(
+            "configured-storage-addons-waterbutler-config",
+            kwargs={
+                "pk": self._configured_storage_addon.pk,
+            },
+        )
+        five_minutes_from_now = datetime.now(UTC) + timedelta(minutes=5)
+        with mock.patch("addon_service.common.hmac.datetime") as mock_datetime:
+            mock_datetime.now.return_value = five_minutes_from_now
+            headers = hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+            )
+        response = self.client.get(request_url, headers=headers)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

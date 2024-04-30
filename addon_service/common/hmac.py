@@ -6,13 +6,17 @@ import urllib
 from datetime import (
     UTC,
     datetime,
-    timedelta,
 )
 
 from django.conf import settings
 
 
-def _sign_message(message, hmac_key=None):
+_AUTH_HEADER_REGEX = re.compile(
+    r"^HMAC-SHA256 SignedHeaders=(?P<headers>[\w;-]*)&Signature=(?P<signature>[^\W_]*$)"
+)
+
+
+def _sign_message(message: str, hmac_key: str = None) -> str:
     key = hmac_key or settings.DEFAULT_HMAC_KEY
     encoded_message = base64.b64encode(message.encode())
     return hmac.new(
@@ -20,15 +24,19 @@ def _sign_message(message, hmac_key=None):
     ).hexdigest()
 
 
-def _get_signed_components(request_url, request_method, body):
+def _get_signed_components(
+    request_url: str, request_method: str, body: str | bytes
+) -> tuple[list[str], dict[str, str]]:
     parsed_url = urllib.parse.urlparse(request_url)
-    content_hash = hashlib.sha256(body.encode()).hexdigest if body else None
-    auth_timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(body, str):
+        body = body.encode()
+    content_hash = hashlib.sha256(body).hexdigest if body else None
+    auth_timestamp = datetime.now(UTC)
     signed_segments = [
         request_method,
         parsed_url.path,
         parsed_url.query,
-        auth_timestamp,
+        str(auth_timestamp),
         content_hash,
     ]
     # Filter out query string and content_hash if none present
@@ -40,8 +48,8 @@ def _get_signed_components(request_url, request_method, body):
 
 
 def make_signed_headers(
-    request_url, request_method, body="", hmac_key=None, ttl_seconds=110
-):
+    request_url: str, request_method: str, body: str | bytes = "", hmac_key: str = None
+) -> dict:
     signed_string_segments, signed_headers = _get_signed_components(
         request_url, request_method, body
     )
@@ -55,41 +63,41 @@ def make_signed_headers(
     )
     return dict(
         **signed_headers,
-        **{
-            "X-Message-Expiration": datetime.now(UTC) + timedelta(seconds=ttl_seconds),
-            "Authorization": auth_header_value,
-        },
+        Authorization=auth_header_value,
     )
 
 
-def _reconstruct_string_to_sign_from_request(request):
-    signed_segments = [
-        request.method,
-        request.path,
-        request.query_params.urlencode(),
-        request.headers["X-Authorization-Timestamp"],
-        request.headers.get("X-Content-SHA256"),
-    ]
+def _reconstruct_string_to_sign_from_request(request, signed_headers: list[str]) -> str:
+    signed_segments = [request.method, request.path]
+    query_string = request.META.get("QUERY_STRING")
+    if query_string:
+        signed_segments.append(query_string)
+    signed_segments.extend(
+        [str(request.headers[signed_header]) for signed_header in signed_headers]
+    )
     return "\n".join([segment for segment in signed_segments if segment])
 
 
 def validate_signed_headers(request, hmac_key=None):
-    signature_parse_expression = re.compile(
-        r"^HMAC-SHA256 .*Signature=(?P<signature>[^\W_]*$)"
-    )
-    match = signature_parse_expression.match(request.headers.get("Authorization", ""))
+    match = _AUTH_HEADER_REGEX.match(request.headers.get("Authorization", ""))
     if not match:
         raise ValueError(
-            "Message was not authorized via valid HMAC-SHA256 signed heders"
+            "Message was not authorized via valid HMAC-SHA256 signed headers"
         )
     expected_signature = match.group("signature")
+    signed_headers = match.group("headers").split(";")
 
     computed_signature = _sign_message(
-        message=_reconstruct_string_to_sign_from_request(request), hmac_key=hmac_key
+        message=_reconstruct_string_to_sign_from_request(
+            request, signed_headers=signed_headers
+        ),
+        hmac_key=hmac_key,
     )
     if not hmac.compare_digest(computed_signature, expected_signature):
         raise ValueError("Could not verify HMAC signed request")
 
     content_hash = request.headers.get("X-Content-SHA256")
-    if content_hash and hashlib.sha256(request.body).hexdigest() != content_hash:
-        raise ValueError("Local content hash did not match value from headers")
+    if content_hash and not hmac.compare_digest(
+        content_hash, hashlib.sha256(request.body).hexdigest()
+    ):
+        raise ValueError("Computed content hash did not match value from headers")

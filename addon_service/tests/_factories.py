@@ -114,6 +114,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
             account.initiate_oauth2_flow(authorized_scopes)
         else:
             account.credentials = credentials
+            account.save()
         return account
 
 
@@ -123,5 +124,32 @@ class ConfiguredStorageAddonFactory(DjangoModelFactory):
 
     root_folder = "/"
     connected_capabilities = AddonCapabilities.ACCESS
-    base_account = factory.SubFactory(AuthorizedStorageAccountFactory)
-    authorized_resource = factory.SubFactory(ResourceReferenceFactory)
+
+    @classmethod
+    def _create(
+        cls,
+        model_class,
+        authorized_resource=None,
+        external_storage_service=None,
+        credentials_format=CredentialsFormats.OAUTH2,
+        base_account=None,
+        account_owner=None,
+        credentials=None,
+        *args,
+        **kwargs,
+    ):
+        authorized_resource = authorized_resource or ResourceReferenceFactory()
+        base_account = base_account or AuthorizedStorageAccountFactory(
+            external_storage_service=external_storage_service,
+            credentials_format=credentials_format,
+            account_owner=account_owner,
+            credentials=credentials,
+        )
+
+        return super()._create(
+            model_class=model_class,
+            authorized_resource=authorized_resource,
+            base_account=base_account,
+            *args,
+            **kwargs,
+        )

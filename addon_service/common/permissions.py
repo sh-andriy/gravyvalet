@@ -1,8 +1,15 @@
+from datetime import (
+    UTC,
+    datetime,
+    timedelta,
+)
+
 from rest_framework import (
     exceptions,
     permissions,
 )
 
+from addon_service.common import hmac as hmac_utils
 from addon_service.models import ResourceReference
 from app.authentication import authenticate_resource
 
@@ -61,3 +68,26 @@ class SessionUserMayAccessInvocation(permissions.BasePermission):
 class SessionUserMayInvokeThruAddon(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         raise NotImplementedError  # TODO: check invoked operation is allowed
+
+
+class IsValidHMACSignedRequest(permissions.BasePermission):
+
+    REQUEST_EXPIRATION_SECONDS = 110
+
+    def has_permission(self, request, view):
+        expiration_time = datetime.now(UTC) - timedelta(
+            seconds=self.REQUEST_EXPIRATION_SECONDS
+        )
+        request_timestamp = request.headers.get("X-Authorization-Timestamp")
+        if not request_timestamp or request_timestamp < expiration_time:
+            raise exceptions.PermissionDenied("HMAC Signed Request is expired")
+        elif request_timestamp > datetime.now(UTC):
+            raise exceptions.PermissionDenied(
+                "HMAC Signed Request provided a timestamp from the future"
+            )
+
+        try:
+            hmac_utils.validate_signed_headers(request)
+        except ValueError as e:
+            raise exceptions.PermissionDenied(e)
+        return True

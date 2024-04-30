@@ -25,7 +25,29 @@ class _DrfJsonApiHelpers(AutoPrefetchMixin, PreloadIncludesMixin, RelatedMixin):
 
 
 class RestrictedReadOnlyViewSet(ReadOnlyModelViewSet):
+    """ReadOnlyViewSet that requires `list` actions return only one result.
+
+    UserReference and ResourceReference endpoints are major entry points into
+    our system, but callers have no a priori way of knowing internal ids for these
+    endpoints. We also do not want to inappropriately leak user information
+    by allowing unrestricted access to `list` operations on these endpoints.
+
+    As such, this viewset implements a restricted version of `list` endpoints
+    that allows subclasses to define required filters that *must* be used to
+    limit the output to a single entry.
+
+    Functionally, this allows requests like
+    `v1/user-references/?filter[user_uri]={uri}`
+    to act as an alternative to
+    `v1/user-references/{pk}`
+    in the case where the caller only has the publicly avaialable uri as a key
+    """
+
     def list(self, request, *args, **kwargs):
+        """Custom implementation of `list` that uses
+        RestrictedListEndpointFilterBackend and check_object_permissions
+        to enforce permissions on returned entities.
+        """
         self.filter_backends = [RestrictedListEndpointFilterBackend]
 
         qs = self.filter_queryset(self.get_queryset())

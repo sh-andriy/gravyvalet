@@ -4,6 +4,7 @@ from typing import (
     ClassVar,
     Iterable,
     Pattern,
+    Self,
 )
 
 
@@ -23,9 +24,7 @@ class JSONAPIQueryParam:
     ARG_REGEX: ClassVar[Pattern] = re.compile(r"\[(?P<name>[^[\]]*)\]")
 
     @classmethod
-    def from_key_value_pair(
-        cls, query_param_name: str, query_param_value: str
-    ) -> "JSONAPIQueryParam":
+    def from_key_value_pair(cls, query_param_name: str, query_param_value: str) -> Self:
         family, args = cls.parse_param_name(query_param_name)
         return cls(family, args, query_param_value)
 

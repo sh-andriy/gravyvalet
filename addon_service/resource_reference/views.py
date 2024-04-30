@@ -9,4 +9,5 @@ class ResourceReferenceViewSet(RestrictedReadOnlyViewSet):
     queryset = ResourceReference.objects.all()
     serializer_class = ResourceReferenceSerializer
     permission_classes = [SessionUserCanViewReferencedResource]
+    # Satisfies requirements of `RestrictedReadOnlyViewSet.list`
     required_list_filter_fields = ("resource_uri",)

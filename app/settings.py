@@ -1,4 +1,3 @@
-import hashlib
 from pathlib import Path
 
 from app import env
@@ -6,7 +5,6 @@ from app import env
 
 SECRET_KEY = env.SECRET_KEY
 DEFAULT_HMAC_KEY = env.OSF_HMAC_KEY or "lmaoooooo"
-DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

@@ -10,8 +10,8 @@ from rest_framework import (
 )
 
 from addon_service.common import hmac as hmac_utils
+from addon_service.common import osf
 from addon_service.models import ResourceReference
-from app.authentication import authenticate_resource
 
 
 class IsAuthenticated(permissions.BasePermission):
@@ -28,26 +28,39 @@ class SessionUserIsOwner(permissions.BasePermission):
 
 
 class SessionUserCanViewReferencedResource(permissions.BasePermission):
+    """for object permissions on objects with a `resource_uri` attribute"""
+
     def has_object_permission(self, request, view, obj):
-        return authenticate_resource(request, obj.resource_uri, "read")
+        return osf.has_osf_permission_on_resource(
+            request,
+            obj.resource_uri,
+            osf.OSFPermission.READ,
+        )
 
 
 class SessionUserIsReferencedResourceAdmin(permissions.BasePermission):
+    """
+    assumes request data parsed by a serializer with `authorized_resource`
+    to-one relationship and/or `authorized_resource_uri` attribute
+    """
+
     def has_permission(self, request, view):
         resource_uri = None
         try:
             resource_uri = ResourceReference.objects.get(
-                id=request.data.get("authoirized_resource", {}).get("id")
+                id=request.data["authorized_resource"]["id"]
             ).resource_uri
-        except ResourceReference.DoesNotExist:
-            resource_uri = request.data.get("authorized_resource", {}).get(
-                "resource_uri"
-            )
+        except (ResourceReference.DoesNotExist, KeyError):
+            resource_uri = request.data.get("authorized_resource_uri")
 
         if resource_uri is None:
             raise exceptions.ParseError
 
-        return authenticate_resource(request, resource_uri, "admin")
+        return osf.has_osf_permission_on_resource(
+            request,
+            resource_uri,
+            osf.OSFPermission.ADMIN,
+        )
 
 
 class SessionUserMayAccessInvocation(permissions.BasePermission):
@@ -58,10 +71,10 @@ class SessionUserMayAccessInvocation(permissions.BasePermission):
         if _user_uri == obj.thru_addon.owner_uri:
             return True  # addon owner
         # user with "read" access on the connected osf project
-        return authenticate_resource(
+        return osf.has_osf_permission_on_resource(
             request,
             obj.thru_addon.authorized_resource.resource_uri,
-            "read",
+            osf.OSFPermission.READ,
         )
 
 

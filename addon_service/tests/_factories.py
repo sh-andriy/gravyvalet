@@ -13,22 +13,22 @@ class UserReferenceFactory(DjangoModelFactory):
     class Meta:
         model = db.UserReference
 
-    user_uri = factory.Sequence(lambda n: f"{settings.URI_ID}user{n}")
+    user_uri = factory.Sequence(lambda n: f"{settings.OSF_BASE_URL}/user{n}")
 
 
 class ResourceReferenceFactory(DjangoModelFactory):
     class Meta:
         model = db.ResourceReference
 
-    resource_uri = factory.Sequence(lambda n: f"{settings.URI_ID}thing{n}")
+    resource_uri = factory.Sequence(lambda n: f"{settings.OSF_BASE_URL}/thing{n}")
 
 
 class OAuth2ClientConfigFactory(DjangoModelFactory):
     class Meta:
         model = db.OAuth2ClientConfig
 
-    auth_uri = factory.Sequence(lambda n: f"{settings.AUTH_URI_ID}{n}")
-    auth_callback_url = "https://osf.io/auth/callback"
+    auth_uri = factory.Sequence(lambda n: f"https://api.example/auth/{n}")
+    auth_callback_url = "https://osf.example/auth/callback"
     token_endpoint_url = "https://api.example.com/oauth/token"
     client_id = factory.Faker("word")
     client_secret = factory.Faker("word")

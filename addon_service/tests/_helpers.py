@@ -50,7 +50,7 @@ class MockOSF:
             "app.authentication.GVCombinedAuthentication.authenticate",
             side_effect=self._mock_user_check,
         ), patch(
-            "addon_service.common.permissions.authenticate_resource",
+            "addon_service.common.osf.has_osf_permission_on_resource",
             side_effect=self._mock_resource_check,
         ):
             yield self
@@ -100,7 +100,7 @@ class MockOSF:
         permissions = self._get_user_permissions(user_uri=caller, resource_uri=uri)
         if required_permission.lower() not in permissions:
             raise drf_exceptions.PermissionDenied
-        return uri  # mimicking behavior from the check being mocked
+        return True
 
 
 class MockExternalService:

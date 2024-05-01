@@ -9,20 +9,11 @@ from addon_service.common.serializer_fields import DataclassRelatedLinkField
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
-    ResourceReference,
 )
 from addon_toolkit import AddonCapabilities
 
 
 RESOURCE_TYPE = get_resource_type_from_model(ConfiguredStorageAddon)
-
-
-class AuthorizedResourceField(ResourceRelatedField):
-    def to_internal_value(self, data):
-        resource_reference, _ = ResourceReference.objects.get_or_create(
-            resource_uri=data["resource_uri"]
-        )
-        return resource_reference
 
 
 class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
@@ -45,9 +36,12 @@ class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
         many=False,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
-    authorized_resource = AuthorizedResourceField(
-        queryset=ResourceReference.objects.all(),
+    authorized_resource_uri = serializers.CharField(
+        required=False, source="resource_uri", write_only=True
+    )
+    authorized_resource = ResourceRelatedField(
         many=False,
+        read_only=True,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
 
@@ -67,6 +61,7 @@ class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
             "root_folder",
             "base_account",
             "authorized_resource",
+            "authorized_resource_uri",
             "connected_capabilities",
             "connected_operations",
             "connected_operation_names",

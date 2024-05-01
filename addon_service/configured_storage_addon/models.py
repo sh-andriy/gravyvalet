@@ -6,6 +6,7 @@ from django.db import models
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.enums.validators import validate_addon_capability
+from addon_service.resource_reference.models import ResourceReference
 from addon_toolkit import (
     AddonCapabilities,
     AddonOperationImp,
@@ -72,6 +73,11 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     @property
     def resource_uri(self):
         return self.authorized_resource.resource_uri
+
+    @resource_uri.setter
+    def resource_uri(self, uri: str):
+        _resource_ref, _ = ResourceReference.objects.get_or_create(resource_uri=uri)
+        self.authorized_resource = _resource_ref
 
     @property
     def connected_operations(self) -> list[AddonOperationModel]:

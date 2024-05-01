@@ -16,14 +16,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.DEBUG
 
-RESOURCE_REFERENCE_LOOKUP_URL = "https://api.osf.io/v2/guids/{0}/"
-USER_REFERENCE_LOOKUP_URL = "https://api.osf.io/v2/users/me/"
 USER_REFERENCE_COOKIE = "osf"
-
+OSF_BASE_URL = env.OSF_BASE_URL.rstrip("/")
+OSF_API_BASE_URL = env.OSF_API_BASE_URL.rstrip("/")
 OSF_BROKER_URL = "amqp://guest:guest@192.168.168.167:5672//"
-
-URI_ID = "http://osf.example/"
-AUTH_URI_ID = "http://osf.auth/"
+ALLOWED_RESOURCE_URI_PREFIXES = {OSF_BASE_URL}
+if DEBUG:
+    # allow for local osf shenanigans
+    ALLOWED_RESOURCE_URI_PREFIXES.update(
+        [
+            "http://192.168.168.167:5000",
+            "http://localhost:5000",
+        ]
+    )
 
 ALLOWED_HOSTS = env.ALLOWED_HOSTS
 

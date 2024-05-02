@@ -1,6 +1,7 @@
 import enum
+import functools
+import re
 from http import HTTPStatus
-from urllib.parse import urlsplit
 
 from asgiref.sync import async_to_sync
 from django import http as django_http
@@ -41,27 +42,34 @@ async def has_osf_permission_on_resource(
     resource_uri: str,
     required_permission: OSFPermission,
 ) -> bool:
-    _auth_headers = _get_osf_auth_headers(request)
-    if not _auth_headers:
-        return False
     _client = await get_singleton_client_session()
     async with _client.get(
         _osfapi_guid_url(resource_uri),
         params={
-            "resolve": "False",  # do not redirect to the referent
+            "resolve": "f",  # do not redirect to the referent
             "embed": "referent",  # instead, include the referent in the response
         },
-        headers=_auth_headers,
+        headers=[
+            *_get_osf_auth_headers(request),
+            ("Accept", "application/vnd.api+json"),  # jsonapi
+        ],
     ) as _response:
         if not HTTPStatus(_response.status).is_success:
-            return False
+            return False  # nonexistent osfid (TODO: consider raising error?)
         _response_content = await _response.json()
+        _embedded_referent = _response_content["data"]["embeds"]["referent"]
         try:
-            _resource_json = _response_content["data"]["embeds"]["referent"]["data"]
-            _permissions = _resource_json["attributes"]["current_user_permissions"]
-        except KeyError:
+            _referent_data = _embedded_referent["data"]
+        except KeyError:  # no `data` for referent implies no permission
             return False
-        return required_permission in _permissions
+        # 'current_user_permissions' includes only explicitly assigned 'read' permission,
+        # but here we wish to consider public resources READ-able by anyone
+        if required_permission == OSFPermission.READ:
+            return bool(_referent_data)
+        return (
+            required_permission
+            in _referent_data["attributes"]["current_user_permissions"]
+        )
 
 
 ###
@@ -70,19 +78,32 @@ async def has_osf_permission_on_resource(
 _HeaderList = list[tuple[str, str]]
 
 
-def _extract_osfid(osf_resource_uri: str):
-    if not any(
-        osf_resource_uri.startswith(_uri_prefix)
-        for _uri_prefix in settings.ALLOWED_RESOURCE_URI_PREFIXES
-    ):
-        raise ValueError(
-            f'expected resource from a known osf {settings.ALLOWED_RESOURCE_URI_PREFIXES} (got "{osf_resource_uri}")'
+@functools.cache  # compute only once
+def _osfid_regex() -> re.Pattern:
+    _prefixes = "|".join(
+        re.escape(_allowed_prefix.rstrip("/"))
+        for _allowed_prefix in settings.ALLOWED_RESOURCE_URI_PREFIXES
+    )
+    return re.compile(
+        "".join(
+            (
+                f"^(?:{_prefixes})",  # starts with an allowed prefix,
+                r"/(?P<osfid>\w+)",  # has only a single path segment,
+                "/?$",  # and perhaps has a trailing slash at the end.
+            )
         )
-    try:
-        (_osfid,) = urlsplit(osf_resource_uri).path.strip("/").split("/")
-    except ValueError:
-        raise ValueError(f'expected short osf uri (got "{osf_resource_uri}")')
-    return _osfid
+    )
+
+
+def _extract_osfid(osf_resource_uri: str):
+    _osfid_match = _osfid_regex().fullmatch(osf_resource_uri)
+    if not _osfid_match:
+        raise ValueError(
+            "expected short osf uri from a known osf"
+            f" (got '{osf_resource_uri}';"
+            f" known osfs: {settings.ALLOWED_RESOURCE_URI_PREFIXES})"
+        )
+    return _osfid_match["osfid"]
 
 
 def _osfapi_guid_url(osf_resource_uri: str):

@@ -80,18 +80,16 @@ _HeaderList = list[tuple[str, str]]
 
 @functools.cache  # compute only once
 def _osfid_regex() -> re.Pattern:
+    # NOTE: does not guarantee a valid/extant osfid, only extracts the part
+    # of the uri that _might_ be a valid/extant osfid (check with your osf)
     _prefixes = "|".join(
         re.escape(_allowed_prefix.rstrip("/"))
         for _allowed_prefix in settings.ALLOWED_RESOURCE_URI_PREFIXES
     )
     return re.compile(
-        "".join(
-            (
-                f"^(?:{_prefixes})",  # starts with an allowed prefix,
-                r"/(?P<osfid>\w+)",  # has only a single path segment,
-                "/?$",  # and perhaps has a trailing slash at the end.
-            )
-        )
+        f"^(?:{_prefixes})"  # starts with an allowed prefix,
+        r"/(?P<osfid>[^/]+)"  # has exactly one path segment,
+        "/?$"  # and perhaps has a trailing slash at the end.
     )
 
 

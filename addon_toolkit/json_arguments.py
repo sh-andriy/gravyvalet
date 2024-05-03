@@ -13,8 +13,13 @@ __all__ = (
     "jsonschema_for_signature_params",
 )
 
+JsonableScalar = str | int | float | None | bool | enum.Enum
+JsonableList = typing.Iterable["JsonableValue"]
+JsonableDict = typing.Mapping[str, "JsonableValue"]
+JsonableValue = JsonableScalar | JsonableList | JsonableDict
 
-def jsonschema_for_signature_params(signature: inspect.Signature) -> dict:
+
+def jsonschema_for_signature_params(signature: inspect.Signature) -> JsonableDict:
     """build jsonschema corresponding to parameters from a function signature
 
     >>> def _foo(a: str, b: int = 7): ...
@@ -40,13 +45,13 @@ def jsonschema_for_signature_params(signature: inspect.Signature) -> dict:
     }
 
 
-def jsonschema_for_dataclass(dataclass: type) -> dict:
+def jsonschema_for_dataclass(dataclass: type) -> JsonableDict:
     """build jsonschema corresponding to the constructor signature of a dataclass"""
     assert dataclasses.is_dataclass(dataclass) and isinstance(dataclass, type)
     return jsonschema_for_signature_params(inspect.signature(dataclass))
 
 
-def jsonschema_for_annotation(annotation: type) -> dict:
+def jsonschema_for_annotation(annotation: type) -> JsonableDict:
     """build jsonschema for a python type annotation"""
     if dataclasses.is_dataclass(annotation):
         return jsonschema_for_dataclass(annotation)
@@ -105,8 +110,8 @@ def json_for_typed_value(type_annotation: typing.Any, value: typing.Any):
 
 def kwargs_from_json(
     signature: inspect.Signature,
-    args_from_json: dict,
-) -> dict:
+    args_from_json: JsonableDict,
+) -> JsonableDict:
     try:
         _kwargs = {
             _param_name: arg_value_from_json(
@@ -142,7 +147,7 @@ def arg_value_from_json(
     raise NotImplementedError(f"what do with `{json_arg_value}` (value for {param})")
 
 
-def json_for_dataclass(dataclass_instance) -> dict:
+def json_for_dataclass(dataclass_instance) -> JsonableDict:
     """return json-serializable representation of the dataclass instance"""
     _field_value_pairs = (
         (_field, getattr(dataclass_instance, _field.name))
@@ -155,7 +160,7 @@ def json_for_dataclass(dataclass_instance) -> dict:
     }
 
 
-def dataclass_from_json(dataclass: type, dataclass_json: dict):
+def dataclass_from_json(dataclass: type, dataclass_json: JsonableDict):
     return dataclass(
         **{
             _field.name: field_value_from_json(_field, dataclass_json)
@@ -164,7 +169,9 @@ def dataclass_from_json(dataclass: type, dataclass_json: dict):
     )
 
 
-def field_value_from_json(field: dataclasses.Field, dataclass_json: dict):
+def field_value_from_json(
+    field: dataclasses.Field[JsonableValue], dataclass_json: JsonableDict
+):
     _json_value = dataclass_json.get(field.name)
     if _json_value is None:
         return None  # TODO: check optional
@@ -174,7 +181,8 @@ def field_value_from_json(field: dataclasses.Field, dataclass_json: dict):
     if issubclass(field.type, enum.Enum):
         return field.type(_json_value)
     if field.type in (tuple, list, set, frozenset):
-        return field.type(_json_value)
+        # type is narrowed but mypy doesn't understand
+        return field.type(_json_value)  # type: ignore
     if field.type in (str, int, float):
         assert isinstance(_json_value, field.type)
         return _json_value

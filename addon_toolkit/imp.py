@@ -11,7 +11,10 @@ from asgiref.sync import (
     sync_to_async,
 )
 
-from .json_arguments import kwargs_from_json
+from .json_arguments import (
+    JsonableDict,
+    kwargs_from_json,
+)
 from .operation import AddonOperationDeclaration
 from .protocol import (
     AddonProtocolDeclaration,
@@ -88,7 +91,9 @@ class AddonOperationImp:
     def imp_function(self):
         return getattr(self.addon_imp.imp_cls, self.declaration.name)
 
-    async def invoke_thru_addon(self, addon_instance: object, json_kwargs: dict):
+    async def invoke_thru_addon(
+        self, addon_instance: object, json_kwargs: JsonableDict
+    ):
         _method = self._get_instance_method(addon_instance)
         _kwargs = kwargs_from_json(self.declaration.call_signature, json_kwargs)
         if not inspect.iscoroutinefunction(_method):

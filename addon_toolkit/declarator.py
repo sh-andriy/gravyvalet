@@ -79,7 +79,7 @@ class Declarator(Generic[DeclarationDataclass]):
 
         return _decorator
 
-    def with_kwargs(self, **static_kwargs) -> "Declarator":
+    def with_kwargs(self, **static_kwargs) -> "Declarator[DeclarationDataclass]":
         """convenience for decorators that differ only by static field values"""
         # note: shared __declarations_by_target
         return dataclasses.replace(self, static_kwargs=static_kwargs)
@@ -105,7 +105,7 @@ class Declarator(Generic[DeclarationDataclass]):
             raise ValueError(f"no declaration found for {target}")
 
 
-class ClassDeclarator(Declarator):
+class ClassDeclarator(Declarator[DeclarationDataclass]):
     """add declarative metadata to python classes using decorators
 
     (same as Declarator but with additional methods that only make

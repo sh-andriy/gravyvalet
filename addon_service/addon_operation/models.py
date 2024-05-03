@@ -11,7 +11,10 @@ from addon_toolkit import (
     AddonCapabilities,
     AddonOperationImp,
 )
-from addon_toolkit.json_arguments import jsonschema_for_signature_params
+from addon_toolkit.json_arguments import (
+    JsonableDict,
+    jsonschema_for_signature_params,
+)
 from addon_toolkit.operation import AddonOperationType
 
 
@@ -49,7 +52,7 @@ class AddonOperationModel(StaticDataclassModel):
         return self.operation_imp.declaration.capability
 
     @cached_property
-    def params_jsonschema(self) -> dict:
+    def params_jsonschema(self) -> JsonableDict:
         return jsonschema_for_signature_params(
             self.operation_imp.declaration.call_signature
         )

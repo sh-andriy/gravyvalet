@@ -2,11 +2,14 @@ import dataclasses
 import typing
 
 
+@dataclasses.dataclass(frozen=True)
 class Credentials(typing.Protocol):
     def asdict(self):
         return dataclasses.asdict(self)
 
-    def iter_headers(self) -> typing.Iterator[tuple[str, str]]: ...
+    def iter_headers(self) -> typing.Iterator[tuple[str, str]]:
+        return
+        yield
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

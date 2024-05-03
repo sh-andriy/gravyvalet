@@ -44,7 +44,7 @@ class AddonOperationDeclaration:
     ) -> "AddonOperationDeclaration":
         return addon_operation.get_declaration(fn)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.required_return_type and not issubclass(
             self.return_type, self.required_return_type
         ):
@@ -64,7 +64,7 @@ class AddonOperationDeclaration:
         return _return_type
 
     @property
-    def name(self):
+    def name(self) -> str:
         # TODO: language tag (kwarg for tagged string?)
         return self.operation_fn.__name__
 

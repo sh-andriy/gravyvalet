@@ -4,6 +4,11 @@ import inspect
 import types
 import typing
 
+from addon_toolkit.typing import (
+    AnyDataclassInstance,
+    DataclassInstance,
+)
+
 
 __all__ = (
     "kwargs_from_json",
@@ -13,7 +18,7 @@ __all__ = (
     "jsonschema_for_signature_params",
 )
 
-JsonableScalar = str | int | float | None | bool | enum.Enum
+JsonableScalar = str | int | float | None | bool | enum.Enum | AnyDataclassInstance
 JsonableList = typing.Iterable["JsonableValue"]
 JsonableDict = typing.Mapping[str, "JsonableValue"]
 JsonableValue = JsonableScalar | JsonableList | JsonableDict
@@ -45,7 +50,7 @@ def jsonschema_for_signature_params(signature: inspect.Signature) -> JsonableDic
     }
 
 
-def jsonschema_for_dataclass(dataclass: type) -> JsonableDict:
+def jsonschema_for_dataclass(dataclass: type[DataclassInstance]) -> JsonableDict:
     """build jsonschema corresponding to the constructor signature of a dataclass"""
     assert dataclasses.is_dataclass(dataclass) and isinstance(dataclass, type)
     return jsonschema_for_signature_params(inspect.signature(dataclass))
@@ -67,7 +72,9 @@ def jsonschema_for_annotation(annotation: type) -> JsonableDict:
 
 
 # TODO generic type: def json_for_typed_value[_ValueType: object](type_annotation: type[_ValueType], value: _ValueType):
-def json_for_typed_value(type_annotation: typing.Any, value: typing.Any):
+def json_for_typed_value(
+    type_annotation: typing.Any, value: typing.Any
+) -> JsonableValue:
     """return json-serializable representation of field value
 
     >>> json_for_typed_value(int, 13)
@@ -87,11 +94,12 @@ def json_for_typed_value(type_annotation: typing.Any, value: typing.Any):
             raise ValueError(f"expected instance of {_type}, got {value}")
         return json_for_dataclass(value)
     if issubclass(_type, enum.Enum):
+        assert isinstance(value, enum.Enum)
         if value not in _type:
             raise ValueError(f"expected member of enum {_type}, got {value}")
         return value.name
     if _type in (str, int, float):  # check str before Iterable
-        return _type(value)
+        return _type(value)  # type: ignore[no-any-return]
     if isinstance(_type, types.GenericAlias):
         # parameterized generic like `list[int]`
         if issubclass(_type.__origin__, typing.Iterable):
@@ -147,7 +155,7 @@ def arg_value_from_json(
     raise NotImplementedError(f"what do with `{json_arg_value}` (value for {param})")
 
 
-def json_for_dataclass(dataclass_instance) -> JsonableDict:
+def json_for_dataclass(dataclass_instance: DataclassInstance) -> JsonableDict:
     """return json-serializable representation of the dataclass instance"""
     _field_value_pairs = (
         (_field, getattr(dataclass_instance, _field.name))
@@ -160,7 +168,10 @@ def json_for_dataclass(dataclass_instance) -> JsonableDict:
     }
 
 
-def dataclass_from_json(dataclass: type, dataclass_json: JsonableDict):
+def dataclass_from_json(
+    dataclass: type[DataclassInstance],
+    dataclass_json: JsonableDict,
+) -> DataclassInstance:
     return dataclass(
         **{
             _field.name: field_value_from_json(_field, dataclass_json)
@@ -170,8 +181,9 @@ def dataclass_from_json(dataclass: type, dataclass_json: JsonableDict):
 
 
 def field_value_from_json(
-    field: dataclasses.Field[JsonableValue], dataclass_json: JsonableDict
-):
+    field: dataclasses.Field[JsonableValue],
+    dataclass_json: JsonableDict,
+) -> JsonableValue:
     _json_value = dataclass_json.get(field.name)
     if _json_value is None:
         return None  # TODO: check optional

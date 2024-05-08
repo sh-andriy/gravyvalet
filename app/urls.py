@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.urls import (
     include,
     path,
@@ -6,4 +7,5 @@ from django.urls import (
 
 urlpatterns = [
     path("v1/", include("addon_service.urls")),
+    path("admin/", admin.site.urls),
 ]

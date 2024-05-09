@@ -15,6 +15,10 @@ from .protocol import (
     AddonProtocolDeclaration,
     addon_protocol,
 )
+from .storage import (
+    StorageAddonProtocol,
+    StorageAddonImp
+)
 
 
 __all__ = (

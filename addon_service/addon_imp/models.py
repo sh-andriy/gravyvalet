@@ -2,14 +2,9 @@ import dataclasses
 
 from django.utils.functional import cached_property
 
-from addon_service.addon_operation.models import AddonOperationModel
+import .known as known_addon_imps
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonImp
-
-from .known import (
-    get_imp_by_name,
-    get_imp_name,
-)
 
 
 # dataclass wrapper for addon_toolkit.AddonImp that sufficiently
@@ -18,32 +13,32 @@ from .known import (
 class AddonImpModel(StaticDataclassModel):
     imp: AddonImp
 
-    ###
-    # class methods
+    def __new__(self, imp):
+        return super().__new__(cache_key=imp.natural_key, imp=imp)
 
     @classmethod
-    def do_get_by_natural_key(cls, *key_parts) -> "AddonImpModel":
-        (_imp_name,) = key_parts
-        return cls(get_imp_by_name(_imp_name))
-
-    @classmethod
-    def get_model_for_imp(cls, imp: AddonImp):
-        return cls.get_by_natural_key(get_imp_name(imp))
-
-    @cached_property
-    def protocol_docstring(self) -> str:
-        return self.imp.addon_protocol.protocol_cls.__doc__ or ""
+    def from_natural_key(cls, key):
+        (_addon_imp_name,) = key
+        return cls(known_addon_imps.get_imp_by_name(_addon_imp_name))
 
     ###
     # instance methods
 
+    @property
+    def natural_key(self):
+        return self.imp.natural_key
+
     @cached_property
     def name(self) -> str:
-        return get_imp_name(self.imp)
+        return self.imp.imp_name
 
     @cached_property
     def imp_cls(self) -> type:
         return self.imp.imp_cls
+
+    @cached_property
+    def protocol_docstring(self) -> str:
+        return self.imp.addon_protocol.protocol_cls.__doc__ or ""
 
     @cached_property
     def imp_docstring(self) -> str:
@@ -51,17 +46,21 @@ class AddonImpModel(StaticDataclassModel):
 
     @cached_property
     def implemented_operations(self) -> frozenset[AddonOperationModel]:
+        # local import to avoid circular import
+        # (AddonOperationModel and AddonImpModel need to be mutually aware of each other in order to populate their respective relationship fields)
+        from addon_service.addon_operation.models import AddonOperationModel
+
         return frozenset(
-            AddonOperationModel.get_model_for_operation_imp(_op_imp)
-            for _op_imp in self.imp.get_operation_imps()
+            AddonOperationModel(_op_imp) for _op_imp in self.imp.get_operation_imps()
         )
 
-    @property
-    def natural_key(self) -> tuple[str, ...]:
-        return (self.name,)
 
     def get_operation_imp(self, operation_name: str):
-        return AddonOperationModel.get_model_for_operation_imp(
+        # local import to avoid circular import
+        # (AddonOperationModel and AddonImpModel need to be mutually aware of each other in order to populate their respective relationship fields)
+        from addon_service.addon_operation.models import AddonOperationModel
+
+        return AddonOperationModel(
             self.imp.get_operation_imp_by_name(operation_name)
         )
 

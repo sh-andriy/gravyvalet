@@ -4,7 +4,6 @@ from django.utils.functional import cached_property
 
 from addon_service.addon_imp.known import (
     get_imp_by_name,
-    get_imp_name,
 )
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonOperationImp
@@ -18,16 +17,25 @@ from addon_toolkit.operation import AddonOperationType
 class AddonOperationModel(StaticDataclassModel):
     operation_imp: AddonOperationImp
 
+    def __new__(cls, operation_imp):
+        return super().__new__(cache_key=operation_imp.natural_key, operation_imp=opeartion_imp)
+
     @classmethod
-    def get_model_for_operation_imp(cls, operation_imp: AddonOperationImp):
-        return cls.get_by_natural_key(
-            get_imp_name(operation_imp.addon_imp),
-            operation_imp.declaration.name,
-        )
+    def from_natural_key(cls, *key_parts: tuple[str, ...]) -> AddonOperationModel:
+        try:
+            super().get_by_natural_key(key_parts)
+        except KeyError:
+             (_addon_imp_name, _operation_name) = key_parts
+             _addon_imp = get_imp_by_name(_addon_imp_name)
+             retun cls(_addon_imp.get_operation_imp_by_name(_operation_name))
 
     @cached_property
     def name(self) -> str:
         return self.operation_imp.declaration.name
+
+    @property
+    def natural_key(self) -> tuple[str, ...]:
+        return self.operation_imp.natural_key
 
     @cached_property
     def operation_type(self) -> AddonOperationType:
@@ -57,20 +65,8 @@ class AddonOperationModel(StaticDataclassModel):
         # (AddonOperationModel and AddonImpModel need to be mutually aware of each other in order to populate their respective relationship fields)
         from addon_service.addon_imp.models import AddonImpModel
 
-        return AddonImpModel.get_model_for_imp(self.operation_imp.addon_imp)
+        return AddonImpModel(self.operation_imp.addon_imp)
 
-    @classmethod
-    def do_get_by_natural_key(cls, *key_parts) -> "AddonOperationModel":
-        (_imp_name, _operation_name) = key_parts
-        _addon_imp = get_imp_by_name(_imp_name)
-        return cls(operation_imp=_addon_imp.get_operation_imp_by_name(_operation_name))
-
-    @property
-    def natural_key(self) -> tuple[str, ...]:
-        return (
-            get_imp_name(self.operation_imp.addon_imp),
-            self.name,
-        )
 
     class JSONAPIMeta:
         resource_name = "addon-operation-imps"

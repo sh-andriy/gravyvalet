@@ -31,7 +31,7 @@ class AddonImp:
 
     addon_protocol_cls: dataclasses.InitVar[type]
     imp_cls: type
-    imp_number: int
+    imp_name: str
     addon_protocol: AddonProtocolDeclaration = dataclasses.field(init=False)
 
     def __post_init__(self, addon_protocol_cls):
@@ -40,6 +40,10 @@ class AddonImp:
             "addon_protocol",
             addon_protocol.get_declaration(addon_protocol_cls),
         )
+
+    @property
+    def natrual_key(self):
+        return (self.name,)
 
     def get_operation_imps(
         self, *, capabilities: Iterable[enum.Enum] = ()
@@ -83,6 +87,9 @@ class AddonOperationImp:
             raise NotImplementedError(  # TODO: helpful exception type
                 f"operation '{self.declaration}' not implemented by {self.addon_imp}"
             )
+    @property
+    def natural_key(self):
+        return (*self.addon_imp.natural_key, self.declaration.name)
 
     @property
     def imp_function(self):

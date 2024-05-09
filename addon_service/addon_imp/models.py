@@ -1,6 +1,5 @@
 import dataclasses
-
-from django.utils.functional import cached_property
+from functools import cached_property
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.static_dataclass_model import StaticDataclassModel

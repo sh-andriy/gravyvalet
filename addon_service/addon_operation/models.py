@@ -1,6 +1,5 @@
 import dataclasses
-
-from django.utils.functional import cached_property
+from functools import cached_property
 
 from addon_service.addon_imp.known import (
     get_imp_by_name,

@@ -1,10 +1,14 @@
 import enum
 
-from addon_imps.storage import BoxDotComImp, StorageImp
+from addon_imps.storage import (
+    BoxDotComImp,
+    StorageImp,
+)
 
 
 if __debug__:
     from addon_imps.storage import my_blarg
+
     BlargStorageImp = StorageImp(imp_cls=my_blarg.MyBlargStorage)
 
 
@@ -14,7 +18,7 @@ class KnownAddonImps(enum.Enum):
 
     # STORAGE Imps are all prefixed with 1
     if __debug__:
-        BLARG = 1000 # USE X000 for test imps
+        BLARG = 1000  # USE X000 for test imps
     BOX_DOT_COM = 1001
 
     # ARCHIVE Imps are all prefixed with 2
@@ -25,9 +29,9 @@ class KnownAddonImps(enum.Enum):
     def imp(self):
         """Retrieve the correct AddonImp for the member"""
         match self:
-            case KnownStorageAddonImps.BLARG:
+            case KnownAddonImps.BLARG:
                 return BlargStorageImp
-            case KnownStorageAddonImps.BOX_DOT_COM:
+            case KnownAddonImps.BOX_DOT_COM:
                 return BoxDotComImp
             case _:
                 raise ValueError(f"No concrete implementation for Addon {self.name}")
@@ -38,7 +42,7 @@ class KnownAddonImps(enum.Enum):
 
     @property
     def is_archive_imp(self):
-        return 2000 <= self.value < 3000 
+        return 2000 <= self.value < 3000
 
 
 def get_imp_by_name(imp_name):

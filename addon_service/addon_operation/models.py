@@ -2,9 +2,7 @@ import dataclasses
 
 from django.utils.functional import cached_property
 
-from addon_service.addon_imp.known import (
-    get_imp_by_name,
-)
+from addon_service.addon_imp.known import get_imp_by_name
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonOperationImp
 from addon_toolkit.json_arguments import jsonschema_for_signature_params
@@ -18,16 +16,18 @@ class AddonOperationModel(StaticDataclassModel):
     operation_imp: AddonOperationImp
 
     def __new__(cls, operation_imp):
-        return super().__new__(cache_key=operation_imp.natural_key, operation_imp=opeartion_imp)
+        return super().__new__(
+            cache_key=operation_imp.natural_key, operation_imp=operation_imp
+        )
 
     @classmethod
-    def from_natural_key(cls, *key_parts: tuple[str, ...]) -> AddonOperationModel:
+    def from_natural_key(cls, key_parts):
         try:
             super().get_by_natural_key(key_parts)
         except KeyError:
-             (_addon_imp_name, _operation_name) = key_parts
-             _addon_imp = get_imp_by_name(_addon_imp_name)
-             retun cls(_addon_imp.get_operation_imp_by_name(_operation_name))
+            (_addon_imp_name, _operation_name) = key_parts
+            _addon_imp = get_imp_by_name(_addon_imp_name)
+            return cls(_addon_imp.get_operation_imp_by_name(_operation_name))
 
     @cached_property
     def name(self) -> str:
@@ -66,7 +66,6 @@ class AddonOperationModel(StaticDataclassModel):
         from addon_service.addon_imp.models import AddonImpModel
 
         return AddonImpModel(self.operation_imp.addon_imp)
-
 
     class JSONAPIMeta:
         resource_name = "addon-operation-imps"

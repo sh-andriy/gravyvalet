@@ -87,6 +87,7 @@ class AddonOperationImp:
             raise NotImplementedError(  # TODO: helpful exception type
                 f"operation '{self.declaration}' not implemented by {self.addon_imp}"
             )
+
     @property
     def natural_key(self):
         return (*self.addon_imp.natural_key, self.declaration.name)

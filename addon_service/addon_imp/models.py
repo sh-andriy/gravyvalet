@@ -2,9 +2,11 @@ import dataclasses
 
 from django.utils.functional import cached_property
 
-import .known as known_addon_imps
+from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonImp
+
+from . import known as known_addon_imps
 
 
 # dataclass wrapper for addon_toolkit.AddonImp that sufficiently
@@ -46,23 +48,12 @@ class AddonImpModel(StaticDataclassModel):
 
     @cached_property
     def implemented_operations(self) -> frozenset[AddonOperationModel]:
-        # local import to avoid circular import
-        # (AddonOperationModel and AddonImpModel need to be mutually aware of each other in order to populate their respective relationship fields)
-        from addon_service.addon_operation.models import AddonOperationModel
-
         return frozenset(
             AddonOperationModel(_op_imp) for _op_imp in self.imp.get_operation_imps()
         )
 
-
     def get_operation_imp(self, operation_name: str):
-        # local import to avoid circular import
-        # (AddonOperationModel and AddonImpModel need to be mutually aware of each other in order to populate their respective relationship fields)
-        from addon_service.addon_operation.models import AddonOperationModel
-
-        return AddonOperationModel(
-            self.imp.get_operation_imp_by_name(operation_name)
-        )
+        return AddonOperationModel(self.imp.get_operation_imp_by_name(operation_name))
 
     class JSONAPIMeta:
         resource_name = "addon-imps"

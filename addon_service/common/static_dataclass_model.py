@@ -21,7 +21,7 @@ class StaticDataclassModel(abc.ABC):
     """a django-model-like base class for statically defined, natural-keyed data
     (put duck-typing here for rest_framework_json_api)
     """
-            
+
     def __new__(cls, natural_key, *args, **kwargs):
         """Check the cache for key and return the cached model
         OR create and cache a new instance based on provided args
@@ -64,12 +64,10 @@ class StaticDataclassModel(abc.ABC):
 
         runs `from_natural_key` once per natural key, caches result until app restart
         """
-        _cache = _StaticCache.for_class(cls)
         try:
-            _gotten = _cache.by_natural_key[key]
+            return _StaticCache.for_class(cls).by_natural_key[key]
         except KeyError:
-            return cls.from_natrual_key(*key_parts)
-        return _gotten
+            return cls.from_natural_key(key)
 
     ###
     # instance methods

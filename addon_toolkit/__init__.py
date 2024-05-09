@@ -16,8 +16,8 @@ from .protocol import (
     addon_protocol,
 )
 from .storage import (
+    StorageAddonImp,
     StorageAddonProtocol,
-    StorageAddonImp
 )
 
 
@@ -28,6 +28,8 @@ __all__ = (
     "AddonOperationImp",
     "AddonProtocolDeclaration",
     "RedirectResult",
+    "StorageAddonImp",
+    "StorageAddonProtocol",
     "addon_operation",
     "addon_protocol",
     "eventual_operation",

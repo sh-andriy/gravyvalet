@@ -50,8 +50,8 @@ class AddonImpModel(StaticDataclassModel):
         return self.imp.imp_cls.__doc__ or ""
 
     @cached_property
-    def implemented_operations(self) -> frozenset[AddonOperationModel]:
-        return frozenset(
+    def implemented_operations(self) -> tuple[AddonOperationModel]:
+        return tuple(
             AddonOperationModel.get_model_for_operation_imp(_op_imp)
             for _op_imp in self.imp.get_operation_imps()
         )

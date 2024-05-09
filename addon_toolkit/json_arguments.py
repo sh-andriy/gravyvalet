@@ -48,17 +48,18 @@ def jsonschema_for_dataclass(dataclass: type) -> dict:
 
 def jsonschema_for_annotation(annotation: type) -> dict:
     """build jsonschema for a python type annotation"""
-    if dataclasses.is_dataclass(annotation):
-        return jsonschema_for_dataclass(annotation)
-    if issubclass(annotation, enum.Enum):
-        return {"enum": [_item.name for _item in annotation]}
-    if annotation is str:
+    _allows_none, _type = _maybe_optional_type(annotation)  # ignore optional-ness
+    if dataclasses.is_dataclass(_type):
+        return jsonschema_for_dataclass(_type)
+    if issubclass(_type, enum.Enum):
+        return {"enum": [_item.name for _item in _type]}
+    if _type is str:
         return {"type": "string"}
-    if annotation in (int, float):
+    if _type in (int, float):
         return {"type": "number"}
-    if annotation in (tuple, list, set, frozenset):
+    if _type in (tuple, list, set, frozenset):
         return {"type": "list"}
-    raise NotImplementedError(f"what do with param annotation '{annotation}'?")
+    raise NotImplementedError(f"what do with param annotation '{_type}'?")
 
 
 # TODO generic type: def json_for_typed_value[_ValueType: object](type_annotation: type[_ValueType], value: _ValueType):

@@ -8,7 +8,7 @@ from . import box_dot_com
 
 StorageImp = functools.partial(AddonImp, addon_protocol_cls=StorageAddonProtocol)
 
-BoxDotComImp = StorageImp(imp_cls=box_dot_com.BoxDotComStorageImp)
+BoxDotComImp = StorageImp(imp_cls=box_dot_com.BoxDotComStorageImp, name="box_dot_com")
 
 __all__ = (
     "box_dot_com",

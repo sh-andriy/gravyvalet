@@ -15,8 +15,8 @@ from . import known as known_addon_imps
 class AddonImpModel(StaticDataclassModel):
     imp: AddonImp
 
-    def __new__(self, imp):
-        return super().__new__(cache_key=imp.natural_key, imp=imp)
+    def __new__(cls, imp):
+        return super().__new__(cls, imp.natural_key)
 
     @classmethod
     def from_natural_key(cls, key):
@@ -32,7 +32,7 @@ class AddonImpModel(StaticDataclassModel):
 
     @cached_property
     def name(self) -> str:
-        return self.imp.imp_name
+        return self.imp.name
 
     @cached_property
     def imp_cls(self) -> type:

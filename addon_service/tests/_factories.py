@@ -3,7 +3,7 @@ from django.conf import settings
 from factory.django import DjangoModelFactory
 
 from addon_service import models as db
-from addon_service.addon_imp.known import get_imp_by_name
+from addon_service.addon_imp.known import KnownAddonImps
 from addon_service.credentials import CredentialsFormats
 from addon_service.external_storage_service import ServiceTypes
 from addon_toolkit import AddonCapabilities
@@ -57,7 +57,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     name = factory.Faker("word")
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
-    int_addon_imp = get_imp_by_name("BLARG").imp_number
+    int_addon_imp = KnownAddonImps.BLARG.value
     oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)
     supported_scopes = ["service.url/grant_all"]
 

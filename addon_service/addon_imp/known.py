@@ -9,7 +9,7 @@ from addon_imps.storage import (
 if __debug__:
     from addon_imps.storage import my_blarg
 
-    BlargStorageImp = StorageImp(imp_cls=my_blarg.MyBlargStorage)
+    BlargStorageImp = StorageImp(imp_cls=my_blarg.MyBlargStorage, name="blarg")
 
 
 @enum.unique

@@ -105,7 +105,7 @@ class TestAddonProtocol(unittest.TestCase):
         cls._my_imp = AddonImp(
             _MyProtocol,
             imp_cls=_MyImplementation,
-            imp_number=7,
+            name="mine",
         )
 
         # a specific implementation of some of those shared operations

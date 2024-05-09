@@ -22,13 +22,13 @@ class StaticDataclassModel(abc.ABC):
     (put duck-typing here for rest_framework_json_api)
     """
 
-    def __new__(cls, natural_key, *args, **kwargs):
+    def __new__(cls, natural_key):
         """Check the cache for key and return the cached model
         OR create and cache a new instance based on provided args
         """
-        _model_instance_cache = _StaticCache.for_cls(cls)
-        return _model_instance_cache.setdefault(
-            natural_key, super.__new__(*args, **kwargs)
+        _model_instance_cache = _StaticCache.for_class(cls)
+        return _model_instance_cache.by_natural_key.setdefault(
+            natural_key, super().__new__(cls)
         )
 
     ###
@@ -56,7 +56,7 @@ class StaticDataclassModel(abc.ABC):
             unquote(_key_segment)
             for _key_segment in key_str.split(NATURAL_KEY_DELIMITER)
         )
-        return cls.get_by_natural_key(*_key_parts)
+        return cls.get_by_natural_key(_key_parts)
 
     @classmethod
     def get_by_natural_key(cls, key: NaturalKey) -> typing.Self:

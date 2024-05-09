@@ -4,8 +4,8 @@ from django.db import models
 
 from addon_service.addon_imp.known import KnownAddonImps
 from addon_service.addon_imp.models import AddonImpModel
+from addon_service.addon_imp.validators import validate_storage_imp
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.enums.validators import validate_storage_imp_number
 from addon_service.credentials import (
     CredentialsFormats,
     validate_credentials_format,
@@ -19,7 +19,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
     name = models.CharField(null=False)
     int_addon_imp = models.IntegerField(
         null=False,
-        validators=[validate_storage_imp_number],
+        validators=[validate_storage_imp],
     )
     int_credentials_format = models.IntegerField(
         null=False,

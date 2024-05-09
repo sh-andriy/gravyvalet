@@ -31,7 +31,7 @@ class AddonImp:
 
     addon_protocol_cls: dataclasses.InitVar[type]
     imp_cls: type
-    imp_name: str
+    name: str
     addon_protocol: AddonProtocolDeclaration = dataclasses.field(init=False)
 
     def __post_init__(self, addon_protocol_cls):
@@ -42,7 +42,7 @@ class AddonImp:
         )
 
     @property
-    def natrual_key(self):
+    def natural_key(self):
         return (self.name,)
 
     def get_operation_imps(

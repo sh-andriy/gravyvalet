@@ -7,6 +7,7 @@ from addon_service.addon_imp.known import (
 )
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import (
+    AddonCapabilities,
     AddonImp,
     AddonOperationDeclaration,
     AddonOperationType,
@@ -54,10 +55,8 @@ class AddonOperationModel(StaticDataclassModel):
         return self.imp_cls.get_imp_function(self.declaration).__doc__ or ""
 
     @cached_property
-    def capability(self) -> str:
-        _capability_name = self.declaration.capability.name
-        assert _capability_name is not None
-        return _capability_name
+    def capability(self) -> AddonCapabilities:
+        return self.declaration.capability
 
     @cached_property
     def params_jsonschema(self) -> dict:

@@ -27,7 +27,9 @@ class AddonInterfaces(enum.Enum):
             raise exceptions.NotAnImp(value)
 
     @staticmethod
-    def get_for_imp_cls(imp_cls: type[AddonImp]) -> "AddonInterfaces":
+    def for_concrete_imp(imp_cls: type[AddonImp]) -> "AddonInterfaces":
+        if imp_cls in AddonInterfaces:
+            raise exceptions.ImpTooAbstract(imp_cls)
         _inherited_interfaces = [
             _interface_member
             for _interface_member in AddonInterfaces
@@ -40,7 +42,3 @@ class AddonInterfaces(enum.Enum):
                 raise exceptions.NotAnImp(imp_cls)
             case _:
                 raise exceptions.ImpHasTooManyJobs(imp_cls, _inherited_interfaces)
-
-    @staticmethod
-    def get_for_imp(imp: AddonImp) -> "AddonInterfaces":
-        return AddonInterfaces.get_for_imp_cls(type(imp))

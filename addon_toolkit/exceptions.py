@@ -1,4 +1,4 @@
-# TODO: helpfully specific exceptions
+"""exception classes for addon_toolkit"""
 
 
 class AddonToolkitException(Exception):
@@ -13,11 +13,11 @@ class BadImp(AddonToolkitException):
     pass
 
 
-class ImpHasTooManyJobs(BadImp):
+class ImpTooAbstract(BadImp):
     pass
 
 
-class ImpNotInstantiatable(BadImp):
+class ImpHasTooManyJobs(BadImp):
     pass
 
 

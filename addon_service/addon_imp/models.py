@@ -11,7 +11,7 @@ from .known import (
 )
 
 
-# dataclass wrapper for addon_toolkit.AddonImp that sufficiently
+# dataclass wrapper for a concrete subclass of AddonImp which
 # meets rest_framework_json_api expectations on a model class
 @dataclasses.dataclass(frozen=True)
 class AddonImpModel(StaticDataclassModel):

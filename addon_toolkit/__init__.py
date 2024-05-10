@@ -1,5 +1,6 @@
 from .addon_operation_declaration import (
     AddonOperationDeclaration,
+    AddonOperationType,
     addon_operation,
     eventual_operation,
     immediate_operation,
@@ -11,10 +12,6 @@ from .imp import (
     AddonImp,
     AddonOperationImp,
 )
-from .protocol import (
-    AddonProtocolDeclaration,
-    addon_protocol,
-)
 
 
 __all__ = (
@@ -22,10 +19,9 @@ __all__ = (
     "AddonImp",
     "AddonOperationDeclaration",
     "AddonOperationImp",
-    "AddonProtocolDeclaration",
+    "AddonOperationType",
     "RedirectResult",
     "addon_operation",
-    "addon_protocol",
     "eventual_operation",
     "immediate_operation",
     "redirect_operation",

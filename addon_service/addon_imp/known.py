@@ -7,7 +7,6 @@ import enum
 
 from addon_imps.storage import box_dot_com
 from addon_toolkit import AddonImp
-from addon_toolkit.storage import StorageAddonProtocol
 
 
 if __debug__:
@@ -22,37 +21,29 @@ __all__ = (
 
 
 @enum.unique
-class KnownAddonImp(enum.Enum):
+class KnownAddonImps(enum.Enum):
     """enum with a name for each addon implementation class that should be known to the api"""
 
-    BOX_DOT_COM = AddonImp(
-        addon_protocol_cls=StorageAddonProtocol,
-        imp_cls=box_dot_com.BoxDotComStorageImp,
-        imp_number=1,
-    )
+    BOX_DOT_COM = box_dot_com.BoxDotComStorageImp
 
     if __debug__:
-        BLARG = AddonImp(
-            addon_protocol_cls=StorageAddonProtocol,
-            imp_cls=my_blarg.MyBlargStorage,
-            imp_number=-7,
-        )
+        BLARG = my_blarg.MyBlargStorage
 
 
 ###
-# helpers for accessing KnownAddonImp
+# helpers for accessing KnownAddonImps
 
 
-def get_imp_by_name(imp_name: str) -> AddonImp:
-    return KnownAddonImp[imp_name].value
+def get_imp_by_name(imp_name: str) -> type[AddonImp]:
+    return KnownAddonImps[imp_name].value
 
 
 def get_imp_name(imp: AddonImp) -> str:
-    return KnownAddonImp(imp).name
+    return KnownAddonImps(imp).name
 
 
-def get_imp_by_number(imp_number: int) -> AddonImp:
-    for _enum_imp in KnownAddonImp:
+def get_imp_by_number(imp_number: int) -> type[AddonImp]:
+    for _enum_imp in KnownAddonImps:
         if _enum_imp.value.imp_number == imp_number:
             return _enum_imp.value
     raise KeyError
@@ -64,7 +55,7 @@ if __debug__:
     _repeated_imp_numbers = [
         _imp_number
         for (_imp_number, _count) in Counter(
-            _imp_enum.value.imp_number for _imp_enum in KnownAddonImp
+            _imp_enum.value.imp_number for _imp_enum in KnownAddonImps
         ).items()
         if _count > 1
     ]

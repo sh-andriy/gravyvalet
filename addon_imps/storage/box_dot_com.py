@@ -1,8 +1,8 @@
 import dataclasses
 import typing
 
-from addon_toolkit import storage
 from addon_toolkit.cursor import OffsetCursor
+from addon_toolkit.interfaces import storage
 
 
 ROOT_FOLDER_ID: str = "0"

@@ -1,6 +1,5 @@
 import dataclasses
-
-from django.utils.functional import cached_property
+from functools import cached_property
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.static_dataclass_model import StaticDataclassModel
@@ -50,8 +49,8 @@ class AddonImpModel(StaticDataclassModel):
         return self.imp.imp_cls.__doc__ or ""
 
     @cached_property
-    def implemented_operations(self) -> frozenset[AddonOperationModel]:
-        return frozenset(
+    def implemented_operations(self) -> tuple[AddonOperationModel]:
+        return tuple(
             AddonOperationModel.get_model_for_operation_imp(_op_imp)
             for _op_imp in self.imp.get_operation_imps()
         )

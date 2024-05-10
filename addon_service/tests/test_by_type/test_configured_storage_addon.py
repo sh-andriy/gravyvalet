@@ -144,7 +144,7 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
                 "type": "configured-storage-addons",
                 "attributes": {
                     "connected_capabilities": ["ACCESS"],
-                    # TODO: "authorized_resource_uri": resource_uri,
+                    "authorized_resource_uri": resource_uri,
                 },
                 "relationships": {
                     "base_account": {
@@ -152,12 +152,6 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
                             "type": "authorized-storage-accounts",
                             "id": self._configured_storage_addon.base_account.pk,
                         },
-                    },
-                    "authorized_resource": {
-                        "data": {
-                            "type": "resource-references",
-                            "resource_uri": resource_uri,
-                        }
                     },
                 },
             }

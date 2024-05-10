@@ -3,13 +3,13 @@
 import collections.abc
 import dataclasses
 import enum
-import typing
 
-# note: addon_toolkit.storage is down-import-stream from addon_toolkit
+# note: addon_toolkit.interfaces.storage is down-import-stream from addon_toolkit
 from addon_toolkit import (
     AddonCapabilities,
+    AddonImp,
     RedirectResult,
-    addon_protocol,
+    exceptions,
     immediate_operation,
     redirect_operation,
 )
@@ -23,7 +23,6 @@ __all__ = (
     "PathResult",
     "PossibleSingleItemResult",
     "StorageAddonImp",
-    "StorageAddonProtocol",
     "StorageConfig",
 )
 
@@ -86,15 +85,22 @@ class ItemSampleResult:
 # use python's typing.Protocol to define a shared interface for storage addons
 
 
-@addon_protocol()  # TODO: descriptions with language tags
-class StorageAddonProtocol(typing.Protocol):
-    def __init__(self, config: StorageConfig, network: HttpRequestor): ...
+@dataclasses.dataclass(frozen=True)
+class StorageAddonImp(AddonImp):
+    """
+    storage-addon implementations should inherit this
+    and start implementing operation methods
+    """
+
+    config: StorageConfig
+    network: HttpRequestor
 
     ###
     # declared operations:
 
     @redirect_operation(capability=AddonCapabilities.ACCESS)
-    def download(self, item_id: str) -> RedirectResult: ...
+    def download(self, item_id: str) -> RedirectResult:
+        raise exceptions.OperationNotImplemented
 
     #
     #    @immediate_operation(capability=AddonCapabilities.ACCESS)
@@ -114,16 +120,20 @@ class StorageAddonProtocol(typing.Protocol):
     # "tree-read" operations:
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_root_folders(self, page_cursor: str = "") -> ItemSampleResult: ...
+    async def get_root_folders(self, page_cursor: str = "") -> ItemSampleResult:
+        raise exceptions.OperationNotImplemented
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_root_items(self, page_cursor: str = "") -> ItemSampleResult: ...
+    async def get_root_items(self, page_cursor: str = "") -> ItemSampleResult:
+        raise exceptions.OperationNotImplemented
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_parent_item_id(self, item_id: str) -> PossibleSingleItemResult: ...
+    async def get_parent_item_id(self, item_id: str) -> PossibleSingleItemResult:
+        raise exceptions.OperationNotImplemented
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_item_path(self, item_id: str) -> PathResult: ...
+    async def get_item_path(self, item_id: str) -> PathResult:
+        raise exceptions.OperationNotImplemented
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
     async def get_child_items(
@@ -131,7 +141,8 @@ class StorageAddonProtocol(typing.Protocol):
         item_id: str,
         page_cursor: str = "",
         item_type: ItemType | None = None,
-    ) -> ItemSampleResult: ...
+    ) -> ItemSampleResult:
+        raise exceptions.OperationNotImplemented
 
 
 #
@@ -158,15 +169,3 @@ class StorageAddonProtocol(typing.Protocol):
 #
 #    @immediate_operation(capability=AddonCapabilities.UPDATE)
 #    async def pls_restore_version(self, item_id: str, version_id: str): ...
-
-
-@dataclasses.dataclass(frozen=True)
-class StorageAddonImp(StorageAddonProtocol):
-    """a still-abstract implementation of StorageAddonProtocol
-
-    storage-addon implementations should probably inherit this
-    and start implementing operation methods
-    """
-
-    config: StorageConfig
-    network: HttpRequestor

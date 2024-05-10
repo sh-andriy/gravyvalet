@@ -1,12 +1,14 @@
 import dataclasses
 import enum
 import inspect
-from http import HTTPMethod
 from typing import (
     Callable,
     Iterator,
 )
 
+from . import exceptions
+from .addon_operation_results import RedirectResult
+from .capabilities import AddonCapabilities
 from .declarator import Declarator
 
 
@@ -35,7 +37,7 @@ class AddonOperationDeclaration:
     """
 
     operation_type: AddonOperationType
-    capability: enum.Enum
+    capability: AddonCapabilities
     operation_fn: Callable  # the decorated function
     return_type: type = dataclasses.field(
         default=type(None),  # if not provided, inferred by __post_init__
@@ -44,7 +46,10 @@ class AddonOperationDeclaration:
 
     @classmethod
     def for_function(self, fn: Callable) -> "AddonOperationDeclaration":
-        return addon_operation.get_declaration(fn)
+        try:
+            return addon_operation.get_declaration(fn)
+        except ValueError:
+            raise exceptions.NotAnOperation(fn)
 
     def __post_init__(self):
         _return_type = self.call_signature.return_annotation
@@ -61,7 +66,7 @@ class AddonOperationDeclaration:
                 self.return_type
             ), f"return_type must be a dataclass (got {self.return_type})"
             if not issubclass(_return_type, self.return_type):
-                raise ValueError(
+                raise exceptions.OperationNotValid(
                     f"expected return type {self.return_type} on operation function {self.operation_fn} (got {_return_type})"
                 )
 
@@ -83,7 +88,7 @@ class AddonOperationDeclaration:
     def param_dataclasses(self) -> Iterator[type]:
         for _param_name, _param in self.call_signature.parameters.items():
             if not dataclasses.is_dataclass(_param.annotation):
-                raise ValueError(
+                raise exceptions.OperationNotValid(
                     f"operation parameters must have dataclass annotations (TODO: decorator to infer dataclass from annotated kwargs), got `{_param_name}: {_param.annotation}`"
                 )
             yield _param.annotation
@@ -94,13 +99,6 @@ addon_operation = Declarator(
     declaration_dataclass=AddonOperationDeclaration,
     field_for_target="operation_fn",
 )
-
-
-@dataclasses.dataclass
-class RedirectResult:
-    url: str
-    method: HTTPMethod = HTTPMethod.GET
-
 
 # decorator for operations that may be performed by a client request (e.g. redirect to waterbutler)
 redirect_operation = addon_operation.with_kwargs(

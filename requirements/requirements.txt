@@ -3,6 +3,6 @@ psycopg>=3.1.8
 djangorestframework==3.14.0
 djangorestframework-jsonapi==6.1.0
 django-filter
-celery==5.2.7
+celery==5.4.0
 jsonschema==4.21.1
 aiohttp==3.9.3

@@ -12,7 +12,7 @@ from addon_service.models import (
     ConfiguredStorageAddon,
     UserReference,
 )
-from addon_toolkit.operation import AddonOperationType
+from addon_toolkit import AddonOperationType
 
 from .perform import perform_invocation__blocking
 
@@ -72,14 +72,14 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
     }
 
     def create(self, validated_data):
-        _thru_addon = validated_data["thru_addon"]
-        _operation_name = validated_data["operation_name"]
-        _addon_imp_model = _thru_addon.base_account.external_storage_service.addon_imp
-        _operation = _addon_imp_model.get_operation_imp(_operation_name)
+        _thru_addon: ConfiguredStorageAddon = validated_data["thru_addon"]
+        _operation_name: str = validated_data["operation_name"]
+        _imp_cls = _thru_addon.imp_cls
+        _operation = _imp_cls.get_operation_by_name(_operation_name)
         _user_uri = self.context["request"].session.get("user_reference_uri")
         _user, _ = UserReference.objects.get_or_create(user_uri=_user_uri)
         _invocation = AddonOperationInvocation.objects.create(
-            operation_identifier=_operation.natural_key_str,
+            operation=AddonOperationModel(_imp_cls, _operation),
             operation_kwargs=validated_data["operation_kwargs"],
             thru_addon=validated_data["thru_addon"],
             by_user=_user,

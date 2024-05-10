@@ -9,15 +9,15 @@ class NotAnImp(AddonToolkitException):
     pass
 
 
-class BadImp(AddonToolkitException):
+class ImpNotValid(AddonToolkitException):
     pass
 
 
-class ImpTooAbstract(BadImp):
+class ImpTooAbstract(ImpNotValid):
     pass
 
 
-class ImpHasTooManyJobs(BadImp):
+class ImpHasTooManyJobs(ImpNotValid):
     pass
 
 

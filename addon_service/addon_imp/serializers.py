@@ -17,6 +17,7 @@ class AddonImpSerializer(serializers.Serializer):
     )
     name = serializers.CharField(read_only=True)
     docstring = serializers.CharField(read_only=True, source="imp_docstring")
+    interface_docstring = serializers.CharField(read_only=True)
 
     implemented_operations = DataclassRelatedLinkField(
         dataclass_model=AddonOperationModel,

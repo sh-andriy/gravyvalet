@@ -15,53 +15,45 @@ from .known import (
 # meets rest_framework_json_api expectations on a model class
 @dataclasses.dataclass(frozen=True)
 class AddonImpModel(StaticDataclassModel):
-    imp: AddonImp
+    imp_cls: type[AddonImp]
 
     ###
-    # class methods
+    # StaticDataclassModel abstract methods
 
     @classmethod
-    def do_get_by_natural_key(cls, *key_parts) -> "AddonImpModel":
-        (_imp_name,) = key_parts
-        return cls(get_imp_by_name(_imp_name))
+    def init_args_from_static_key(cls, static_key: str) -> tuple:
+        return (get_imp_by_name(static_key),)
 
-    @classmethod
-    def get_model_for_imp(cls, imp: AddonImp):
-        return cls.get_by_natural_key(get_imp_name(imp))
-
-    @cached_property
-    def protocol_docstring(self) -> str:
-        return self.imp.addon_protocol.protocol_cls.__doc__ or ""
+    @property
+    def static_key(self) -> str:
+        return self.name
 
     ###
-    # instance methods
+    # fields for api
 
     @cached_property
     def name(self) -> str:
-        return get_imp_name(self.imp)
-
-    @cached_property
-    def imp_cls(self) -> type:
-        return self.imp.imp_cls
+        return get_imp_name(self.imp_cls)
 
     @cached_property
     def imp_docstring(self) -> str:
-        return self.imp.imp_cls.__doc__ or ""
+        return self.imp_cls.__doc__ or ""
 
     @cached_property
-    def implemented_operations(self) -> tuple[AddonOperationModel]:
+    def interface_docstring(self) -> str:
+        return self.imp_cls.get_interface_cls().__doc__ or ""
+
+    @cached_property
+    def implemented_operations(self) -> tuple[AddonOperationModel, ...]:
         return tuple(
-            AddonOperationModel.get_model_for_operation_imp(_op_imp)
-            for _op_imp in self.imp.get_operation_imps()
+            AddonOperationModel(self.imp_cls, _operation)
+            for _operation in self.imp_cls.all_implemented_operations()
         )
 
-    @property
-    def natural_key(self) -> tuple[str, ...]:
-        return (self.name,)
-
-    def get_operation_imp(self, operation_name: str):
-        return AddonOperationModel.get_model_for_operation_imp(
-            self.imp.get_operation_imp_by_name(operation_name)
+    def get_operation_model(self, operation_name: str):
+        return AddonOperationModel(
+            self.imp_cls,
+            self.imp_cls.get_operation_by_name(operation_name),
         )
 
     class JSONAPIMeta:

@@ -19,24 +19,22 @@ __all__ = (
 
 
 @sync_to_async
-def perform_invocation__async(
-    invocation: AddonOperationInvocation,
-) -> AddonOperationInvocation:
+def perform_invocation__async(invocation: AddonOperationInvocation) -> None:
     # implemented as a sync function (for django transactions)
     # wrapped in sync_to_async (to guarantee a running event loop)
     with dibs(invocation):  # TODO: handle dibs errors
         try:
-            _addon_instance = get_storage_addon_instance(invocation.thru_addon)
-            _operation_imp = invocation.operation.operation_imp
+            _imp = get_storage_addon_instance(invocation.thru_addon)
+            _operation = invocation.operation
             # inner transaction to contain database errors,
             # so status can be saved in the outer transaction (from `dibs`)
             with transaction.atomic():
-                _result = _operation_imp.invoke_thru_addon__blocking(
-                    _addon_instance,
+                _result = _imp.invoke_operation__blocking(
+                    _operation.declaration,
                     invocation.operation_kwargs,
                 )
             invocation.operation_result = json_for_typed_value(
-                _operation_imp.declaration.return_type,
+                _operation.declaration.return_type,
                 _result,
             )
             invocation.invocation_status = InvocationStatus.SUCCESS
@@ -45,7 +43,6 @@ def perform_invocation__async(
             raise  # TODO: or swallow?
         finally:
             invocation.save()
-    return invocation
 
 
 # NOTE: yes this is `async_to_sync(sync_to_async(...))`; was an easy way

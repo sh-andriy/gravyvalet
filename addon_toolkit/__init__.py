@@ -8,17 +8,13 @@ from .addon_operation_declaration import (
 )
 from .addon_operation_results import RedirectResult
 from .capabilities import AddonCapabilities
-from .imp import (
-    AddonImp,
-    AddonOperationImp,
-)
+from .imp import AddonImp
 
 
 __all__ = (
     "AddonCapabilities",
     "AddonImp",
     "AddonOperationDeclaration",
-    "AddonOperationImp",
     "AddonOperationType",
     "RedirectResult",
     "addon_operation",

@@ -32,8 +32,8 @@ def validate_invocation_status(value):
 
 def validate_storage_imp_number(value):
     try:
-        _imp = get_imp_by_number(value)
+        _imp_cls = get_imp_by_number(value)
     except KeyError:
         raise ValidationError(f"invalid imp number: {value}")
-    if _imp.addon_protocol.protocol_cls is not StorageAddonImp:
-        raise ValidationError(f"expected storage imp (got {_imp})")
+    if not issubclass(_imp_cls, StorageAddonImp):
+        raise ValidationError(f"expected storage imp (got {_imp_cls})")

@@ -52,6 +52,8 @@ class AddonOperationDeclaration:
             raise exceptions.NotAnOperation(fn)
 
     def __post_init__(self):
+        if len(self.capability) != 1:
+            raise exceptions.OperationNotValid
         _return_type = self.call_signature.return_annotation
         if self.return_type is type(None):
             # no return_type declared; infer from type annotation

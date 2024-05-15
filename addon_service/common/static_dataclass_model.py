@@ -1,33 +1,14 @@
 import abc
-import functools
-import logging
 import typing
 
 from addon_service.common.opaque import (
     make_opaque,
     unmake_opaque,
 )
+from addon_service.common.permacache_metaclass import PermacacheMetaclass
 
 
-_logger = logging.getLogger(__name__)
-
-
-class CachedByArgs(type):
-    """metaclass that caches new objects by constructor args -- same args get the same object
-
-    careful: there's no cache size limit -- use only with bounded arg-space
-
-    limitation: no keyword args; only positional args allowed
-                (avoid duplicates from kwargs in different order)
-    """
-
-    @functools.cache
-    def __call__(cls, *args):
-        _logger.debug("CachedByArgs: new %s with args=%r", cls, args)
-        return super().__call__(*args)
-
-
-class StaticDataclassModel(metaclass=CachedByArgs):
+class StaticDataclassModel(metaclass=PermacacheMetaclass):
     """a django-model-like base class for statically defined, natural-keyed data
     (put duck-typing here for rest_framework_json_api)
     """
@@ -37,7 +18,8 @@ class StaticDataclassModel(metaclass=CachedByArgs):
 
     @classmethod
     @abc.abstractmethod
-    def init_args_from_static_key(cls, key: str) -> tuple:
+    def init_args_from_static_key(cls, static_key: str) -> tuple:
+        """return a tuple of positional args to be passed to this class's constructor"""
         raise NotImplementedError
 
     @property

@@ -5,7 +5,7 @@ from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonImp
 
-from .known import (
+from .known_imps import (
     get_imp_by_name,
     get_imp_name,
 )

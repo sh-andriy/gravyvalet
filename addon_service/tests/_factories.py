@@ -3,7 +3,7 @@ from django.conf import settings
 from factory.django import DjangoModelFactory
 
 from addon_service import models as db
-from addon_service.addon_imp.known import (
+from addon_service.addon_imp.known_imps import (
     get_imp_by_name,
     get_imp_number,
 )

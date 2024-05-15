@@ -92,7 +92,7 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
         return [
             _operation.name
             for _operation in self.imp_cls.implemented_operations_for_capabilities(
-                self.authorized_capabilities
+                self.connected_capabilities
             )
         ]
 

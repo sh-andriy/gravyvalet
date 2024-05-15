@@ -2,7 +2,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from addon_service.addon_imp.known import (
+from addon_service.addon_imp.known_imps import (
     get_imp_by_number,
     get_imp_number,
 )

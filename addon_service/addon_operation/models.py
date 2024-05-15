@@ -1,7 +1,7 @@
 import dataclasses
 from functools import cached_property
 
-from addon_service.addon_imp.known import (
+from addon_service.addon_imp.known_imps import (
     get_imp_by_name,
     get_imp_name,
 )

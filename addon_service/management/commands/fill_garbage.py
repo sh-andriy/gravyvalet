@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import LabelCommand
 
 from addon_service import models as db
-from addon_service.addon_imp.known import get_imp_by_name
+from addon_service.addon_imp.known_imps import get_imp_by_name
 from addon_service.credentials.enums import CredentialsFormats
 from addon_toolkit import AddonCapabilities
 

@@ -90,10 +90,9 @@ class RetrieveWriteDeleteViewSet(
 class StaticDataclassViewset(ViewSet, RelatedMixin):
     http_method_names = ["get", "head", "options"]
 
-    # set in subclasses:
-    serializer_class: (
-        typing.Any
-    )  # should have a dataclass at serializer_class.Meta.model
+    # subclasses must have a `serializer_class` that has
+    # a dataclass at `serializer_class.Meta.model`
+    serializer_class: typing.Any
 
     @property
     def dataclass_model(self) -> type[StaticDataclassModel]:

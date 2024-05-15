@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 
-from addon_service.addon_imp.known import get_imp_by_number
+from addon_service.addon_imp.known_imps import get_imp_by_number
 from addon_service.common.invocation import InvocationStatus
 from addon_toolkit import AddonCapabilities
 from addon_toolkit.interfaces.storage import StorageAddonImp

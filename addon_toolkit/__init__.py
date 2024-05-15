@@ -9,11 +9,13 @@ from .addon_operation_declaration import (
 from .addon_operation_results import RedirectResult
 from .capabilities import AddonCapabilities
 from .imp import AddonImp
+from .interfaces import AddonInterface
 
 
 __all__ = (
     "AddonCapabilities",
     "AddonImp",
+    "AddonInterface",
     "AddonOperationDeclaration",
     "AddonOperationType",
     "RedirectResult",

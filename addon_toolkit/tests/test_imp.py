@@ -1,11 +1,11 @@
 import dataclasses
 import unittest
 from http import HTTPMethod
-from unittest import mock
 
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
+    AddonInterface,
     AddonOperationDeclaration,
     AddonOperationType,
     RedirectResult,
@@ -15,13 +15,13 @@ from addon_toolkit import (
 )
 
 
-class TestAddonImpInterface(unittest.TestCase):
-    # the basics of an addon interface
+class TestAddonImp(unittest.TestCase):
+    # the basics of an addon imp
 
     ###
     # shared test env (on `self`)
-    _MyInterface: type[AddonImp]  # AddonImp subclass with operation declarations
-    _MyImp: type[AddonImp]  # concrete subclass of _MyInterface
+    _MyInterface: type[AddonInterface]  # AddonInterface with operation declarations
+    _MyImp: type[AddonImp]  # concrete AddonImp subclass
     _expected_get_op: AddonOperationDeclaration
     _expected_put_op: AddonOperationDeclaration
     _expected_query_op: AddonOperationDeclaration
@@ -36,7 +36,7 @@ class TestAddonImpInterface(unittest.TestCase):
             url: str
             flibbly: int
 
-        class _MyInterface(AddonImp):
+        class _MyInterface(AddonInterface):
             """this _MyInterface docstring should find its way to browsable docs somewhere"""
 
             @redirect_operation(capability=AddonCapabilities.ACCESS)
@@ -58,18 +58,12 @@ class TestAddonImpInterface(unittest.TestCase):
                 """this url_for_put docstring should find its way to docs"""
                 raise exceptions.OperationNotImplemented
 
-        # bypass `AddonInterfaces` lookup in tests -- always `_MyInterface`
-        cls.enterClassContext(
-            mock.patch(
-                "addon_toolkit.imp.AddonImp.get_interface_cls",
-                return_value=_MyInterface,
-            )
-        )
-
         ###
         # implement (some of) the protocol's declared operations
 
-        class _MyImp(_MyInterface):
+        class _MyImp(AddonImp):
+            ADDON_INTERFACE = _MyInterface
+
             def url_for_get(self, checksum_iri: str) -> RedirectResult:
                 """this url_for_get docstring could contain implementation-specific caveats"""
                 return RedirectResult(
@@ -107,7 +101,7 @@ class TestAddonImpInterface(unittest.TestCase):
 
     def test_iter_declared_operations(self) -> None:
         self.assertEqual(
-            set(self._MyImp.iter_declared_operations()),
+            set(self._MyInterface.iter_declared_operations()),
             {self._expected_get_op, self._expected_put_op, self._expected_query_op},
         )
 

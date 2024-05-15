@@ -10,6 +10,7 @@ from asgiref.sync import (
 from . import exceptions
 from .addon_operation_declaration import AddonOperationDeclaration
 from .capabilities import AddonCapabilities
+from .interfaces import AddonInterface
 from .json_arguments import kwargs_from_json
 
 
@@ -19,50 +20,26 @@ __all__ = ("AddonImp",)
 class AddonImp:
     """base class for all addon implementations"""
 
-    def __new__(cls, *args, **kwargs):
-        if cls is AddonImp:
-            raise exceptions.ImpTooAbstract(cls)
-        if not issubclass(cls, cls.get_interface_cls()):
-            raise exceptions.ImpNotValid(cls)
-        return super().__new__(cls)
+    # subclasses must set `ADDON_INTERFACE`
+    ADDON_INTERFACE: typing.ClassVar[type[AddonInterface]]
 
-    @classmethod
-    @functools.cache
-    def get_interface_cls(cls) -> type["AddonImp"]:
-        # circular import (TODO: consider reorganizing to avoid?)
-        from .interfaces import AddonInterfaces
+    ###
+    # class methods
 
-        return AddonInterfaces.for_concrete_imp(cls).value
-
-    @classmethod
-    def iter_declared_operations(
-        cls,
-    ) -> typing.Iterator[AddonOperationDeclaration]:
-        for _name, _fn in inspect.getmembers(
-            cls.get_interface_cls(), inspect.isfunction
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        if not (
+            hasattr(cls, "ADDON_INTERFACE")
+            and issubclass(cls.ADDON_INTERFACE, AddonInterface)
         ):
-            try:
-                yield AddonOperationDeclaration.for_function(_fn)
-            except exceptions.NotAnOperation:
-                continue
-
-    @classmethod
-    @functools.cache
-    def get_operation_by_name(
-        cls,
-        operation_name: str,
-        /,  # all args positional-only (for cache's sake)
-    ) -> AddonOperationDeclaration:
-        return AddonOperationDeclaration.for_function(
-            getattr(cls.get_interface_cls(), operation_name),
-        )
+            raise exceptions.ImpNotValid(cls)
 
     @classmethod
     @functools.cache
     def all_implemented_operations(cls) -> frozenset[AddonOperationDeclaration]:
         return frozenset(
             _operation
-            for _operation in cls.iter_declared_operations()
+            for _operation in cls.ADDON_INTERFACE.iter_declared_operations()
             if cls.has_implemented_operation(_operation)
         )
 
@@ -82,18 +59,23 @@ class AddonImp:
             return False
 
     @classmethod
-    def get_interface_function(self, operation: AddonOperationDeclaration):
+    def get_imp_function(cls, operation: AddonOperationDeclaration):
         try:
-            return getattr(self.get_interface_cls(), operation.name)
+            return getattr(cls, operation.name)
         except AttributeError:
-            raise exceptions.OperationNotValid(self, operation)
+            raise exceptions.OperationNotImplemented(cls, operation)
 
     @classmethod
-    def get_imp_function(cls, operation: AddonOperationDeclaration):
-        _imp_function = getattr(cls, operation.name, None)
-        if _imp_function in (None, cls.get_interface_function(operation)):
-            raise exceptions.OperationNotImplemented(cls, operation)
-        return _imp_function
+    @functools.cache
+    def get_operation_by_name(
+        cls,
+        operation_name: str,
+        /,  # all args positional-only (for cache's sake)
+    ) -> AddonOperationDeclaration:
+        _operation = cls.ADDON_INTERFACE.get_operation_by_name(operation_name)
+        if not cls.has_implemented_operation(_operation):
+            raise exceptions.OperationNotImplemented(cls, _operation)
+        return _operation
 
     ###
     # instance methods

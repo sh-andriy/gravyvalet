@@ -4,17 +4,18 @@ import collections.abc
 import dataclasses
 import enum
 
-# note: addon_toolkit.interfaces.storage is down-import-stream from addon_toolkit
-from addon_toolkit import (
-    AddonCapabilities,
-    AddonImp,
-    RedirectResult,
-    exceptions,
+from addon_toolkit import exceptions
+from addon_toolkit.addon_operation_declaration import (
     immediate_operation,
     redirect_operation,
 )
+from addon_toolkit.addon_operation_results import RedirectResult
+from addon_toolkit.capabilities import AddonCapabilities
 from addon_toolkit.constrained_network import HttpRequestor
 from addon_toolkit.cursor import Cursor
+from addon_toolkit.imp import AddonImp
+
+from ._base import AddonInterface
 
 
 __all__ = (
@@ -22,6 +23,7 @@ __all__ = (
     "ItemSampleResult",
     "PathResult",
     "PossibleSingleItemResult",
+    "StorageAddonInterface",
     "StorageAddonImp",
     "StorageConfig",
 )
@@ -82,18 +84,10 @@ class ItemSampleResult:
 
 
 ###
-# use python's typing.Protocol to define a shared interface for storage addons
+# declaration of all storage addon operations
 
 
-@dataclasses.dataclass(frozen=True)
-class StorageAddonImp(AddonImp):
-    """
-    storage-addon implementations should inherit this
-    and start implementing operation methods
-    """
-
-    config: StorageConfig
-    network: HttpRequestor
+class StorageAddonInterface(AddonInterface):
 
     ###
     # declared operations:
@@ -169,3 +163,13 @@ class StorageAddonImp(AddonImp):
 #
 #    @immediate_operation(capability=AddonCapabilities.UPDATE)
 #    async def pls_restore_version(self, item_id: str, version_id: str): ...
+
+
+@dataclasses.dataclass(frozen=True)
+class StorageAddonImp(AddonImp):
+    """base class for storage addon implementations"""
+
+    ADDON_INTERFACE = StorageAddonInterface
+
+    config: StorageConfig
+    network: HttpRequestor

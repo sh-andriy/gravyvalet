@@ -31,3 +31,7 @@ class OperationNotImplemented(AddonToolkitException):
 
 class OperationNotValid(AddonToolkitException):
     pass
+
+
+class NotAnInterface(AddonToolkitException):
+    pass

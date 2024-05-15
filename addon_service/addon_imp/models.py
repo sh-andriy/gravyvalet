@@ -41,7 +41,7 @@ class AddonImpModel(StaticDataclassModel):
 
     @cached_property
     def interface_docstring(self) -> str:
-        return self.imp_cls.get_interface_cls().__doc__ or ""
+        return self.imp_cls.ADDON_INTERFACE.__doc__ or ""
 
     @cached_property
     def implemented_operations(self) -> tuple[AddonOperationModel, ...]:

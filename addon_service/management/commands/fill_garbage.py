@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import LabelCommand
 
 from addon_service import models as db
-from addon_service.addon_imp.known import get_imp_by_name
+from addon_service.addon_imp.known_imps import get_imp_by_name
 from addon_service.credentials.enums import CredentialsFormats
 from addon_toolkit import AddonCapabilities
 
@@ -19,7 +19,7 @@ class Command(LabelCommand):
         _blarg_imp = get_imp_by_name("BLARG")
         _ess = db.ExternalStorageService.objects.create(
             service_name=label,
-            int_addon_imp=_blarg_imp.imp_number,
+            addon_imp=db.AddonImpModel(_blarg_imp),
             int_credentials_format=CredentialsFormats.PERSONAL_ACCESS_TOKEN.value,
             max_concurrent_downloads=2,
             max_upload_mb=2,

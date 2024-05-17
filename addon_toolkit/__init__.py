@@ -1,31 +1,25 @@
-from .capabilities import AddonCapabilities
-from .imp import (
-    AddonImp,
-    AddonOperationImp,
-)
-from .operation import (
+from .addon_operation_declaration import (
     AddonOperationDeclaration,
-    RedirectResult,
+    AddonOperationType,
     addon_operation,
     eventual_operation,
     immediate_operation,
     redirect_operation,
 )
-from .protocol import (
-    AddonProtocolDeclaration,
-    addon_protocol,
-)
+from .addon_operation_results import RedirectResult
+from .capabilities import AddonCapabilities
+from .imp import AddonImp
+from .interfaces import AddonInterface
 
 
 __all__ = (
     "AddonCapabilities",
     "AddonImp",
+    "AddonInterface",
     "AddonOperationDeclaration",
-    "AddonOperationImp",
-    "AddonProtocolDeclaration",
+    "AddonOperationType",
     "RedirectResult",
     "addon_operation",
-    "addon_protocol",
     "eventual_operation",
     "immediate_operation",
     "redirect_operation",

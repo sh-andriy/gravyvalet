@@ -1,105 +1,95 @@
-import dataclasses
-import enum
+import functools
 import inspect
-from typing import (
-    Iterable,
-    Iterator,
-)
+import typing
 
 from asgiref.sync import (
     async_to_sync,
     sync_to_async,
 )
 
+from . import exceptions
+from .addon_operation_declaration import AddonOperationDeclaration
+from .capabilities import AddonCapabilities
+from .interfaces import AddonInterface
 from .json_arguments import kwargs_from_json
-from .operation import AddonOperationDeclaration
-from .protocol import (
-    AddonProtocolDeclaration,
-    addon_protocol,
-)
 
 
-__all__ = (
-    "AddonImp",
-    "AddonOperationImp",
-)
+__all__ = ("AddonImp",)
 
 
-@dataclasses.dataclass(frozen=True)
 class AddonImp:
-    """dataclass for an addon protocol and a class supposed to implement that protocol"""
+    """base class for all addon implementations"""
 
-    addon_protocol_cls: dataclasses.InitVar[type]
-    imp_cls: type
-    imp_number: int
-    addon_protocol: AddonProtocolDeclaration = dataclasses.field(init=False)
+    # subclasses must set `ADDON_INTERFACE`
+    ADDON_INTERFACE: typing.ClassVar[type[AddonInterface]]
 
-    def __post_init__(self, addon_protocol_cls):
-        object.__setattr__(  # using __setattr__ to bypass dataclass frozenness
-            self,
-            "addon_protocol",
-            addon_protocol.get_declaration(addon_protocol_cls),
-        )
+    ###
+    # class methods
 
-    def get_operation_imps(
-        self, *, capabilities: Iterable[enum.Enum] = ()
-    ) -> Iterator["AddonOperationImp"]:
-        for _declaration in self.addon_protocol.get_operation_declarations(
-            capabilities=capabilities
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        if not (
+            hasattr(cls, "ADDON_INTERFACE")
+            # AddonInterface is a typing.Protocol, but don't want duck-typing here
+            and AddonInterface in cls.ADDON_INTERFACE.__mro__
         ):
-            try:
-                yield AddonOperationImp(addon_imp=self, declaration=_declaration)
-            except NotImplementedError:  # TODO: helpful exception type
-                pass  # operation not implemented
+            raise exceptions.ImpHasNoInterface(cls)
 
-    def get_operation_imp_by_name(self, operation_name: str) -> "AddonOperationImp":
-        try:
-            return AddonOperationImp(
-                addon_imp=self,
-                declaration=self.addon_protocol.get_operation_declaration_by_name(
-                    operation_name
-                ),
-            )
-        except NotImplementedError:  # TODO: helpful exception type
-            raise ValueError(f'unknown operation name "{operation_name}"')
-
-
-@dataclasses.dataclass(frozen=True)
-class AddonOperationImp:
-    """dataclass for an operation implemented as part of an addon protocol implementation"""
-
-    addon_imp: AddonImp
-    declaration: AddonOperationDeclaration
-
-    def __post_init__(self):
-        _protocol_fn = getattr(
-            self.addon_imp.addon_protocol.protocol_cls, self.declaration.name
+    @classmethod
+    @functools.cache
+    def all_implemented_operations(cls) -> frozenset[AddonOperationDeclaration]:
+        return frozenset(
+            _operation
+            for _operation in cls.ADDON_INTERFACE.iter_declared_operations()
+            if cls.has_implemented_operation(_operation)
         )
+
+    @classmethod
+    def implemented_operations_for_capabilities(
+        cls, capabilities: AddonCapabilities
+    ) -> typing.Iterator[AddonOperationDeclaration]:
+        for _operation in cls.all_implemented_operations():
+            if _operation.capability in capabilities:
+                yield _operation
+
+    @classmethod
+    def has_implemented_operation(cls, operation: AddonOperationDeclaration):
         try:
-            _imp_fn = self.imp_function
+            return bool(cls.get_imp_function(operation))
+        except exceptions.OperationNotImplemented:
+            return False
+
+    @classmethod
+    def get_imp_function(cls, operation: AddonOperationDeclaration):
+        try:
+            return getattr(cls, operation.name)
         except AttributeError:
-            _imp_fn = _protocol_fn
-        if _imp_fn is _protocol_fn:
-            raise NotImplementedError(  # TODO: helpful exception type
-                f"operation '{self.declaration}' not implemented by {self.addon_imp}"
-            )
+            raise exceptions.OperationNotImplemented(cls, operation)
 
-    @property
-    def imp_function(self):
-        return getattr(self.addon_imp.imp_cls, self.declaration.name)
+    @classmethod
+    @functools.cache
+    def get_operation_declaration(
+        cls,
+        operation_name: str,
+        /,  # all args positional-only (for cache's sake)
+    ) -> AddonOperationDeclaration:
+        _operation = cls.ADDON_INTERFACE.get_operation_by_name(operation_name)
+        if not cls.has_implemented_operation(_operation):
+            raise exceptions.OperationNotImplemented(cls, _operation)
+        return _operation
 
-    async def invoke_thru_addon(self, addon_instance: object, json_kwargs: dict):
-        _method = self._get_instance_method(addon_instance)
-        _kwargs = kwargs_from_json(self.declaration.call_signature, json_kwargs)
-        if not inspect.iscoroutinefunction(_method):
-            _method = sync_to_async(_method)
-        _result = await _method(**_kwargs)
-        assert isinstance(_result, self.declaration.return_type)
+    ###
+    # instance methods
+
+    async def invoke_operation(
+        self, operation: AddonOperationDeclaration, json_kwargs: dict
+    ):
+        _operation_method = getattr(self, operation.name)
+        _kwargs = kwargs_from_json(operation.call_signature, json_kwargs)
+        if not inspect.iscoroutinefunction(_operation_method):
+            _operation_method = sync_to_async(_operation_method)
+        _result = await _operation_method(**_kwargs)
+        assert isinstance(_result, operation.return_type)
         return _result
 
-    invoke_thru_addon__blocking = async_to_sync(invoke_thru_addon)
-
-    def _get_instance_method(self, addon_instance: object):
-        return getattr(addon_instance, self.declaration.name)
-
-    # TODO: async def async_call_with_json_kwargs(self, addon_instance: object, json_kwargs: dict):
+    invoke_operation__blocking = async_to_sync(invoke_operation)

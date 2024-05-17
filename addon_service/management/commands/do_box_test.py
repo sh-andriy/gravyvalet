@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from addon_service import models as db
-from addon_service.addon_imp.known import get_imp_by_name
+from addon_service.addon_imp.known_imps import get_imp_by_name
 from addon_service.addon_operation_invocation.perform import (
     perform_invocation__blocking,
 )
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             client_secret=client_secret,
         )
         _box_service, _ = db.ExternalStorageService.objects.update_or_create(
-            int_addon_imp=get_imp_by_name("BOX_DOT_COM").imp_number,
+            addon_imp=db.AddonImpModel(get_imp_by_name("BOX_DOT_COM")),
             defaults=dict(
                 name="my-box-dot-com",
                 oauth2_client_config=_oauth2_config,

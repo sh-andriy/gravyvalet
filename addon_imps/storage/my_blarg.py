@@ -1,5 +1,5 @@
 from addon_toolkit import RedirectResult
-from addon_toolkit.storage import (
+from addon_toolkit.interfaces.storage import (
     ItemResult,
     ItemSampleResult,
     ItemType,

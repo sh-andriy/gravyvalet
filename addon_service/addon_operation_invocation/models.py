@@ -16,9 +16,7 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
         default=InvocationStatus.STARTING.value,
     )
     operation_identifier = models.TextField()  # TODO: validator
-    operation_kwargs = models.JSONField(
-        default=dict, blank=True
-    )  # TODO: validate in `clean()`
+    operation_kwargs = models.JSONField(default=dict, blank=True)
     thru_addon = models.ForeignKey("ConfiguredStorageAddon", on_delete=models.CASCADE)
     by_user = models.ForeignKey("UserReference", on_delete=models.CASCADE)
     operation_result = models.JSONField(null=True, default=None, blank=True)
@@ -45,7 +43,11 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
 
     @property
     def operation(self) -> AddonOperationModel:
-        return AddonOperationModel.get_by_natural_key_str(self.operation_identifier)
+        return AddonOperationModel.get_by_static_key(self.operation_identifier)
+
+    @operation.setter
+    def operation(self, value: AddonOperationModel):
+        self.operation_identifier = value.static_key
 
     @property
     def operation_name(self) -> str:

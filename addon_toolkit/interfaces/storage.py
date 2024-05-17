@@ -5,16 +5,17 @@ import dataclasses
 import enum
 import typing
 
-# note: addon_toolkit.storage is down-import-stream from addon_toolkit
-from addon_toolkit import (
-    AddonCapabilities,
-    RedirectResult,
-    addon_protocol,
+from addon_toolkit.addon_operation_declaration import (
     immediate_operation,
     redirect_operation,
 )
+from addon_toolkit.addon_operation_results import RedirectResult
+from addon_toolkit.capabilities import AddonCapabilities
 from addon_toolkit.constrained_network import HttpRequestor
 from addon_toolkit.cursor import Cursor
+from addon_toolkit.imp import AddonImp
+
+from ._base import AddonInterface
 
 
 __all__ = (
@@ -22,8 +23,8 @@ __all__ = (
     "ItemSampleResult",
     "PathResult",
     "PossibleSingleItemResult",
+    "StorageAddonInterface",
     "StorageAddonImp",
-    "StorageAddonProtocol",
     "StorageConfig",
 )
 
@@ -83,12 +84,10 @@ class ItemSampleResult:
 
 
 ###
-# use python's typing.Protocol to define a shared interface for storage addons
+# declaration of all storage addon operations
 
 
-@addon_protocol()  # TODO: descriptions with language tags
-class StorageAddonProtocol(typing.Protocol):
-    def __init__(self, config: StorageConfig, network: HttpRequestor): ...
+class StorageAddonInterface(AddonInterface, typing.Protocol):
 
     ###
     # declared operations:
@@ -161,12 +160,10 @@ class StorageAddonProtocol(typing.Protocol):
 
 
 @dataclasses.dataclass(frozen=True)
-class StorageAddonImp(StorageAddonProtocol):
-    """a still-abstract implementation of StorageAddonProtocol
+class StorageAddonImp(AddonImp):
+    """base class for storage addon implementations"""
 
-    storage-addon implementations should probably inherit this
-    and start implementing operation methods
-    """
+    ADDON_INTERFACE = StorageAddonInterface
 
     config: StorageConfig
     network: HttpRequestor

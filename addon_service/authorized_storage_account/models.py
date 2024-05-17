@@ -1,5 +1,3 @@
-from typing import Iterator
-
 from django.core.exceptions import ValidationError
 from django.db import (
     models,
@@ -21,7 +19,6 @@ from addon_service.oauth.utils import (
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
-    AddonOperationImp,
 )
 
 from .validators import (
@@ -121,16 +118,21 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @property
     def authorized_operations(self) -> list[AddonOperationModel]:
+        _imp_cls = self.imp_cls
         return [
-            AddonOperationModel(_operation_imp)
-            for _operation_imp in self.iter_authorized_operations()
+            AddonOperationModel(_imp_cls, _operation)
+            for _operation in _imp_cls.implemented_operations_for_capabilities(
+                self.authorized_capabilities
+            )
         ]
 
     @property
-    def authorized_operation_names(self):
+    def authorized_operation_names(self) -> list[str]:
         return [
-            _operation_imp.declaration.name
-            for _operation_imp in self.iter_authorized_operations()
+            _operation.name
+            for _operation in self.imp_cls.implemented_operations_for_capabilities(
+                self.authorized_capabilities
+            )
         ]
 
     @property
@@ -162,6 +164,10 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     def api_base_url(self, value):
         self._api_base_url = value
 
+    @property
+    def imp_cls(self) -> type[AddonImp]:
+        return self.external_service.addon_imp.imp_cls
+
     @transaction.atomic
     def initiate_oauth2_flow(self, authorized_scopes=None):
         if self.credentials_format is not CredentialsFormats.OAUTH2:
@@ -173,12 +179,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             state_nonce=generate_state_nonce(),
         )
         self.save()
-
-    def iter_authorized_operations(self) -> Iterator[AddonOperationImp]:
-        _addon_imp: AddonImp = self.external_storage_service.addon_imp.imp
-        yield from _addon_imp.get_operation_imps(
-            capabilities=self.authorized_capabilities
-        )
 
     def clean(self, *args, **kwargs):
         super().clean(*args, **kwargs)

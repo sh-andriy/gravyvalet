@@ -1,5 +1,3 @@
-from typing import Iterator
-
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -9,7 +7,7 @@ from addon_service.common.enums.validators import validate_addon_capability
 from addon_service.resource_reference.models import ResourceReference
 from addon_toolkit import (
     AddonCapabilities,
-    AddonOperationImp,
+    AddonImp,
 )
 
 
@@ -81,16 +79,21 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     @property
     def connected_operations(self) -> list[AddonOperationModel]:
+        _imp_cls = self.imp_cls
         return [
-            AddonOperationModel(_operation_imp)
-            for _operation_imp in self.iter_connected_operations()
+            AddonOperationModel(_imp_cls, _operation)
+            for _operation in _imp_cls.implemented_operations_for_capabilities(
+                self.connected_capabilities
+            )
         ]
 
     @property
     def connected_operation_names(self):
         return [
-            _operation_imp.declaration.name
-            for _operation_imp in self.iter_connected_operations()
+            _operation.name
+            for _operation in self.imp_cls.implemented_operations_for_capabilities(
+                self.connected_capabilities
+            )
         ]
 
     @property
@@ -101,11 +104,9 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     def external_service(self):
         return self.base_account.external_service
 
-    def iter_connected_operations(self) -> Iterator[AddonOperationImp]:
-        _connected_caps = self.connected_capabilities
-        for _operation_imp in self.base_account.iter_authorized_operations():
-            if _operation_imp.declaration.capability in _connected_caps:
-                yield _operation_imp
+    @property
+    def imp_cls(self) -> type[AddonImp]:
+        return self.base_account.external_service.addon_imp.imp_cls
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)

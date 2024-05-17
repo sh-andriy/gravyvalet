@@ -33,7 +33,7 @@ class AddonImp:
             # AddonInterface is a typing.Protocol, but don't want duck-typing here
             and AddonInterface in cls.ADDON_INTERFACE.__mro__
         ):
-            raise exceptions.ImpMissingInterface(cls)
+            raise exceptions.ImpHasNoInterface(cls)
 
     @classmethod
     @functools.cache

@@ -6,11 +6,6 @@ from addon_toolkit.addon_operation_declaration import AddonOperationDeclaration
 
 
 class AddonInterface(typing.Protocol):
-    def __new__(cls, *args, **kwargs):
-        raise RuntimeError(
-            f"cannot instantiate {cls}! is only for declaring an interface"
-        )
-
     ###
     # class methods
 

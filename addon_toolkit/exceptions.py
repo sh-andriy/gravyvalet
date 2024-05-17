@@ -21,7 +21,7 @@ class ImpHasTooManyJobs(ImpNotValid):
     pass
 
 
-class ImpMissingInterface(ImpNotValid):
+class ImpHasNoInterface(ImpNotValid):
     pass
 
 

@@ -1,10 +1,7 @@
 import dataclasses
 from functools import cached_property
 
-from addon_service.addon_imp.known_imps import (
-    get_imp_by_name,
-    get_imp_name,
-)
+from addon_service.common import known_imps
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import (
     AddonCapabilities,
@@ -28,12 +25,12 @@ class AddonOperationModel(StaticDataclassModel):
     @classmethod
     def init_args_from_static_key(cls, static_key: str) -> tuple:
         (_imp_name, _operation_name) = static_key.split(":")
-        _imp_cls = get_imp_by_name(_imp_name)
+        _imp_cls = known_imps.get_imp_by_name(_imp_name)
         return (_imp_cls, _imp_cls.get_operation_declaration(_operation_name))
 
     @property
     def static_key(self) -> str:
-        return ":".join((get_imp_name(self.imp_cls), self.declaration.name))
+        return ":".join((known_imps.get_imp_name(self.imp_cls), self.declaration.name))
 
     ###
     # fields for api

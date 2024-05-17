@@ -1,4 +1,4 @@
-from addon_service.common.enums.serializers import (
+from addon_service.common.enum_serializers import (
     EnumNameChoiceField,
     EnumNameMultipleChoiceField,
 )

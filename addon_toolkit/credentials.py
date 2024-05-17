@@ -6,7 +6,8 @@ class Credentials(typing.Protocol):
     def asdict(self):
         return dataclasses.asdict(self)
 
-    def iter_headers(self) -> typing.Iterator[tuple[str, str]]: ...
+    def iter_headers(self) -> typing.Iterator[tuple[str, str]]:
+        yield from ()
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

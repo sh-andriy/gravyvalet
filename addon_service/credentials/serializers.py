@@ -3,7 +3,7 @@ from rest_framework.serializers import (
     ValidationError,
 )
 
-from .enums import CredentialsFormats
+from addon_service.common.credentials_formats import CredentialsFormats
 
 
 SUPPORTED_CREDENTIALS_FORMATS = set(CredentialsFormats) - {

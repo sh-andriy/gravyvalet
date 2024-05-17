@@ -14,7 +14,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from addon_service.common import hmac as hmac_utils
-from addon_service.credentials import CredentialsFormats
+from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.models import (
     ConfiguredStorageAddon,
     ResourceReference,

@@ -1,6 +1,8 @@
 import enum
 import typing
 
+from .enum_utils import enum_names
+
 
 __all__ = ("enum_names_same_as",)
 
@@ -12,8 +14,8 @@ def enum_names_same_as(
     other_enum: type[enum.Enum],
 ) -> typing.Callable[[_ThisEnum], _ThisEnum]:
     def _enum_decorator(this_enum: _ThisEnum) -> _ThisEnum:
-        _other_names = _enum_names(other_enum)
-        _these_names = _enum_names(this_enum)
+        _other_names = enum_names(other_enum)
+        _these_names = enum_names(this_enum)
         if _other_names != _these_names:
             _missing = (_other_names - _these_names) or None
             _extras = (_these_names - _other_names) or None
@@ -25,7 +27,3 @@ def enum_names_same_as(
         return this_enum
 
     return _enum_decorator
-
-
-def _enum_names(some_enum: type[enum.Enum]) -> set[str]:
-    return set(some_enum.__members__.keys())

@@ -2,20 +2,16 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from addon_service.addon_imp.known_imps import (
-    get_imp_by_number,
-    get_imp_number,
-)
 from addon_service.addon_imp.models import AddonImpModel
+from addon_service.common import known_imps
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.enums.validators import validate_storage_imp_number
-from addon_service.credentials import (
-    CredentialsFormats,
+from addon_service.common.credentials_formats import CredentialsFormats
+from addon_service.common.service_types import ServiceTypes
+from addon_service.common.validators import (
     validate_credentials_format,
+    validate_service_type,
+    validate_storage_imp_number,
 )
-
-from .enums import ServiceTypes
-from .validators import validate_service_type
 
 
 class ExternalStorageService(AddonsServiceBaseModel):
@@ -56,11 +52,11 @@ class ExternalStorageService(AddonsServiceBaseModel):
 
     @property
     def addon_imp(self) -> AddonImpModel:
-        return AddonImpModel(get_imp_by_number(self.int_addon_imp))
+        return AddonImpModel(known_imps.get_imp_by_number(self.int_addon_imp))
 
     @addon_imp.setter
     def addon_imp(self, value: AddonImpModel):
-        self.int_addon_imp = get_imp_number(value.imp_cls)
+        self.int_addon_imp = known_imps.get_imp_number(value.imp_cls)
 
     @property
     def auth_uri(self):

@@ -180,6 +180,11 @@ class _PrivateNetworkInfo(_PrivateInfo):
             self.account.oauth2_token_metadata,
         )
 
+    @sync_to_async
+    def _refresh_account(self) -> None:
+        # wrap db access in `sync_to_async`
+        self.account.refresh_from_db()
+
     async def refresh_oauth_access_token(self) -> None:
         _oauth_client_config, _oauth_token_metadata = await self._get_oauth_models()
         _fresh_token_result = await oauth_utils.get_refreshed_access_token(
@@ -190,3 +195,4 @@ class _PrivateNetworkInfo(_PrivateInfo):
             client_secret=_oauth_client_config.client_secret,
         )
         await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
+        await self._refresh_account()

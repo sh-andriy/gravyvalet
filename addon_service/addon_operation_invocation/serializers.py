@@ -75,7 +75,7 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
         _thru_addon: ConfiguredStorageAddon = validated_data["thru_addon"]
         _operation_name: str = validated_data["operation_name"]
         _imp_cls = _thru_addon.imp_cls
-        _operation = _imp_cls.get_operation_by_name(_operation_name)
+        _operation = _imp_cls.get_operation_declaration(_operation_name)
         _user_uri = self.context["request"].session.get("user_reference_uri")
         _user, _ = UserReference.objects.get_or_create(user_uri=_user_uri)
         _invocation = AddonOperationInvocation.objects.create(

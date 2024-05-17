@@ -29,7 +29,7 @@ class AddonOperationModel(StaticDataclassModel):
     def init_args_from_static_key(cls, static_key: str) -> tuple:
         (_imp_name, _operation_name) = static_key.split(":")
         _imp_cls = get_imp_by_name(_imp_name)
-        return (_imp_cls, _imp_cls.get_operation_by_name(_operation_name))
+        return (_imp_cls, _imp_cls.get_operation_declaration(_operation_name))
 
     @property
     def static_key(self) -> str:

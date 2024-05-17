@@ -21,6 +21,10 @@ class ImpHasTooManyJobs(ImpNotValid):
     pass
 
 
+class ImpMissingInterface(ImpNotValid):
+    pass
+
+
 class NotAnOperation(AddonToolkitException):
     pass
 
@@ -30,8 +34,4 @@ class OperationNotImplemented(AddonToolkitException):
 
 
 class OperationNotValid(AddonToolkitException):
-    pass
-
-
-class NotAnInterface(AddonToolkitException):
     pass

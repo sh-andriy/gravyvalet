@@ -132,18 +132,18 @@ class TestAddonImp(unittest.TestCase):
 
     def test_operation_by_name(self) -> None:
         self.assertEqual(
-            self._MyImp.get_operation_by_name("url_for_get"),
+            self._MyImp.get_operation_declaration("url_for_get"),
             self._expected_get_op,
         )
         self.assertEqual(
-            self._MyImp.get_operation_by_name("url_for_put"),
+            self._MyImp.get_operation_declaration("url_for_put"),
             self._expected_put_op,
         )
 
     def test_invoke_operation(self) -> None:
         _myimp_instance = self._MyImp()
         _result = _myimp_instance.invoke_operation__blocking(
-            self._MyImp.get_operation_by_name("url_for_get"),
+            self._MyImp.get_operation_declaration("url_for_get"),
             {"checksum_iri": "..."},
         )
         self.assertEqual(

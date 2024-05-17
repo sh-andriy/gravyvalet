@@ -30,9 +30,10 @@ class AddonImp:
         super().__init_subclass__(**kwargs)
         if not (
             hasattr(cls, "ADDON_INTERFACE")
-            and issubclass(cls.ADDON_INTERFACE, AddonInterface)
+            # AddonInterface is a typing.Protocol, but don't want duck-typing here
+            and AddonInterface in cls.ADDON_INTERFACE.__mro__
         ):
-            raise exceptions.ImpNotValid(cls)
+            raise exceptions.ImpMissingInterface(cls)
 
     @classmethod
     @functools.cache
@@ -67,7 +68,7 @@ class AddonImp:
 
     @classmethod
     @functools.cache
-    def get_operation_by_name(
+    def get_operation_declaration(
         cls,
         operation_name: str,
         /,  # all args positional-only (for cache's sake)
@@ -80,16 +81,10 @@ class AddonImp:
     ###
     # instance methods
 
-    def get_imp_method(self, operation: AddonOperationDeclaration):
-        _imp_method = getattr(self, operation.name)
-        if _imp_method.__func__ is not self.get_imp_function(operation):
-            raise exceptions.OperationNotValid(self, operation)
-        return _imp_method
-
     async def invoke_operation(
         self, operation: AddonOperationDeclaration, json_kwargs: dict
     ):
-        _operation_method = self.get_imp_method(operation)
+        _operation_method = getattr(self, operation.name)
         _kwargs = kwargs_from_json(operation.call_signature, json_kwargs)
         if not inspect.iscoroutinefunction(_operation_method):
             _operation_method = sync_to_async(_operation_method)

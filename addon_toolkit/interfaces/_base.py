@@ -5,7 +5,11 @@ from addon_toolkit import exceptions
 from addon_toolkit.addon_operation_declaration import AddonOperationDeclaration
 
 
-class AddonInterface:
+class AddonInterface(typing.Protocol):
+    def __new__(cls, *args, **kwargs):
+        raise RuntimeError(
+            f"cannot instantiate {cls}! is only for declaring an interface"
+        )
 
     ###
     # class methods
@@ -20,4 +24,8 @@ class AddonInterface:
 
     @classmethod
     def get_operation_by_name(cls, operation_name: str) -> AddonOperationDeclaration:
-        return AddonOperationDeclaration.for_function(getattr(cls, operation_name))
+        try:
+            _operation_fn = getattr(cls, operation_name)
+        except AttributeError:
+            raise exceptions.NotAnOperation(cls, operation_name)
+        return AddonOperationDeclaration.for_function(_operation_fn)

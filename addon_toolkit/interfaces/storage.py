@@ -3,8 +3,8 @@
 import collections.abc
 import dataclasses
 import enum
+import typing
 
-from addon_toolkit import exceptions
 from addon_toolkit.addon_operation_declaration import (
     immediate_operation,
     redirect_operation,
@@ -87,14 +87,13 @@ class ItemSampleResult:
 # declaration of all storage addon operations
 
 
-class StorageAddonInterface(AddonInterface):
+class StorageAddonInterface(AddonInterface, typing.Protocol):
 
     ###
     # declared operations:
 
     @redirect_operation(capability=AddonCapabilities.ACCESS)
-    def download(self, item_id: str) -> RedirectResult:
-        raise exceptions.OperationNotImplemented
+    def download(self, item_id: str) -> RedirectResult: ...
 
     #
     #    @immediate_operation(capability=AddonCapabilities.ACCESS)
@@ -114,20 +113,16 @@ class StorageAddonInterface(AddonInterface):
     # "tree-read" operations:
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_root_folders(self, page_cursor: str = "") -> ItemSampleResult:
-        raise exceptions.OperationNotImplemented
+    async def get_root_folders(self, page_cursor: str = "") -> ItemSampleResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_root_items(self, page_cursor: str = "") -> ItemSampleResult:
-        raise exceptions.OperationNotImplemented
+    async def get_root_items(self, page_cursor: str = "") -> ItemSampleResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_parent_item_id(self, item_id: str) -> PossibleSingleItemResult:
-        raise exceptions.OperationNotImplemented
+    async def get_parent_item_id(self, item_id: str) -> PossibleSingleItemResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
-    async def get_item_path(self, item_id: str) -> PathResult:
-        raise exceptions.OperationNotImplemented
+    async def get_item_path(self, item_id: str) -> PathResult: ...
 
     @immediate_operation(capability=AddonCapabilities.ACCESS)
     async def get_child_items(
@@ -135,8 +130,7 @@ class StorageAddonInterface(AddonInterface):
         item_id: str,
         page_cursor: str = "",
         item_type: ItemType | None = None,
-    ) -> ItemSampleResult:
-        raise exceptions.OperationNotImplemented
+    ) -> ItemSampleResult: ...
 
 
 #

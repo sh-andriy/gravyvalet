@@ -53,7 +53,7 @@ class AddonImpModel(StaticDataclassModel):
     def get_operation_model(self, operation_name: str):
         return AddonOperationModel(
             self.imp_cls,
-            self.imp_cls.get_operation_by_name(operation_name),
+            self.imp_cls.get_operation_declaration(operation_name),
         )
 
     class JSONAPIMeta:

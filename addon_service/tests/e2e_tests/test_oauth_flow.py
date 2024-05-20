@@ -7,7 +7,7 @@ from addon_service.common.aiohttp_session import (
     close_singleton_client_session__blocking,
     get_singleton_client_session__blocking,
 )
-from addon_service.credentials import CredentialsFormats
+from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.models import AuthorizedStorageAccount
 from addon_service.tests import (
     _factories,

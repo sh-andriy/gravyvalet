@@ -3,7 +3,7 @@ from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.addon_imp.models import AddonImpModel
 from addon_service.common import view_names
-from addon_service.common.enums.serializers import EnumNameChoiceField
+from addon_service.common.enum_serializers import EnumNameChoiceField
 from addon_service.common.serializer_fields import DataclassRelatedDataField
 from addon_toolkit import AddonCapabilities
 

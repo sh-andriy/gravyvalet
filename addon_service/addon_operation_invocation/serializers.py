@@ -3,8 +3,8 @@ from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.common import view_names
-from addon_service.common.enums.serializers import EnumNameChoiceField
-from addon_service.common.invocation import InvocationStatus
+from addon_service.common.enum_serializers import EnumNameChoiceField
+from addon_service.common.invocation_status import InvocationStatus
 from addon_service.common.serializer_fields import DataclassRelatedDataField
 from addon_service.models import (
     AddonOperationInvocation,

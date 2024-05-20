@@ -2,13 +2,9 @@ import dataclasses
 from functools import cached_property
 
 from addon_service.addon_operation.models import AddonOperationModel
+from addon_service.common import known_imps
 from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonImp
-
-from .known_imps import (
-    get_imp_by_name,
-    get_imp_name,
-)
 
 
 # dataclass wrapper for a concrete subclass of AddonImp which
@@ -22,7 +18,7 @@ class AddonImpModel(StaticDataclassModel):
 
     @classmethod
     def init_args_from_static_key(cls, static_key: str) -> tuple:
-        return (get_imp_by_name(static_key),)
+        return (known_imps.get_imp_by_name(static_key),)
 
     @property
     def static_key(self) -> str:
@@ -33,7 +29,7 @@ class AddonImpModel(StaticDataclassModel):
 
     @cached_property
     def name(self) -> str:
-        return get_imp_name(self.imp_cls)
+        return known_imps.get_imp_name(self.imp_cls)
 
     @cached_property
     def imp_docstring(self) -> str:

@@ -13,7 +13,6 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_toolkit.credentials import AccessTokenCredentials
 
 from .utils import FreshTokenResult
-from .validators import ensure_shared_client
 
 
 class OAuth2ClientConfig(AddonsServiceBaseModel):
@@ -81,7 +80,7 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
         if not self.pk:
             return
 
-        ensure_shared_client(self)
+        self.validate_shared_client()
         if self.state_nonce and self.refresh_token:
             raise ValidationError(
                 "Error on OAuth2 Flow: state nonce and refresh token both present."
@@ -89,6 +88,16 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
         if not (self.state_nonce or self.refresh_token):
             raise ValidationError(
                 "Error in OAuth2 Flow: Neither state nonce nor refresh token present."
+            )
+
+    def validate_shared_client(self):
+        client_configs = set(
+            account.external_service.oauth2_client_config
+            for account in self.linked_accounts
+        )
+        if len(client_configs) != 1:
+            raise ValidationError(
+                "OAuth2 Token Metadata is linked to mulitple services/clients"
             )
 
     @sync_to_async

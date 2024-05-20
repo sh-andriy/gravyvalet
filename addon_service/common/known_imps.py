@@ -6,7 +6,7 @@ import and add new implementations here to make them available in the api
 import enum
 
 from addon_imps.storage import box_dot_com
-from addon_service.common.enums.decorators import enum_names_same_as
+from addon_service.common.enum_decorators import enum_names_same_as
 from addon_toolkit import AddonImp
 
 

@@ -3,7 +3,7 @@ from django.db import models
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.enums.validators import validate_addon_capability
+from addon_service.common.validators import validate_addon_capability
 from addon_service.resource_reference.models import ResourceReference
 from addon_toolkit import (
     AddonCapabilities,

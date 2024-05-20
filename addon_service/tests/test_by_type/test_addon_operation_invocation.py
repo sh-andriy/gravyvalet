@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from addon_service.common.aiohttp_session import (
     close_singleton_client_session__blocking,
 )
-from addon_service.common.invocation import InvocationStatus
+from addon_service.common.invocation_status import InvocationStatus
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,

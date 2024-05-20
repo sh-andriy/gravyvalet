@@ -2,7 +2,7 @@ import enum
 
 from rest_framework_json_api import serializers
 
-from .flags import combine_flags
+from .enum_utils import combine_flags
 
 
 ENUM_BASE_CLASSES = [

@@ -6,7 +6,7 @@ from django.db import transaction
 
 from addon_service.addon_imp.instantiation import get_storage_addon_instance
 from addon_service.common.dibs import dibs
-from addon_service.common.invocation import InvocationStatus
+from addon_service.common.invocation_status import InvocationStatus
 from addon_service.models import AddonOperationInvocation
 from addon_toolkit.json_arguments import json_for_typed_value
 

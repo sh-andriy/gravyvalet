@@ -11,8 +11,8 @@ from addon_service import models as db
 from addon_service.authorized_storage_account.views import (
     AuthorizedStorageAccountViewSet,
 )
-from addon_service.credentials import CredentialsFormats
-from addon_service.external_storage_service import ServiceTypes
+from addon_service.common.credentials_formats import CredentialsFormats
+from addon_service.common.service_types import ServiceTypes
 from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,

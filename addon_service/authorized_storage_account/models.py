@@ -6,11 +6,10 @@ from django.db import (
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
-from addon_service.common.enums.validators import validate_addon_capability
-from addon_service.credentials import (
-    CredentialsFormats,
-    ExternalCredentials,
-)
+from addon_service.common.credentials_formats import CredentialsFormats
+from addon_service.common.service_types import ServiceTypes
+from addon_service.common.validators import validate_addon_capability
+from addon_service.credentials import ExternalCredentials
 from addon_service.oauth.models import OAuth2TokenMetadata
 from addon_service.oauth.utils import (
     build_auth_url,
@@ -19,11 +18,6 @@ from addon_service.oauth.utils import (
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
-)
-
-from .validators import (
-    validate_api_base_url,
-    validate_oauth_state,
 )
 
 
@@ -182,5 +176,39 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     def clean(self, *args, **kwargs):
         super().clean(*args, **kwargs)
-        validate_api_base_url(self)
-        validate_oauth_state(self)
+        self.validate_api_base_url()
+        self.validate_oauth_state()
+
+    def validate_api_base_url(self):
+        service = self.external_service
+        if self._api_base_url and not service.configurable_api_root:
+            raise ValidationError(
+                {
+                    "api_base_url": f"Cannot specify an api_base_url for Public-only service {service.name}"
+                }
+            )
+        if ServiceTypes.PUBLIC not in service.service_type and not self.api_base_url:
+            raise ValidationError(
+                {
+                    "api_base_url": f"Must specify an api_base_url for Hosted-only service {service.name}"
+                }
+            )
+
+    def validate_oauth_state(self):
+        if (
+            self.credentials_format is not CredentialsFormats.OAUTH2
+            or not self.oauth2_token_metadata
+        ):
+            return
+        if bool(self.credentials) == bool(self.oauth2_token_metadata.state_nonce):
+            raise ValidationError(
+                {
+                    "credentials": "OAuth2 accounts must assign exactly one of state_nonce and access_token"
+                }
+            )
+        if self.credentials and not self.oauth2_token_metadata.refresh_token:
+            raise ValidationError(
+                {
+                    "credentials": "OAuth2 accounts with an access token must have a refresh token"
+                }
+            )

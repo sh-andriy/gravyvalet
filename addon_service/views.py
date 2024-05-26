@@ -1,5 +1,10 @@
 """ Import views/viewsets here for convenience """
 
+from http import HTTPStatus
+
+from django.db import transaction
+from django.http import HttpResponse
+
 from addon_service.addon_imp.views import AddonImpViewSet
 from addon_service.addon_operation.views import AddonOperationViewSet
 from addon_service.addon_operation_invocation.views import (
@@ -15,6 +20,14 @@ from addon_service.resource_reference.views import ResourceReferenceViewSet
 from addon_service.user_reference.views import UserReferenceViewSet
 
 
+@transaction.non_atomic_requests
+async def status(request):
+    """
+    Handles status checks for the GV
+    """
+    return HttpResponse(status=HTTPStatus.OK)
+
+
 __all__ = (
     "AddonImpViewSet",
     "AddonOperationInvocationViewSet",
@@ -25,4 +38,5 @@ __all__ = (
     "ResourceReferenceViewSet",
     "UserReferenceViewSet",
     "oauth2_callback_view",
+    "status",
 )

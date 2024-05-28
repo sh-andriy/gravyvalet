@@ -65,4 +65,5 @@ __all__ = ("urlpatterns",)
 urlpatterns = [
     *_router.urls,
     path(r"oauth/callback/", views.oauth2_callback_view, name="oauth2-callback"),
+    path(r"status/", views.status, name="status"),
 ]

@@ -4,11 +4,13 @@ from django.db import models
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.validators import validate_addon_capability
+from addon_service.common.waterbutler_compat import WaterbutlerProviderKey
 from addon_service.resource_reference.models import ResourceReference
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
 )
+from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class ConnectedStorageAddonManager(models.Manager):
@@ -107,6 +109,17 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     @property
     def imp_cls(self) -> type[AddonImp]:
         return self.base_account.external_service.addon_imp.imp_cls
+
+    def storage_imp_config(self) -> StorageConfig:
+        return StorageConfig(
+            max_upload_mb=self.external_service.max_upload_mb,
+            external_api_url=self.base_account.api_base_url,
+            connected_root_id=self.root_folder,
+            waterbutler_provider_key=WaterbutlerProviderKey.for_imp_cls(
+                self.external_service.addon_imp.imp_cls
+            ),
+            external_account_id=self.base_account.external_account_id,
+        )
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)

@@ -3,7 +3,6 @@ import enum
 
 from rest_framework_json_api import serializers
 
-from addon_service import models as db
 from addon_service.common import known_imps
 from addon_service.common.enum_decorators import enum_names_same_as
 from addon_toolkit import (
@@ -29,14 +28,6 @@ class WaterbutlerProviderKey(enum.Enum):
         return _provider_key
 
 
-@dataclasses.dataclass
-class WaterbutlerAddonSettings:
-    external_api_url: str
-    connected_root_id: str  # may be path or id
-    waterbutler_provider_key: str
-    external_account_id: str | None = None
-
-
 class WaterButlerConfigurationSerializer(serializers.Serializer):
     """Serialize ConfiguredStorageAddon information required by WaterButler.
 
@@ -47,10 +38,7 @@ class WaterButlerConfigurationSerializer(serializers.Serializer):
     credentials = serializers.SerializerMethodField("_credentials_for_waterbutler")
     settings = serializers.SerializerMethodField("_settings_for_waterbutler")
 
-    def _credentials_for_waterbutler(
-        self,
-        configured_storage_addon: db.ConfiguredStorageAddon,
-    ):
+    def _credentials_for_waterbutler(self, configured_storage_addon):
         _creds_data = configured_storage_addon.credentials
         match type(_creds_data):
             case credentials.AccessTokenCredentials:
@@ -64,17 +52,8 @@ class WaterButlerConfigurationSerializer(serializers.Serializer):
             case _:
                 raise ValueError(f"unknown credentials type: {_creds_data}")
 
-    def _settings_for_waterbutler(
-        self,
-        configured_storage_addon: db.ConfiguredStorageAddon,
-    ):
+    def _settings_for_waterbutler(self, configured_storage_addon):
         """An ugly compatibility layer between GravyValet and WaterButler."""
-        _wb_addon_settings = WaterbutlerAddonSettings(
-            external_api_url=configured_storage_addon.base_account.api_base_url,
-            connected_root_id=configured_storage_addon.root_folder,
-            waterbutler_provider_key=WaterbutlerProviderKey.for_imp_cls(
-                configured_storage_addon.external_service.addon_imp.imp_cls
-            ),
-            external_account_id=configured_storage_addon.base_account.external_account_id,
+        return json_arguments.json_for_dataclass(
+            configured_storage_addon.storage_imp_config()
         )
-        return json_arguments.json_for_dataclass(_wb_addon_settings)

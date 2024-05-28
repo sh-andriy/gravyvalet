@@ -215,6 +215,7 @@ class TestWBConfigRetrieval(APITestCase):
             self.assertEqual(
                 response.data["settings"],
                 {
+                    "max_upload_mb": self._external_service.max_upload_mb,
                     "connected_root_id": root_folder,
                     "external_account_id": "",
                     "external_api_url": self._external_service.api_base_url,

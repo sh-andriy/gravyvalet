@@ -39,6 +39,7 @@ class Command(BaseCommand):
         _connect = _subparsers.add_parser("connect")
         _connect.set_defaults(_test_phase="connect")
         _connect.add_argument("account_id")
+        _connect.add_argument("resource_uri")
         _invoke = _subparsers.add_parser("invoke")
         _invoke.set_defaults(_test_phase="invoke")
         _invoke.add_argument("addon_id")
@@ -55,7 +56,10 @@ class Command(BaseCommand):
                         client_secret=kwargs["client_secret"],
                     )
                 case "connect":
-                    self._connect_addon(account_id=kwargs["account_id"])
+                    self._connect_addon(
+                        account_id=kwargs["account_id"],
+                        resource_uri=kwargs["resource_uri"],
+                    )
                 case "invoke":
                     self._do_invokes__blocking(kwargs)
                 case _:
@@ -98,11 +102,11 @@ class Command(BaseCommand):
         )
         self.stdout.write(_account.auth_url)
         self.stdout.write(
-            f"{self.style.SUCCESS('then run again with:')} do_box_test connect {_account.pk}"
+            f"{self.style.SUCCESS('then run again with:')} do_box_test connect {_account.pk} <resource_uri>"
         )
         return _account
 
-    def _connect_addon(self, account_id):
+    def _connect_addon(self, account_id, resource_uri):
         _account = db.AuthorizedStorageAccount.objects.get(pk=account_id)
         _ir, _ = db.ResourceReference.objects.get_or_create(
             resource_uri="http://localhost:5000/haen7",

@@ -1,6 +1,9 @@
 from pathlib import Path
 
 from app import env
+import os
+import raven
+
 
 
 SECRET_KEY = env.SECRET_KEY
@@ -35,6 +38,7 @@ INSTALLED_APPS = (
     # 'django.contrib.staticfiles',
     "rest_framework",
     "rest_framework_json_api",
+    "raven.contrib.django.raven_compat",
     "addon_service",
 )
 
@@ -141,3 +145,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = "/static/"
+
+SENTRY_DSN = os.getenv('SENTRY_DSN')
+VERSION = os.getenv('VERSION')
+
+RAVEN_CONFIG = {
+    "dsn": SENTRY_DSN,
+    "release": VERSION,
+}

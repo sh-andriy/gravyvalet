@@ -38,7 +38,6 @@ class StorageConfig:
     max_upload_mb: int
     external_api_url: str
     connected_root_id: str | None = None
-    waterbutler_provider_key: str = ""
     external_account_id: str | None = None
 
 

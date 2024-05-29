@@ -54,6 +54,10 @@ class WaterButlerConfigurationSerializer(serializers.Serializer):
 
     def _settings_for_waterbutler(self, configured_storage_addon):
         """An ugly compatibility layer between GravyValet and WaterButler."""
-        return json_arguments.json_for_dataclass(
+        _wb_settings = json_arguments.json_for_dataclass(
             configured_storage_addon.storage_imp_config()
         )
+        _wb_settings["waterbutler_provider_key"] = WaterbutlerProviderKey.for_imp_cls(
+            configured_storage_addon.imp_cls
+        )
+        return _wb_settings

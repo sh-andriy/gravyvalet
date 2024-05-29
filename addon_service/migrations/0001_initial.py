@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ),
                 ("created", models.DateTimeField(editable=False)),
                 ("modified", models.DateTimeField()),
-                ("account_name", models.CharField(blank=True, default="")),
+                ("_display_name", models.CharField(blank=True, default="")),
                 ("external_account_id", models.CharField(blank=True, default="")),
                 (
                     "int_authorized_capabilities",
@@ -188,7 +188,7 @@ class Migration(migrations.Migration):
                 ),
                 ("created", models.DateTimeField(editable=False)),
                 ("modified", models.DateTimeField()),
-                ("name", models.CharField()),
+                ("display_name", models.CharField()),
                 (
                     "int_addon_imp",
                     models.IntegerField(
@@ -256,6 +256,7 @@ class Migration(migrations.Migration):
                 ),
                 ("created", models.DateTimeField(editable=False)),
                 ("modified", models.DateTimeField()),
+                ("_display_name", models.CharField(blank=True, default="")),
                 ("root_folder", models.CharField(blank=True)),
                 (
                     "int_connected_capabilities",

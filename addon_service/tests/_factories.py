@@ -58,7 +58,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     class Meta:
         model = db.ExternalStorageService
 
-    name = factory.Faker("word")
+    display_name = factory.Faker("word")
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
     int_addon_imp = known_imps.get_imp_number(known_imps.get_imp_by_name("BLARG"))
@@ -91,7 +91,7 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
     class Meta:
         model = db.AuthorizedStorageAccount
 
-    account_name = factory.Faker("word")
+    display_name = factory.Faker("word")
     default_root_folder = "/"
     authorized_capabilities = AddonCapabilities.ACCESS | AddonCapabilities.UPDATE
 

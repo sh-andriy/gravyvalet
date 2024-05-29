@@ -15,7 +15,7 @@ from addon_service.common.validators import (
 
 
 class ExternalStorageService(AddonsServiceBaseModel):
-    name = models.CharField(null=False)
+    display_name = models.CharField(null=False)
     int_addon_imp = models.IntegerField(
         null=False,
         validators=[validate_storage_imp_number],

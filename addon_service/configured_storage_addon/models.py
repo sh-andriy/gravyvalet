@@ -26,8 +26,8 @@ class ConnectedStorageAddonManager(models.Manager):
 class ConfiguredStorageAddon(AddonsServiceBaseModel):
     objects = ConnectedStorageAddonManager()
 
+    _display_name = models.CharField(null=False, blank=True, default="")
     root_folder = models.CharField(blank=True)
-
     int_connected_capabilities = models.IntegerField(
         validators=[validate_addon_capability]
     )
@@ -50,6 +50,14 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     class JSONAPIMeta:
         resource_name = "configured-storage-addons"
+
+    @property
+    def display_name(self):
+        return self._display_name or self.base_account.display_name
+
+    @display_name.setter
+    def display_name(self, value: str):
+        self._display_name = value
 
     @property
     def connected_capabilities(self) -> AddonCapabilities:

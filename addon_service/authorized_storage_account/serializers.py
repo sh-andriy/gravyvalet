@@ -108,6 +108,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         fields = [
             "id",
             "url",
+            "display_name",
             "account_owner",
             "api_base_url",
             "auth_url",

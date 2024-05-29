@@ -77,10 +77,11 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)
-        if not self.pk:
-            return
+        self.validate_nonce_and_token()
+        if not self._state.adding:
+            self.validate_shared_client()
 
-        self.validate_shared_client()
+    def validate_nonce_and_token(self):
         if self.state_nonce and self.refresh_token:
             raise ValidationError(
                 "Error on OAuth2 Flow: state nonce and refresh token both present."

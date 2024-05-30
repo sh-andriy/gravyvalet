@@ -1,0 +1,13 @@
+gv admin
+========
+
+todo (definitely):
+- linked to-one fields (never list a whole table)
+- linked to-many fields (never list a whole table)
+- enum choice fields (hide all the "int_..." details)
+
+todo (maybe):
+- in DEBUG, admin interface for auth account, conf addon
+
+done:
+- enable django admin for external service, oauth config

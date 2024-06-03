@@ -6,6 +6,24 @@ from app import env
 SECRET_KEY = env.SECRET_KEY
 DEFAULT_HMAC_KEY = env.OSF_HMAC_KEY or "lmaoooooo"
 
+if not env.DEBUG and not env.GRAVYVALET_ENCRYPT_SECRET:
+    raise RuntimeError(
+        "pls set `GRAVYVALET_ENCRYPT_SECRET` environment variable to something safely random"
+    )
+GRAVYVALET_ENCRYPT_SECRET: bytes = (
+    env.GRAVYVALET_ENCRYPT_SECRET.encode()
+    if env.GRAVYVALET_ENCRYPT_SECRET
+    else b"this is fine"
+)
+GRAVYVALET_ENCRYPT_SECRET_PRIORS: tuple[bytes, ...] = tuple(
+    _prior.encode() for _prior in env.GRAVYVALET_ENCRYPT_SECRET_PRIORS
+)
+GRAVYVALET_SALT_BYTE_COUNT = env.GRAVYVALET_SALT_BYTE_COUNT
+GRAVYVALET_SCRYPT_COST = env.GRAVYVALET_SCRYPT_COST
+GRAVYVALET_SCRYPT_BLOCK_SIZE = env.GRAVYVALET_SCRYPT_BLOCK_SIZE
+GRAVYVALET_SCRYPT_PARALLELIZATION = env.GRAVYVALET_SCRYPT_PARALLELIZATION
+GRAVYVALET_DERIVED_KEY_CACHE_SIZE = env.GRAVYVALET_DERIVED_KEY_CACHE_SIZE
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

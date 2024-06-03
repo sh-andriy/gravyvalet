@@ -8,6 +8,8 @@ from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
 from addon_toolkit import AddonCapabilities
 
+from ._helpers import patch_encryption_key_derivation
+
 
 class UserReferenceFactory(DjangoModelFactory):
     class Meta:
@@ -118,7 +120,8 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         if credentials_format is CredentialsFormats.OAUTH2:
             account.initiate_oauth2_flow(authorized_scopes)
         else:
-            account.credentials = credentials
+            with patch_encryption_key_derivation():
+                account.credentials = credentials
             account.save()
         return account
 

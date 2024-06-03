@@ -17,6 +17,7 @@ from addon_service.tests import _factories
 from addon_service.tests._helpers import (
     MockOSF,
     get_test_request,
+    patch_encryption_key_derivation,
 )
 from addon_toolkit import AddonCapabilities
 from addon_toolkit.credentials import (
@@ -145,8 +146,8 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             account = db.AuthorizedStorageAccount.objects.get(id=_resp.data["id"])
             with self.subTest(creds_format=creds_format):
                 self.assertEqual(
-                    account._credentials.credentials_blob,
-                    MOCK_CREDENTIALS[creds_format].asdict(),
+                    account._credentials.decrypted_credentials,
+                    MOCK_CREDENTIALS[creds_format],
                 )
 
     def test_post__sets_auth_url(self):
@@ -289,6 +290,9 @@ class TestAuthorizedStorageAccountModel(TestCase):
         cls._asa = _factories.AuthorizedStorageAccountFactory()
         cls._user = cls._asa.account_owner
 
+    def setUp(self):
+        self.enterContext(patch_encryption_key_derivation())
+
     def test_can_load(self):
         _resource_from_db = db.AuthorizedStorageAccount.objects.get(id=self._asa.id)
         self.assertEqual(self._asa.pk, _resource_from_db.pk)
@@ -394,7 +398,8 @@ class TestAuthorizedStorageAccountModel(TestCase):
             account.save()
             with self.subTest(creds_format=creds_format):
                 self.assertEqual(
-                    account._credentials.credentials_blob, mock_credentials.asdict()
+                    account._credentials.decrypted_credentials,
+                    mock_credentials,
                 )
 
     def test_set_credentials__create__oauth(self):
@@ -427,8 +432,8 @@ class TestAuthorizedStorageAccountModel(TestCase):
             with self.subTest(creds_format=creds_format):
                 with self.subTest("Credentials values updated"):
                     self.assertEqual(
-                        account._credentials.credentials_blob,
-                        updated_credentials.asdict(),
+                        account._credentials.decrypted_credentials,
+                        updated_credentials,
                     )
                 with self.subTest("Credentials updated in place"):
                     self.assertEqual(account._credentials.id, original_creds_id)

@@ -31,3 +31,33 @@ DEBUG = bool(os.environ.get("DEBUG"))
 
 # comma-separated list:
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+
+###
+# credentials encryption secrets and parameters
+#
+# to rotate credentials encryption secrets (and settings):
+# 1. update environment:
+#    - set GRAVYVALET_ENCRYPT_SECRET to a new, long, random string (...no commas, tho)
+#    - add the old secret to GRAVYVALET_ENCRYPT_SECRET_PRIORS (comma-separated list)
+#    - (optional) update key-derivation parameters with best practices du jour
+# 2. call `.rotate_encryption()` on every `ExternalCredentials` (perhaps via celery task
+#    `addon_service.credentials.tasks.schedule_encryption_rotation__celery`)
+# 3. remove the old secret from GRAVYVALET_ENCRYPT_SECRET_PRIORS
+GRAVYVALET_ENCRYPT_SECRET = os.environ.get("GRAVYVALET_ENCRYPT_SECRET")
+GRAVYVALET_ENCRYPT_SECRET_PRIORS = tuple(
+    filter(bool, os.environ.get("GRAVYVALET_ENCRYPT_SECRET_PRIORS", "").split(","))
+)
+# optional overrides for scrypt key derivation parameters (when unset or "0", use sensible defaults)
+# see https://datatracker.ietf.org/doc/html/rfc7914#section-2
+GRAVYVALET_SALT_BYTE_COUNT = int(os.environ.get("GRAVYVALET_SALT_BYTE_COUNT", 0))
+GRAVYVALET_SCRYPT_COST = int(os.environ.get("GRAVYVALET_SCRYPT_COST", 0))
+GRAVYVALET_SCRYPT_BLOCK_SIZE = int(os.environ.get("GRAVYVALET_SCRYPT_BLOCK_SIZE", 0))
+GRAVYVALET_SCRYPT_PARALLELIZATION = int(
+    os.environ.get("GRAVYVALET_SCRYPT_PARALLELIZATION", 0)
+)
+# size of the derived-key cache (set to "0" to disable caching)
+GRAVYVALET_DERIVED_KEY_CACHE_SIZE = int(
+    os.environ.get("GRAVYVALET_DERIVED_KEY_CACHE_SIZE", 512)
+)
+# END credentials encryption secrets and parameters
+###

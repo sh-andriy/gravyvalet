@@ -52,7 +52,7 @@ class MockOSF:
         ), patch(
             "addon_service.common.osf.has_osf_permission_on_resource",
             side_effect=self._mock_resource_check,
-        ):
+        ), patch_encryption_key_derivation():
             yield self
 
     def configure_assumed_caller(self, caller_uri):
@@ -188,3 +188,15 @@ def get_test_request(user=None, method="get", path="", cookies=None):
         for name, value in cookies.items():
             _request.COOKIES[name] = value
     return _request
+
+
+def patch_encryption_key_derivation():
+    # expect to call scrypt with all the following params:
+    def _mock_scrypt(secret, salt, n, r, p, dklen, maxmem):
+        # some random derived key
+        return b"\xdd\xd1\xdfN9\n\xbb\xa5\x9a|\xc6\x1f\xd6b\xf2\xfc>\x1e\xfe\xfd\x14\xc6n\xd7\x18\xbf'\x04qk\x8c\xfb"
+
+    return patch(
+        "addon_service.credentials.encryption.hashlib.scrypt",
+        side_effect=_mock_scrypt,
+    )

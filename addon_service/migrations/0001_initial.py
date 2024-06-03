@@ -51,27 +51,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="ExternalCredentials",
-            fields=[
-                (
-                    "id",
-                    addon_service.common.str_uuid_field.StrUUIDField(
-                        default=addon_service.common.str_uuid_field.str_uuid4,
-                        editable=False,
-                        primary_key=True,
-                        serialize=False,
-                    ),
-                ),
-                ("created", models.DateTimeField(editable=False)),
-                ("modified", models.DateTimeField()),
-                ("credentials_blob", models.JSONField(blank=True, default=dict)),
-            ],
-            options={
-                "verbose_name": "External Credentials",
-                "verbose_name_plural": "External Credentials",
-            },
-        ),
-        migrations.CreateModel(
             name="OAuth2ClientConfig",
             fields=[
                 (
@@ -240,6 +219,36 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "External Storage Service",
                 "verbose_name_plural": "External Storage Services",
+            },
+        ),
+        migrations.CreateModel(
+            name="ExternalCredentials",
+            fields=[
+                (
+                    "id",
+                    addon_service.common.str_uuid_field.StrUUIDField(
+                        default=addon_service.common.str_uuid_field.str_uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("created", models.DateTimeField(editable=False)),
+                ("modified", models.DateTimeField()),
+                ("encrypted_json", models.BinaryField()),
+                ("_salt", models.BinaryField()),
+                ("_scrypt_block_size", models.IntegerField()),
+                ("_scrypt_cost", models.IntegerField()),
+                ("_scrypt_parallelization", models.IntegerField()),
+            ],
+            options={
+                "verbose_name": "External Credentials",
+                "verbose_name_plural": "External Credentials",
+                "indexes": [
+                    models.Index(
+                        fields=["modified"], name="addon_servi_modifie_20d811_idx"
+                    )
+                ],
             },
         ),
         migrations.CreateModel(

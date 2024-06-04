@@ -35,6 +35,11 @@ class OAuth2ClientConfig(AddonsServiceBaseModel):
         verbose_name_plural = "OAuth2 Client Configs"
         app_label = "addon_service"
 
+    def __repr__(self):
+        return f'<{self.__class__.__qualname__}(pk="{self.pk}", auth_uri="{self.auth_uri}", client_id="{self.client_id}")>'
+
+    __str__ = __repr__
+
 
 class OAuth2TokenMetadataManager(models.Manager):
     def get_by_state_token(self, state_token: str):

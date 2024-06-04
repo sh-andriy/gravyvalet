@@ -19,15 +19,18 @@ class ExternalStorageService(AddonsServiceBaseModel):
     int_addon_imp = models.IntegerField(
         null=False,
         validators=[validate_storage_imp_number],
+        verbose_name="Addon implementation",
     )
     int_credentials_format = models.IntegerField(
         null=False,
         validators=[validate_credentials_format],
+        verbose_name="Credentials format",
     )
     int_service_type = models.IntegerField(
         null=False,
         default=ServiceTypes.PUBLIC.value,
         validators=[validate_service_type],
+        verbose_name="Service type",
     )
     max_concurrent_downloads = models.IntegerField(null=False)
     max_upload_mb = models.IntegerField(null=False)
@@ -36,7 +39,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
 
     oauth2_client_config = models.ForeignKey(
         "addon_service.OAuth2ClientConfig",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="external_storage_services",
         null=True,
         blank=True,
@@ -49,6 +52,11 @@ class ExternalStorageService(AddonsServiceBaseModel):
 
     class JSONAPIMeta:
         resource_name = "external-storage-services"
+
+    def __repr__(self):
+        return f'<{self.__class__.__qualname__}(pk="{self.pk}", name="{self.name}")>'
+
+    __str__ = __repr__
 
     @property
     def addon_imp(self) -> AddonImpModel:

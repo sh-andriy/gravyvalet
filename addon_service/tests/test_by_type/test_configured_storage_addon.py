@@ -219,7 +219,7 @@ class TestWBConfigRetrieval(APITestCase):
                     "connected_root_id": root_folder,
                     "external_account_id": "",
                     "external_api_url": self._external_service.api_base_url,
-                    "waterbutler_provider_key": "blarrrg",
+                    "imp_name": "BLARG",
                 },
             )
 

@@ -1,28 +1,12 @@
 import dataclasses
-import enum
 
 from rest_framework_json_api import serializers
 
 from addon_service.common import known_imps
-from addon_service.common.enum_decorators import enum_names_same_as
 from addon_toolkit import (
-    AddonImp,
     credentials,
     json_arguments,
 )
-
-
-@enum_names_same_as(known_imps._KnownAddonImps)
-class WaterbutlerProviderKey(enum.Enum):
-    BOX_DOT_COM = "box"
-
-    if __debug__:
-        BLARG = "blarrrg"
-
-    @staticmethod
-    def for_imp_cls(imp_cls: type[AddonImp]) -> str:
-        _imp_name = known_imps.get_imp_name(imp_cls)
-        return WaterbutlerProviderKey[_imp_name].value
 
 
 class WaterButlerConfigurationSerializer(serializers.Serializer):
@@ -54,7 +38,7 @@ class WaterButlerConfigurationSerializer(serializers.Serializer):
         _wb_settings = json_arguments.json_for_dataclass(
             configured_storage_addon.storage_imp_config()
         )
-        _wb_settings["waterbutler_provider_key"] = WaterbutlerProviderKey.for_imp_cls(
+        _wb_settings["imp_name"] = known_imps.get_imp_name(
             configured_storage_addon.imp_cls
         )
         return _wb_settings

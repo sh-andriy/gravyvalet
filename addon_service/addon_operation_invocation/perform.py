@@ -24,7 +24,11 @@ def perform_invocation__async(invocation: AddonOperationInvocation) -> None:
     # wrapped in sync_to_async (to guarantee a running event loop)
     with dibs(invocation):  # TODO: handle dibs errors
         try:
-            _imp = get_storage_addon_instance(invocation.thru_addon)
+            _imp = get_storage_addon_instance(
+                invocation.imp_cls,
+                invocation.thru_account,
+                invocation.storage_imp_config(),
+            )
             _operation = invocation.operation
             # inner transaction to contain database errors,
             # so status can be saved in the outer transaction (from `dibs`)
@@ -34,7 +38,7 @@ def perform_invocation__async(invocation: AddonOperationInvocation) -> None:
                     invocation.operation_kwargs,
                 )
             invocation.operation_result = json_for_typed_value(
-                _operation.declaration.return_type,
+                _operation.declaration.result_dataclass,
                 _result,
             )
             invocation.invocation_status = InvocationStatus.SUCCESS

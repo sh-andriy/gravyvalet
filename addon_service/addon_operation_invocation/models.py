@@ -8,6 +8,8 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.invocation_status import InvocationStatus
 from addon_service.common.validators import validate_invocation_status
 from addon_service.models import AddonOperationModel
+from addon_toolkit import AddonImp
+from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class AddonOperationInvocation(AddonsServiceBaseModel):
@@ -17,7 +19,12 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
     )
     operation_identifier = models.TextField()  # TODO: validator
     operation_kwargs = models.JSONField(default=dict, blank=True)
-    thru_addon = models.ForeignKey("ConfiguredStorageAddon", on_delete=models.CASCADE)
+    thru_addon = models.ForeignKey(
+        "ConfiguredStorageAddon", null=True, blank=True, on_delete=models.CASCADE
+    )
+    thru_account = models.ForeignKey(
+        "AuthorizedStorageAccount", on_delete=models.CASCADE
+    )
     by_user = models.ForeignKey("UserReference", on_delete=models.CASCADE)
     operation_result = models.JSONField(null=True, default=None, blank=True)
     exception_type = models.TextField(blank=True, default="")
@@ -57,6 +64,10 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
     def owner_uri(self) -> str:
         return self.by_user.user_uri
 
+    @property
+    def imp_cls(self) -> type[AddonImp]:
+        return self.thru_account.imp_cls
+
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)
         try:
@@ -66,6 +77,17 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
             )
         except jsonschema.exceptions.ValidationError as _exception:
             raise ValidationError(_exception)
+        if self.thru_addon is not None and (
+            self.thru_addon.base_account_id != self.thru_account_id
+        ):
+            raise ValidationError(
+                {"thru_addon": "thru_addon and thru_account must agree"}
+            )
+
+    def storage_imp_config(self) -> StorageConfig:
+        if self.thru_addon:
+            return self.thru_addon.storage_imp_config()
+        return self.thru_account.storage_imp_config()
 
     def set_exception(self, exception: BaseException) -> None:
         self.invocation_status = InvocationStatus.EXCEPTION

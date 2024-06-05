@@ -1,3 +1,5 @@
+import dataclasses
+
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -13,11 +15,9 @@ from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class ConnectedStorageAddonManager(models.Manager):
-    """
-    Only returned active users, not ones that are deactivated.
-    """
 
     def active(self):
+        """filter to addons owned by non-deactivated users"""
         return self.get_queryset().filter(
             base_account__account_owner__deactivated__isnull=True
         )
@@ -107,14 +107,12 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     @property
     def imp_cls(self) -> type[AddonImp]:
-        return self.base_account.external_service.addon_imp.imp_cls
+        return self.base_account.imp_cls
 
     def storage_imp_config(self) -> StorageConfig:
-        return StorageConfig(
-            max_upload_mb=self.external_service.max_upload_mb,
-            external_api_url=self.base_account.api_base_url,
+        return dataclasses.replace(
+            self.base_account.storage_imp_config(),
             connected_root_id=self.root_folder,
-            external_account_id=self.base_account.external_account_id,
         )
 
     def clean_fields(self, *args, **kwargs):

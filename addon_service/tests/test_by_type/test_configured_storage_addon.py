@@ -190,6 +190,7 @@ class TestWBConfigRetrieval(APITestCase):
             credentials=AccessTokenCredentials(access_token="access"),
         )
         cls._user = cls._configured_storage_addon.account_owner
+        cls._external_service = cls._configured_storage_addon.external_service
 
     def test_get_waterbutler_config(self):
         request_url = reverse(
@@ -214,8 +215,11 @@ class TestWBConfigRetrieval(APITestCase):
             self.assertEqual(
                 response.data["settings"],
                 {
-                    "folder": root_folder,
-                    "service": self._configured_storage_addon.external_service.name,
+                    "max_upload_mb": self._external_service.max_upload_mb,
+                    "connected_root_id": root_folder,
+                    "external_account_id": "",
+                    "external_api_url": self._external_service.api_base_url,
+                    "imp_name": "BLARG",
                 },
             )
 

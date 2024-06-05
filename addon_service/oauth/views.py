@@ -4,6 +4,8 @@ from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.http import HttpResponse
 
+from addon_service.common.aiohttp_session import get_singleton_client_session
+from addon_service.common.network import GravyvaletHttpRequestor
 from addon_service.models import (
     OAuth2ClientConfig,
     OAuth2TokenMetadata,
@@ -30,7 +32,8 @@ async def oauth2_callback_view(request):
         client_id=_oauth_client_config.client_id,
         client_secret=_oauth_client_config.client_secret,
     )
-    await _token_metadata.update_with_fresh_token(_fresh_token_result)
+    _accounts = await _token_metadata.update_with_fresh_token(_fresh_token_result)
+    await _update_external_account_ids(_accounts)
     return HttpResponse(status=HTTPStatus.OK)  # TODO: redirect
 
 
@@ -44,3 +47,15 @@ def _resolve_state_token(
 ) -> tuple[OAuth2TokenMetadata, OAuth2ClientConfig]:
     _token_metadata = OAuth2TokenMetadata.objects.get_by_state_token(state_token)
     return (_token_metadata, _token_metadata.client_details)
+
+
+async def _update_external_account_ids(accounts):
+    for _account in accounts:
+        _account.external_account_id = await _account.imp_cls.get_external_account_id(
+            network=GravyvaletHttpRequestor(
+                client_session=await get_singleton_client_session(),
+                prefix_url=_account.external_service.api_base_url,
+                account=_account,
+            ),
+        )
+        await sync_to_async(_account.save)()

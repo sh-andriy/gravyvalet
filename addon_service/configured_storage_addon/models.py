@@ -9,6 +9,7 @@ from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
 )
+from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class ConnectedStorageAddonManager(models.Manager):
@@ -107,6 +108,14 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     @property
     def imp_cls(self) -> type[AddonImp]:
         return self.base_account.external_service.addon_imp.imp_cls
+
+    def storage_imp_config(self) -> StorageConfig:
+        return StorageConfig(
+            max_upload_mb=self.external_service.max_upload_mb,
+            external_api_url=self.base_account.api_base_url,
+            connected_root_id=self.root_folder,
+            external_account_id=self.base_account.external_account_id,
+        )
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)

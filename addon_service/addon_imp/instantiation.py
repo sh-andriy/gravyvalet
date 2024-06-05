@@ -1,10 +1,7 @@
 from addon_service.common.aiohttp_session import get_singleton_client_session__blocking
 from addon_service.common.network import GravyvaletHttpRequestor
 from addon_service.models import ConfiguredStorageAddon
-from addon_toolkit.interfaces.storage import (
-    StorageAddonImp,
-    StorageConfig,
-)
+from addon_toolkit.interfaces.storage import StorageAddonImp
 
 
 def get_storage_addon_instance(
@@ -15,9 +12,7 @@ def get_storage_addon_instance(
     _imp_cls = _external_storage_service.addon_imp.imp_cls
     assert issubclass(_imp_cls, StorageAddonImp)
     return _imp_cls(
-        config=StorageConfig(
-            max_upload_mb=_external_storage_service.max_upload_mb,
-        ),
+        config=configured_storage_addon.storage_imp_config(),
         network=GravyvaletHttpRequestor(
             client_session=get_singleton_client_session__blocking(),
             prefix_url=_external_storage_service.api_base_url,

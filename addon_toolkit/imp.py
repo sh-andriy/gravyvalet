@@ -10,6 +10,7 @@ from asgiref.sync import (
 from . import exceptions
 from .addon_operation_declaration import AddonOperationDeclaration
 from .capabilities import AddonCapabilities
+from .constrained_network import HttpRequestor
 from .interfaces import AddonInterface
 from .json_arguments import kwargs_from_json
 
@@ -77,6 +78,11 @@ class AddonImp:
         if not cls.has_implemented_operation(_operation):
             raise exceptions.OperationNotImplemented(cls, _operation)
         return _operation
+
+    @classmethod
+    async def get_external_account_id(cls, network: HttpRequestor) -> str:
+        """to be implemented by addons which require an external account id"""
+        return ""
 
     ###
     # instance methods

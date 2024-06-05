@@ -1,13 +1,19 @@
 from django.db import models
 from django.utils import timezone
 
+from addon_service.common.str_uuid_field import (
+    StrUUIDField,
+    str_uuid4,
+)
+
 
 class AddonsServiceBaseModel(models.Model):
+    id = StrUUIDField(primary_key=True, default=str_uuid4, editable=False)
     created = models.DateTimeField(editable=False)
     modified = models.DateTimeField()
 
     def save(self, *args, **kwargs):
-        if not self.id:
+        if self._state.adding:
             self.created = timezone.now()
         self.modified = timezone.now()
         self.full_clean()

@@ -218,8 +218,13 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                 }
             )
 
+    ###
+    # async functions for use in oauth callback flows
+
     async def refresh_oauth_access_token(self) -> None:
-        _oauth_client_config, _oauth_token_metadata = await self._get_oauth_models()
+        _oauth_client_config, _oauth_token_metadata = (
+            await self._load_client_config_and_token_metadata()
+        )
         _fresh_token_result = await oauth_utils.get_refreshed_access_token(
             token_endpoint_url=_oauth_client_config.token_endpoint_url,
             refresh_token=_oauth_token_metadata.refresh_token,
@@ -233,7 +238,9 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     refresh_oauth_access_token__blocking = async_to_sync(refresh_oauth_access_token)
 
     @sync_to_async
-    def _get_oauth_models(self) -> tuple[OAuth2ClientConfig, OAuth2TokenMetadata]:
+    def _load_client_config_and_token_metadata(
+        self,
+    ) -> tuple[OAuth2ClientConfig, OAuth2TokenMetadata]:
         # wrap db access in `sync_to_async`
         return (
             self.external_service.oauth2_client_config,

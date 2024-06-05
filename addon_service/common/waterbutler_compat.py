@@ -22,10 +22,7 @@ class WaterbutlerProviderKey(enum.Enum):
     @staticmethod
     def for_imp_cls(imp_cls: type[AddonImp]) -> str:
         _imp_name = known_imps.get_imp_name(imp_cls)
-        _provider_key = WaterbutlerProviderKey[_imp_name].value
-        if _provider_key is None:
-            raise ValueError(imp_cls)
-        return _provider_key
+        return WaterbutlerProviderKey[_imp_name].value
 
 
 class WaterButlerConfigurationSerializer(serializers.Serializer):

@@ -174,11 +174,8 @@ class ConfiguredStorageAddonPOSTTests(BaseAPITest):
             format="vnd.api+json",
         )
         self.assertEqual(response.status_code, HTTPStatus.CREATED)
-        self.assertTrue(
-            ConfiguredStorageAddon.objects.filter(
-                authorized_resource__resource_uri=new_resource_uri
-            ).exists()
-        )
+        _created = ConfiguredStorageAddon.objects.get(pk=response.data["id"])
+        self.assertEqual(_created.resource_uri, new_resource_uri)
 
 
 class TestWBConfigRetrieval(APITestCase):

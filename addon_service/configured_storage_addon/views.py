@@ -9,7 +9,7 @@ from addon_service.common.permissions import (
     IsValidHMACSignedRequest,
     SessionUserCanViewReferencedResource,
     SessionUserIsOwner,
-    SessionUserIsReferencedResourceAdmin,
+    SessionUserMayConnectAddon,
 )
 from addon_service.common.viewsets import RetrieveWriteDeleteViewSet
 from addon_service.common.waterbutler_compat import WaterButlerConfigurationSerializer
@@ -29,7 +29,7 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteDeleteViewSet):
             case "partial_update" | "update" | "destroy":
                 return [IsAuthenticated(), SessionUserIsOwner()]
             case "create":
-                return [IsAuthenticated(), SessionUserIsReferencedResourceAdmin()]
+                return [IsAuthenticated(), SessionUserMayConnectAddon()]
             case "get_wb_config":
                 return [IsValidHMACSignedRequest()]
             case None:

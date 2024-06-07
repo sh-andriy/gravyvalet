@@ -54,7 +54,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
         resource_name = "external-storage-services"
 
     def __repr__(self):
-        return f'<{self.__class__.__qualname__}(pk="{self.pk}", name="{self.name}")>'
+        return f'<{self.__class__.__qualname__}(pk="{self.pk}", display_name="{self.display_name}")>'
 
     __str__ = __repr__
 

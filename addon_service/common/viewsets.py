@@ -2,10 +2,7 @@ import dataclasses
 import typing
 
 from rest_framework import mixins as drf_mixins
-from rest_framework.exceptions import (
-    NotFound,
-    PermissionDenied,
-)
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.viewsets import (
     GenericViewSet,
@@ -56,7 +53,7 @@ class RestrictedReadOnlyViewSet(ReadOnlyModelViewSet):
         try:
             self.check_object_permissions(self.request, qs.get())
         except qs.model.DoesNotExist:
-            raise NotFound("Provided filter returned no results.")
+            return Response([])
         except qs.model.MultipleObjectsReturned:
             raise PermissionDenied(
                 "Filters to this endpoint must be uniquely identifying"

@@ -17,7 +17,7 @@ RESOURCE_TYPE = get_resource_type_from_model(ConfiguredStorageAddon)
 
 
 class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
-    root_folder = serializers.CharField(required=False)
+    root_folder = serializers.CharField(required=False, allow_blank=True)
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE)
     )

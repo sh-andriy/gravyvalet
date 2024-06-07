@@ -90,7 +90,7 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
         return self.thru_account.storage_imp_config()
 
     def set_exception(self, exception: BaseException) -> None:
-        self.invocation_status = InvocationStatus.EXCEPTION
+        self.invocation_status = InvocationStatus.ERROR
         self.exception_type = type(exception).__qualname__
         self.exception_message = repr(exception)
         _tb = traceback.TracebackException.from_exception(exception)

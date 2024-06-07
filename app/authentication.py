@@ -2,6 +2,7 @@ from rest_framework import authentication as drf_authentication
 from rest_framework.request import Request as DrfRequest
 
 from addon_service.common import osf
+from addon_service.models import UserReference
 
 
 class GVCombinedAuthentication(drf_authentication.BaseAuthentication):
@@ -10,8 +11,9 @@ class GVCombinedAuthentication(drf_authentication.BaseAuthentication):
     def authenticate(self, request: DrfRequest):
         _user_uri = osf.get_osf_user_uri(request._request)
         if _user_uri:
+            UserReference.objects.get_or_create(user_uri=_user_uri)
             request.session["user_reference_uri"] = _user_uri
-            return (True, None)  # TODO load UserReference?
+            return (True, None)
         return None  # unauthenticated
 
     def authenticate_header(self, request):

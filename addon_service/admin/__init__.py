@@ -16,7 +16,7 @@ class ExternalStorageServiceAdmin(GravyvaletModelAdmin):
         "created",
         "modified",
     )
-    linked_fk_fields = ("oauth2_client_config",)
+    raw_id_fields = ("oauth2_client_config",)
     enum_choice_fields = {
         "int_addon_imp": known_imps.AddonImpNumbers,
         "int_credentials_format": CredentialsFormats,

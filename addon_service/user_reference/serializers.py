@@ -5,6 +5,7 @@ from rest_framework_json_api.utils import get_resource_type_from_model
 from addon_service.common import view_names
 from addon_service.models import (
     AuthorizedStorageAccount,
+    ResourceReference,
     UserReference,
 )
 
@@ -23,9 +24,18 @@ class UserReferenceSerializer(serializers.HyperlinkedModelSerializer):
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
 
+    configured_resources = HyperlinkedRelatedField(
+        many=True,
+        queryset=ResourceReference.objects.all(),
+        related_link_view_name=view_names.related_view(RESOURCE_TYPE),
+    )
+
     included_serializers = {
         "authorized_storage_accounts": (
             "addon_service.serializers.AuthorizedStorageAccountSerializer"
+        ),
+        "configured_resources": (
+            "addon_service.serializers.ResourceReferenceSerializer"
         ),
     }
 
@@ -36,4 +46,5 @@ class UserReferenceSerializer(serializers.HyperlinkedModelSerializer):
             "url",
             "user_uri",
             "authorized_storage_accounts",
+            "configured_resources",
         ]

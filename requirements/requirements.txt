@@ -6,3 +6,4 @@ django-filter
 celery==5.2.7
 jsonschema==4.21.1
 aiohttp==3.9.3
+pyjwe==1.0.0

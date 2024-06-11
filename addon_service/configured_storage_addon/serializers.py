@@ -58,6 +58,7 @@ class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
         fields = [
             "id",
             "url",
+            "display_name",
             "root_folder",
             "base_account",
             "authorized_resource",

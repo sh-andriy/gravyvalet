@@ -6,6 +6,7 @@ from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
 
 from ._base import GravyvaletModelAdmin
+from .decorators import linked_many_field
 
 
 @admin.register(models.ExternalStorageService)
@@ -25,6 +26,7 @@ class ExternalStorageServiceAdmin(GravyvaletModelAdmin):
 
 
 @admin.register(models.OAuth2ClientConfig)
+@linked_many_field("external_storage_services")
 class OAuth2ClientConfigAdmin(GravyvaletModelAdmin):
     readonly_fields = (
         "id",

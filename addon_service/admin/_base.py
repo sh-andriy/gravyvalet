@@ -17,7 +17,10 @@ class GravyvaletModelAdmin(admin.ModelAdmin):
                 label=db_field.verbose_name,
                 choices=[
                     (None, ""),
-                    *((_member.value, _member.name) for _member in _enum),
+                    *(
+                        (_member.value, _member.name)
+                        for _member in _enum.__members__.values()
+                    ),
                 ],
             )
         return super().formfield_for_dbfield(db_field, request, **kwargs)

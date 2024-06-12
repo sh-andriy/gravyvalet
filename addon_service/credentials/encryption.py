@@ -51,18 +51,29 @@ class KeyParameters:  # https://datatracker.ietf.org/doc/html/rfc7914#section-2
     scrypt_parallelization: int = settings.GRAVYVALET_SCRYPT_PARALLELIZATION or 1
 
     def __post_init__(self):
-        assert self.scrypt_block_size > 1
-        # scrypt_cost "must be larger than 1, a power of 2, and less than 2^(128 * r / 8)"
+        if len(self.salt) < 16:
+            raise ValueError(f"expected salt length >= 16 (got {len(self.salt)})")
+        if self.scrypt_block_size <= 1:
+            raise ValueError(
+                f"expected scrypt_block_size > 1 (got {self.scrypt_block_size})"
+            )
         _cost_log2 = math.log2(self.scrypt_cost)
-        assert (
+        if not (
             self.scrypt_cost > 1
             and _cost_log2 == int(_cost_log2)
             and _cost_log2 <= (128 * self.scrypt_block_size / 8)
-        )
-        # scrypt_parallelization "is a positive integer less than or equal to ((2^32-1) * 32) / (128 * r)"
-        assert self.scrypt_parallelization <= ((2**32 - 1) * 32) / (
-            128 * self.scrypt_block_size
-        )
+        ):
+            raise ValueError(
+                f"expected scrypt_cost larger than 1, a power of 2, and less than 2^(128 * r / 8) (got {self.scrypt_cost})"
+            )
+        if not (
+            0
+            < self.scrypt_parallelization
+            <= ((2**32 - 1) * 32) / (128 * self.scrypt_block_size)
+        ):
+            raise ValueError(
+                f"expected scrypt_parallelization >0 and <=(((2^32-1) * 32) / (128 * r)) (got {self.scrypt_parallelization})"
+            )
 
     def memory_required(self) -> int:
         return self.scrypt_cost * self.scrypt_block_size * 129

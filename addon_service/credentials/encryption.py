@@ -48,7 +48,7 @@ class KeyParameters:  # https://datatracker.ietf.org/doc/html/rfc7914#section-2
     # recommended scrypt_block_size ("r") = 8
     scrypt_block_size: int = settings.GRAVYVALET_SCRYPT_BLOCK_SIZE or 8
     # recommended scrypt_parallelization ("p") = 1
-    scrypt_parallelization: int = settings.GRAVYVALET_SCRYPT_PARALLELIZATION or 3
+    scrypt_parallelization: int = settings.GRAVYVALET_SCRYPT_PARALLELIZATION or 1
 
     def __post_init__(self):
         assert self.scrypt_block_size > 1

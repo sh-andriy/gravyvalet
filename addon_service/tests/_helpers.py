@@ -14,7 +14,6 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.sessions.backends.db import SessionStore
 from django.urls import reverse
-from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
 from rest_framework_json_api.utils import get_resource_type_from_model
 
@@ -47,7 +46,7 @@ class MockOSF:
     @contextlib.contextmanager
     def mocking(self):
         with patch(
-            "app.authentication.GVCombinedAuthentication.authenticate",
+            "addon_service.authentication.GVCombinedAuthentication.authenticate",
             side_effect=self._mock_user_check,
         ), patch(
             "addon_service.common.osf.has_osf_permission_on_resource",
@@ -98,9 +97,7 @@ class MockOSF:
     def _mock_resource_check(self, request, uri, required_permission, *args, **kwargs):
         caller = self._get_assumed_caller(cookies=request.COOKIES)
         permissions = self._get_user_permissions(user_uri=caller, resource_uri=uri)
-        if required_permission.lower() not in permissions:
-            raise drf_exceptions.PermissionDenied
-        return True
+        return bool(required_permission.lower() in permissions)
 
 
 class MockExternalService:

@@ -201,6 +201,7 @@ class TestWBConfigRetrieval(APITestCase):
             headers=hmac_utils.make_signed_headers(
                 request_url=request_url,
                 request_method="GET",
+                hmac_key=settings.OSF_HMAC_KEY,
             ),
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -263,6 +264,7 @@ class TestWBConfigRetrieval(APITestCase):
             headers = hmac_utils.make_signed_headers(
                 request_url=request_url,
                 request_method="GET",
+                hmac_key=settings.OSF_HMAC_KEY,
             )
         response = self.client.get(request_url, headers=headers)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
@@ -280,6 +282,7 @@ class TestWBConfigRetrieval(APITestCase):
             headers = hmac_utils.make_signed_headers(
                 request_url=request_url,
                 request_method="GET",
+                hmac_key=settings.OSF_HMAC_KEY,
             )
         response = self.client.get(request_url, headers=headers)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

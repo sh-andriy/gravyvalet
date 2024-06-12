@@ -76,7 +76,19 @@ class KeyParameters:  # https://datatracker.ietf.org/doc/html/rfc7914#section-2
             )
 
     def memory_required(self) -> int:
-        return self.scrypt_cost * self.scrypt_block_size * 129
+        # approximate scrypt memory usage:
+        # - actual block size in bytes: 128 * r
+        _block_bytecount = 128 * self.scrypt_block_size
+        # - primary memory bottleneck: "scryptROMix Algorithm" https://datatracker.ietf.org/doc/html/rfc7914#section-5
+        #   uses an (implicit, temporary) array "V" consisting of N blocks
+        _scryptromix_bytecount = self.scrypt_cost * _block_bytecount
+        # - "scrypt Algorithm" https://datatracker.ietf.org/doc/html/rfc7914#section-6
+        #   uses "an array B consisting of p blocks of 128 * r octets each"
+        _scrypt_main_bytecount = self.scrypt_parallelization * _block_bytecount
+        # - add fudge for intermediate blocks and other implementation details
+        #   (seems to work well enough for N in range 2^14-2^20, r in range 2-13, p in range 1-5)
+        _fudge = _block_bytecount * 5
+        return _scrypt_main_bytecount + _scryptromix_bytecount + _fudge
 
 
 def pls_encrypt_json(jsonable_obj, key_params: KeyParameters) -> bytes:

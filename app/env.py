@@ -27,6 +27,15 @@ OSF_HMAC_EXPIRATION_SECONDS = int(os.environ.get("OSF_HMAC_EXPIRATION_SECONDS", 
 OSF_BASE_URL = os.environ.get("OSF_BASE_URL", "https://osf.example")
 OSF_API_BASE_URL = os.environ.get("OSF_API_BASE_URL", "https://api.osf.example")
 
+# amqp/celery
+AMQP_BROKER_URL = os.environ.get(
+    "AMQP_BROKER_URL", "amqp://guest:guest@192.168.168.167:5672"
+)
+GV_QUEUE_NAME_PREFIX = os.environ.get("GV_QUEUE_NAME_PREFIX", "gravyvalet_tasks")
+OSF_BACKCHANNEL_QUEUE_NAME = os.environ.get(
+    "OSF_BACKCHANNEL_QUEUE_NAME", "account_status_changes"
+)
+
 # any non-empty value enables debug mode:
 DEBUG = bool(os.environ.get("DEBUG"))
 
@@ -44,8 +53,8 @@ CORS_ALLOWED_ORIGINS = tuple(
 #    - set GRAVYVALET_ENCRYPT_SECRET to a new, long, random string (...no commas, tho)
 #    - add the old secret to GRAVYVALET_ENCRYPT_SECRET_PRIORS (comma-separated list)
 #    - (optional) update key-derivation parameters with best practices du jour
-# 2. call `.rotate_encryption()` on every `ExternalCredentials` (perhaps via celery task
-#    `addon_service.credentials.tasks.schedule_encryption_rotation__celery`)
+# 2. call `.rotate_encryption()` on every `ExternalCredentials` (perhaps via
+#    celery tasks in `addon_service.tasks.key_rotation`)
 # 3. remove the old secret from GRAVYVALET_ENCRYPT_SECRET_PRIORS
 GRAVYVALET_ENCRYPT_SECRET = os.environ.get("GRAVYVALET_ENCRYPT_SECRET")
 GRAVYVALET_ENCRYPT_SECRET_PRIORS = tuple(

@@ -9,9 +9,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from addon_service import models as db
-from addon_service.addon_operation_invocation.perform import (
-    perform_invocation__blocking,
-)
 from addon_service.common import known_imps
 from addon_service.common.aiohttp_session import (
     close_singleton_client_session__blocking,
@@ -19,6 +16,7 @@ from addon_service.common.aiohttp_session import (
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.invocation_status import InvocationStatus
 from addon_service.common.service_types import ServiceTypes
+from addon_service.tasks.invocation import perform_invocation__blocking
 from addon_toolkit import AddonCapabilities
 
 

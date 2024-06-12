@@ -16,6 +16,9 @@ class WaterButlerConfigurationSerializer(serializers.Serializer):
     and `serialize_waterbutler_settings` functions used by the OSF-based Addons.
     """
 
+    class JSONAPIMeta:
+        resource_name = "waterbutler-config"
+
     credentials = serializers.SerializerMethodField("_credentials_for_waterbutler")
     settings = serializers.SerializerMethodField("_settings_for_waterbutler")
 

@@ -15,9 +15,11 @@ if __debug__:
 
 
 __all__ = (
+    "AddonImpNumbers",
+    "KnownAddonImps",
     "get_imp_by_name",
-    "get_imp_name",
     "get_imp_by_number",
+    "get_imp_name",
 )
 
 
@@ -26,21 +28,21 @@ __all__ = (
 
 
 def get_imp_by_name(imp_name: str) -> type[AddonImp]:
-    return _KnownAddonImps[imp_name].value
+    return KnownAddonImps[imp_name].value
 
 
 def get_imp_name(imp: type[AddonImp]) -> str:
-    return _KnownAddonImps(imp).name
+    return KnownAddonImps(imp).name
 
 
 def get_imp_by_number(imp_number: int) -> type[AddonImp]:
-    _imp_name = _AddonImpNumbers(imp_number).name
+    _imp_name = AddonImpNumbers(imp_number).name
     return get_imp_by_name(_imp_name)
 
 
 def get_imp_number(imp: type[AddonImp]) -> int:
     _imp_name = get_imp_name(imp)
-    return _AddonImpNumbers[_imp_name].value
+    return AddonImpNumbers[_imp_name].value
 
 
 ###
@@ -48,7 +50,7 @@ def get_imp_number(imp: type[AddonImp]) -> int:
 
 
 @enum.unique
-class _KnownAddonImps(enum.Enum):
+class KnownAddonImps(enum.Enum):
     """Static mapping from API-facing name for an AddonImp to the Imp itself"""
 
     BOX_DOT_COM = box_dot_com.BoxDotComStorageImp
@@ -58,8 +60,8 @@ class _KnownAddonImps(enum.Enum):
 
 
 @enum.unique
-@enum_names_same_as(_KnownAddonImps)
-class _AddonImpNumbers(enum.Enum):
+@enum_names_same_as(KnownAddonImps)
+class AddonImpNumbers(enum.Enum):
     """Static mapping from each AddonImp name to a unique integer (for database use)"""
 
     BOX_DOT_COM = 1001

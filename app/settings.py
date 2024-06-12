@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    # 'django.contrib.staticfiles',
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
     "rest_framework",
     "rest_framework_json_api",
     "addon_service",
@@ -48,7 +49,7 @@ INSTALLED_APPS = [
 
 if DEBUG:
     # run under ASGI locally:
-    INSTALLED_APPS.append("daphne")  # django's reference asgi server
+    INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
     ASGI_APPLICATION = "app.asgi.application"
 
 MIDDLEWARE = [

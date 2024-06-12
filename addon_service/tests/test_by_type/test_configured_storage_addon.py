@@ -207,6 +207,7 @@ class TestWBConfigRetrieval(APITestCase):
             ),
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.json()["data"]["type"], "waterbutler-config")
 
         with self.subTest("Confirm Credentials"):
             self.assertEqual(response.data["credentials"], {"token": "access"})

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from app import env
@@ -103,7 +104,7 @@ DATABASES = {
     },
 }
 
-if env.OSFDB_HOST:
+if env.OSFDB_HOST and not sys.argv[1:2] == ["test"]:
     DATABASES["osf"] = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": env.OSFDB_NAME,

@@ -111,7 +111,8 @@ if env.OSFDB_HOST:
         "PASSWORD": env.OSFDB_PASSWORD,
         "HOST": env.OSFDB_HOST,
         "PORT": env.OSFDB_PORT,
-        "ATOMIC_REQUESTS": True,
+        "ATOMIC_REQUESTS": False,
+        "AUTOCOMMIT": False,
         "CONN_MAX_AGE": env.OSFDB_CONN_MAX_AGE,
         "OPTIONS": {
             "sslmode": env.OSFDB_SSLMODE,

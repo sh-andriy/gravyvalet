@@ -19,9 +19,14 @@ class UserReference(AddonsServiceBaseModel):
 
     @property
     def configured_resources(self):
-        return ResourceReference.objects.filter(
-            configured_storage_addons__base_account__account_owner=self,
-        )
+        return ResourceReference.objects.annotate(
+            has_addon_configured_by_user=models.Exists(
+                ConfiguredStorageAddon.objects.filter(
+                    authorized_resource_id=models.OuterRef("id"),
+                    base_account__account_owner=self,
+                )
+            )
+        ).filter(has_addon_configured_by_user=True)
 
     class Meta:
         verbose_name = "User Reference"

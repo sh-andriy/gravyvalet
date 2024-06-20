@@ -7,7 +7,7 @@ from addon_service.common.serializer_fields import (
     DataclassRelatedLinkField,
     ReadOnlyResourceRelatedField,
 )
-from addon_service.credentials import CredentialsField
+from addon_service.credentials.serializers import CredentialsField
 
 
 __all__ = (

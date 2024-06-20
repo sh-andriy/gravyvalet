@@ -13,7 +13,7 @@ from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
 from addon_service.common.validators import validate_addon_capability
-from addon_service.credentials import ExternalCredentials
+from addon_service.credentials.models import ExternalCredentials
 from addon_service.oauth import utils as oauth_utils
 from addon_service.oauth.models import (
     OAuth2ClientConfig,
@@ -103,7 +103,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     @property
     def credentials(self):
         if self._credentials:
-            return self._credentials.as_data()
+            return self._credentials.decrypted_credentials
         return None
 
     @credentials.setter
@@ -115,8 +115,12 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                 f"Got credentials of type {creds_type}."
             )
         if not self._credentials:
-            self._credentials = ExternalCredentials()
-        self._credentials._update(credentials_data)
+            self._credentials = ExternalCredentials.new()
+        try:
+            self._credentials.decrypted_credentials = credentials_data
+            self._credentials.save()
+        except TypeError as e:
+            raise ValidationError(e)
 
     @property
     def authorized_capabilities(self) -> AddonCapabilities:

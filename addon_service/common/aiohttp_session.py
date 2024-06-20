@@ -1,3 +1,6 @@
+import threading
+from threading import local
+
 import aiohttp
 from asgiref.sync import async_to_sync
 
@@ -9,24 +12,29 @@ __all__ = (
     "close_singleton_client_session__blocking",
 )
 
-
-__SINGLETON_CLIENT_SESSION: aiohttp.ClientSession | None = None
+__SINGLETON_CLIENT_SESSION_STORE: threading.local = local()
 
 
 async def get_singleton_client_session() -> aiohttp.ClientSession:
-    global __SINGLETON_CLIENT_SESSION
-    if __SINGLETON_CLIENT_SESSION is None:
-        __SINGLETON_CLIENT_SESSION = aiohttp.ClientSession(
+    if not is_session_valid():
+        __SINGLETON_CLIENT_SESSION_STORE.session = aiohttp.ClientSession(
             cookie_jar=aiohttp.DummyCookieJar(),  # ignore all cookies
         )
-    return __SINGLETON_CLIENT_SESSION
+    return __SINGLETON_CLIENT_SESSION_STORE.session
+
+
+def is_session_valid() -> bool:
+    return (
+        hasattr(__SINGLETON_CLIENT_SESSION_STORE, "session")
+        and isinstance(__SINGLETON_CLIENT_SESSION_STORE.session, aiohttp.ClientSession)
+        and not __SINGLETON_CLIENT_SESSION_STORE.session.closed
+    )
 
 
 async def close_singleton_client_session() -> None:
-    global __SINGLETON_CLIENT_SESSION
-    if __SINGLETON_CLIENT_SESSION is not None:
-        await __SINGLETON_CLIENT_SESSION.close()
-        __SINGLETON_CLIENT_SESSION = None
+    if is_session_valid():
+        await __SINGLETON_CLIENT_SESSION_STORE.close()
+        __SINGLETON_CLIENT_SESSION_STORE.session = None
 
 
 get_singleton_client_session__blocking = async_to_sync(get_singleton_client_session)

@@ -2,10 +2,7 @@ import dataclasses
 import typing
 
 from rest_framework import mixins as drf_mixins
-from rest_framework.exceptions import (
-    NotFound,
-    PermissionDenied,
-)
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.viewsets import (
     GenericViewSet,
@@ -56,7 +53,7 @@ class RestrictedReadOnlyViewSet(ReadOnlyModelViewSet):
         try:
             self.check_object_permissions(self.request, qs.get())
         except qs.model.DoesNotExist:
-            raise NotFound("Provided filter returned no results.")
+            return Response([])
         except qs.model.MultipleObjectsReturned:
             raise PermissionDenied(
                 "Filters to this endpoint must be uniquely identifying"
@@ -66,9 +63,20 @@ class RestrictedReadOnlyViewSet(ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
+class _CreateWithPermissionsMixin(drf_mixins.CreateModelMixin):
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        _instance = serializer.instance
+        # check permissions on the created instance (which may or may not be saved)
+        self.check_object_permissions(self.request, _instance)
+        if serializer.instance._state.adding:
+            # the serializer didn't save it
+            _instance.save()
+
+
 class RetrieveWriteViewSet(
     _DrfJsonApiHelpers,
-    drf_mixins.CreateModelMixin,
+    _CreateWithPermissionsMixin,
     drf_mixins.RetrieveModelMixin,
     drf_mixins.UpdateModelMixin,
     GenericViewSet,
@@ -78,7 +86,7 @@ class RetrieveWriteViewSet(
 
 class RetrieveWriteDeleteViewSet(
     _DrfJsonApiHelpers,
-    drf_mixins.CreateModelMixin,
+    _CreateWithPermissionsMixin,
     drf_mixins.RetrieveModelMixin,
     drf_mixins.UpdateModelMixin,
     drf_mixins.DestroyModelMixin,

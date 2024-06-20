@@ -31,7 +31,7 @@ class _AddonServiceRouter(SimpleRouter):
     ]
 
 
-_router = _AddonServiceRouter()
+_router = _AddonServiceRouter(trailing_slash=False)
 
 
 def _register_viewset(viewset):

@@ -4,6 +4,7 @@ from django.utils import timezone
 from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.configured_storage_addon.models import ConfiguredStorageAddon
+from addon_service.resource_reference.models import ResourceReference
 
 
 class UserReference(AddonsServiceBaseModel):
@@ -15,6 +16,17 @@ class UserReference(AddonsServiceBaseModel):
         return ConfiguredStorageAddon.objects.filter(
             base_account__account_owner=self,
         )
+
+    @property
+    def configured_resources(self):
+        return ResourceReference.objects.annotate(
+            has_addon_configured_by_user=models.Exists(
+                ConfiguredStorageAddon.objects.filter(
+                    authorized_resource_id=models.OuterRef("id"),
+                    base_account__account_owner=self,
+                )
+            )
+        ).filter(has_addon_configured_by_user=True)
 
     class Meta:
         verbose_name = "User Reference"

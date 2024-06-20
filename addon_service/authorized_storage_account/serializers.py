@@ -82,6 +82,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         external_service = validated_data["external_storage_service"]
         try:
             authorized_account = AuthorizedStorageAccount.objects.create(
+                _display_name=validated_data.get("display_name", ""),
                 external_storage_service=external_service,
                 account_owner=account_owner,
                 authorized_capabilities=validated_data.get("authorized_capabilities"),
@@ -108,6 +109,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         fields = [
             "id",
             "url",
+            "display_name",
             "account_owner",
             "api_base_url",
             "auth_url",

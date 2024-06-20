@@ -11,7 +11,7 @@ from .decorators import linked_many_field
 
 @admin.register(models.ExternalStorageService)
 class ExternalStorageServiceAdmin(GravyvaletModelAdmin):
-    list_display = ("name", "created", "modified")
+    list_display = ("display_name", "created", "modified")
     readonly_fields = (
         "id",
         "created",

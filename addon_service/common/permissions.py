@@ -11,7 +11,6 @@ from rest_framework import (
 
 from addon_service.common import hmac as hmac_utils
 from addon_service.common import osf
-from addon_service.models import ResourceReference
 
 
 class IsAuthenticated(permissions.BasePermission):
@@ -38,28 +37,18 @@ class SessionUserCanViewReferencedResource(permissions.BasePermission):
         )
 
 
-class SessionUserIsReferencedResourceAdmin(permissions.BasePermission):
-    """
-    assumes request data parsed by a serializer with `authorized_resource`
-    to-one relationship and/or `authorized_resource_uri` attribute
-    """
-
-    def has_permission(self, request, view):
-        resource_uri = None
-        try:
-            resource_uri = ResourceReference.objects.get(
-                id=request.data["authorized_resource"]["id"]
-            ).resource_uri
-        except (ResourceReference.DoesNotExist, KeyError):
-            resource_uri = request.data.get("authorized_resource_uri")
-
-        if resource_uri is None:
-            raise exceptions.ParseError
-
-        return osf.has_osf_permission_on_resource(
-            request,
-            resource_uri,
-            osf.OSFPermission.ADMIN,
+class SessionUserMayConnectAddon(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        _user_uri = request.session.get("user_reference_uri")
+        return (
+            # must be account owner
+            (_user_uri == obj.owner_uri)
+            # and admin of the osf resource
+            and osf.has_osf_permission_on_resource(
+                request,
+                obj.resource_uri,
+                osf.OSFPermission.ADMIN,
+            )
         )
 
 
@@ -76,6 +65,27 @@ class SessionUserMayAccessInvocation(permissions.BasePermission):
                 request,
                 obj.thru_addon.authorized_resource.resource_uri,
                 osf.OSFPermission.READ,
+            )
+        )
+
+
+class SessionUserMayPerformInvocation(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        _user_uri = request.session.get("user_reference_uri")
+        _thru_addon = obj.thru_addon
+        _thru_account = obj.thru_account
+        if _thru_addon is None:
+            # when invoking thru account, must be the owner
+            return _user_uri == _thru_account.owner_uri
+        # when invoking thru addon, may be either...
+        return bool(
+            # the addon owner:
+            (_user_uri == _thru_addon.owner_uri)
+            # or a user with sufficient on the connected osf project:
+            or osf.has_osf_permission_on_resource(
+                request,
+                _thru_addon.authorized_resource.resource_uri,
+                osf.OSFPermission.for_capabilities(obj.operation.capability),
             )
         )
 

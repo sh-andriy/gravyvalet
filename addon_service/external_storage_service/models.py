@@ -15,7 +15,7 @@ from addon_service.common.validators import (
 
 
 class ExternalStorageService(AddonsServiceBaseModel):
-    name = models.CharField(null=False)
+    display_name = models.CharField(null=False)
     int_addon_imp = models.IntegerField(
         null=False,
         validators=[validate_storage_imp_number],
@@ -54,7 +54,7 @@ class ExternalStorageService(AddonsServiceBaseModel):
         resource_name = "external-storage-services"
 
     def __repr__(self):
-        return f'<{self.__class__.__qualname__}(pk="{self.pk}", name="{self.name}")>'
+        return f'<{self.__class__.__qualname__}(pk="{self.pk}", display_name="{self.display_name}")>'
 
     __str__ = __repr__
 

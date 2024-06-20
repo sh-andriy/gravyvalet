@@ -42,7 +42,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     objects = AuthorizedStorageAccountManager()
 
-    account_name = models.CharField(null=False, blank=True, default="")
+    _display_name = models.CharField(null=False, blank=True, default="")
     external_account_id = models.CharField(null=False, blank=True, default="")
     int_authorized_capabilities = models.IntegerField(
         validators=[validate_addon_capability]
@@ -83,6 +83,14 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     class JSONAPIMeta:
         resource_name = "authorized-storage-accounts"
+
+    @property
+    def display_name(self):
+        return self._display_name or self.external_service.display_name
+
+    @display_name.setter
+    def display_name(self, value: str):
+        self._display_name = value
 
     @property
     def external_service(self):
@@ -207,13 +215,13 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         if self._api_base_url and not service.configurable_api_root:
             raise ValidationError(
                 {
-                    "api_base_url": f"Cannot specify an api_base_url for Public-only service {service.name}"
+                    "api_base_url": f"Cannot specify an api_base_url for Public-only service {service.display_name}"
                 }
             )
         if ServiceTypes.PUBLIC not in service.service_type and not self.api_base_url:
             raise ValidationError(
                 {
-                    "api_base_url": f"Must specify an api_base_url for Hosted-only service {service.name}"
+                    "api_base_url": f"Must specify an api_base_url for Hosted-only service {service.display_name}"
                 }
             )
 

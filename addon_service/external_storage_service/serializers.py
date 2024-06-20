@@ -37,6 +37,6 @@ class ExternalStorageServiceSerializer(serializers.HyperlinkedModelSerializer):
             "credentials_format",
             "max_concurrent_downloads",
             "max_upload_mb",
-            "name",
+            "display_name",
             "url",
         ]

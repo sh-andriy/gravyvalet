@@ -13,7 +13,7 @@ class ExternalCredentials(AddonsServiceBaseModel):
     encrypted_json = models.BinaryField()
     _salt = models.BinaryField()
     _scrypt_block_size = models.IntegerField()
-    _scrypt_cost = models.IntegerField()
+    _scrypt_cost_log2 = models.IntegerField()
     _scrypt_parallelization = models.IntegerField()
 
     # Attributes inherited from back-references:
@@ -72,7 +72,7 @@ class ExternalCredentials(AddonsServiceBaseModel):
         return encryption.KeyParameters(
             salt=self._salt,
             scrypt_block_size=self._scrypt_block_size,
-            scrypt_cost=self._scrypt_cost,
+            scrypt_cost_log2=self._scrypt_cost_log2,
             scrypt_parallelization=self._scrypt_parallelization,
         )
 
@@ -80,7 +80,7 @@ class ExternalCredentials(AddonsServiceBaseModel):
     def _key_parameters(self, value: encryption.KeyParameters) -> None:
         self._salt = value.salt
         self._scrypt_block_size = value.scrypt_block_size
-        self._scrypt_cost = value.scrypt_cost
+        self._scrypt_cost_log2 = value.scrypt_cost_log2
         self._scrypt_parallelization = value.scrypt_parallelization
 
     # END encryption-related methods

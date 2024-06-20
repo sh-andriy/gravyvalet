@@ -47,13 +47,13 @@ GRAVYVALET_ENCRYPT_SECRET = os.environ.get("GRAVYVALET_ENCRYPT_SECRET")
 GRAVYVALET_ENCRYPT_SECRET_PRIORS = tuple(
     filter(bool, os.environ.get("GRAVYVALET_ENCRYPT_SECRET_PRIORS", "").split(","))
 )
-# optional overrides for scrypt key derivation parameters (when unset or "0", use sensible defaults)
+# optional overrides for scrypt key derivation parameters (when unset, use sensible defaults)
 # see https://datatracker.ietf.org/doc/html/rfc7914#section-2
-GRAVYVALET_SALT_BYTE_COUNT = int(os.environ.get("GRAVYVALET_SALT_BYTE_COUNT", 0))
-GRAVYVALET_SCRYPT_COST = int(os.environ.get("GRAVYVALET_SCRYPT_COST", 0))
-GRAVYVALET_SCRYPT_BLOCK_SIZE = int(os.environ.get("GRAVYVALET_SCRYPT_BLOCK_SIZE", 0))
+GRAVYVALET_SALT_BYTE_COUNT = int(os.environ.get("GRAVYVALET_SALT_BYTE_COUNT", 17))
+GRAVYVALET_SCRYPT_COST_LOG2 = int(os.environ.get("GRAVYVALET_SCRYPT_COST_LOG2", 17))
+GRAVYVALET_SCRYPT_BLOCK_SIZE = int(os.environ.get("GRAVYVALET_SCRYPT_BLOCK_SIZE", 8))
 GRAVYVALET_SCRYPT_PARALLELIZATION = int(
-    os.environ.get("GRAVYVALET_SCRYPT_PARALLELIZATION", 0)
+    os.environ.get("GRAVYVALET_SCRYPT_PARALLELIZATION", 1)
 )
 # size of the derived-key cache (set to "0" to disable caching)
 GRAVYVALET_DERIVED_KEY_CACHE_SIZE = int(

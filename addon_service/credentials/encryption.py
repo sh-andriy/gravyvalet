@@ -13,7 +13,6 @@ import dataclasses
 import functools
 import hashlib
 import json
-import math
 import os
 
 from cryptography import fernet
@@ -43,8 +42,8 @@ def salt_factory() -> bytes:
 @dataclasses.dataclass(frozen=True)  # frozen for use as lru_cache key
 class KeyParameters:  # https://datatracker.ietf.org/doc/html/rfc7914#section-2
     salt: bytes = dataclasses.field(default_factory=salt_factory)
-    # recommended scrypt_cost ("N") between 2^14 and 2^20
-    scrypt_cost: int = settings.GRAVYVALET_SCRYPT_COST or 2**17
+    # recommended scrypt_cost_log2 between 14 and 20 (for "N" between 2^14 and 2^20)
+    scrypt_cost_log2: int = settings.GRAVYVALET_SCRYPT_COST_LOG2 or 17
     # recommended scrypt_block_size ("r") = 8
     scrypt_block_size: int = settings.GRAVYVALET_SCRYPT_BLOCK_SIZE or 8
     # recommended scrypt_parallelization ("p") = 1
@@ -57,14 +56,13 @@ class KeyParameters:  # https://datatracker.ietf.org/doc/html/rfc7914#section-2
             raise ValueError(
                 f"expected scrypt_block_size > 1 (got {self.scrypt_block_size})"
             )
-        _cost_log2 = math.log2(self.scrypt_cost)
         if not (
-            self.scrypt_cost > 1
-            and _cost_log2 == int(_cost_log2)
-            and _cost_log2 <= (128 * self.scrypt_block_size / 8)
+            self.scrypt_cost_log2 >= 1
+            and self.scrypt_cost_log2 == int(self.scrypt_cost_log2)
+            and self.scrypt_cost_log2 <= (128 * self.scrypt_block_size / 8)
         ):
             raise ValueError(
-                f"expected scrypt_cost larger than 1, a power of 2, and less than 2^(128 * r / 8) (got {self.scrypt_cost})"
+                f"expected scrypt_cost_log2 integer between 1 and (128 * r / 8) (got {self.scrypt_cost_log2})"
             )
         if not (
             0
@@ -76,12 +74,12 @@ class KeyParameters:  # https://datatracker.ietf.org/doc/html/rfc7914#section-2
             )
 
     def memory_required(self) -> int:
-        # approximate scrypt memory usage:
+        # approximate upper-bound on scrypt memory usage:
         # - actual block size in bytes: 128 * r
         _block_bytecount = 128 * self.scrypt_block_size
         # - primary memory bottleneck: "scryptROMix Algorithm" https://datatracker.ietf.org/doc/html/rfc7914#section-5
         #   uses an (implicit, temporary) array "V" consisting of N blocks
-        _scryptromix_bytecount = self.scrypt_cost * _block_bytecount
+        _scryptromix_bytecount = (2**self.scrypt_cost_log2) * _block_bytecount
         # - "scrypt Algorithm" https://datatracker.ietf.org/doc/html/rfc7914#section-6
         #   uses "an array B consisting of p blocks of 128 * r octets each"
         _scrypt_main_bytecount = self.scrypt_parallelization * _block_bytecount
@@ -114,7 +112,7 @@ def pls_rotate_encryption(
     _fresh_params = KeyParameters(salt=salt_factory())
     _stored_up_to_date = (
         len(stored_params.salt) == len(_fresh_params.salt)
-        and stored_params.scrypt_cost == _fresh_params.scrypt_cost
+        and stored_params.scrypt_cost_log2 == _fresh_params.scrypt_cost_log2
         and stored_params.scrypt_block_size == _fresh_params.scrypt_block_size
         and stored_params.scrypt_parallelization == _fresh_params.scrypt_parallelization
     )
@@ -157,7 +155,7 @@ def _derive_key_bytes(secret: bytes, key_params: KeyParameters) -> bytes:
     return hashlib.scrypt(
         secret,
         salt=key_params.salt,
-        n=key_params.scrypt_cost,
+        n=2**key_params.scrypt_cost_log2,
         r=key_params.scrypt_block_size,
         p=key_params.scrypt_parallelization,
         dklen=_KEY_BYTE_COUNT,

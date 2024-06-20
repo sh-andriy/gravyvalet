@@ -19,9 +19,14 @@ __all__ = (
     "TIMESTAMP_HEADER",
 )
 
-_AUTH_HEADER_PREFIX = "HMAC-"
+# this is but one way to hmac-sign an http request -- aligns with how osf sends them:
+# https://github.com/CenterForOpenScience/osf.io/blob/develop/osf/external/gravy_valet/auth_helpers.py
+
+_AUTH_HEADER_SCHEME = "HMAC-SHA256"
 _AUTH_HEADER_REGEX = re.compile(
-    r"^HMAC-SHA256 SignedHeaders=(?P<headers>[\w;-]*)&Signature=(?P<signature>[^\W_]*$)"
+    "^"
+    + re.escape(_AUTH_HEADER_SCHEME)
+    + r" SignedHeaders=(?P<headers>[\w;-]*)&Signature=(?P<signature>[^\W_]*$)"
 )
 TIMESTAMP_HEADER = "X-Authorization-Timestamp"
 CONTENT_HASH_HEADER = "X-Content-SHA256"
@@ -45,9 +50,7 @@ def make_signed_headers(
         message="\n".join(signed_string_segments), hmac_key=hmac_key
     )
     signature_header_fields = ";".join(signed_headers.keys())
-    auth_header_value = (
-        f"HMAC-SHA256 SignedHeaders={signature_header_fields}&Signature={signature}"
-    )
+    auth_header_value = f"{_AUTH_HEADER_SCHEME} SignedHeaders={signature_header_fields}&Signature={signature}"
     return dict(
         **signed_headers,
         Authorization=auth_header_value,
@@ -59,7 +62,7 @@ def validate_signed_headers(
     request: HttpRequest, hmac_key: str, expiration_seconds: int | None = None
 ) -> dict[str, str]:
     _authorization = request.headers.get("Authorization", "")
-    if not _authorization.startswith(_AUTH_HEADER_PREFIX):
+    if not _authorization.startswith(_AUTH_HEADER_SCHEME):
         raise NotUsingHmac
     match = _AUTH_HEADER_REGEX.match(_authorization)
     if not match:

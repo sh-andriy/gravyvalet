@@ -1,5 +1,6 @@
 import enum
 import functools
+import logging
 import re
 from http import HTTPStatus
 
@@ -18,6 +19,8 @@ __all__ = (
     "get_osf_user_uri",
     "has_osf_permission_on_resource",
 )
+
+_logger = logging.getLogger(__name__)
 
 _OSF_HMAC_USER_HEADER = "X-Requesting-User-URI"
 _OSF_HMAC_RESOURCE_HEADER = "X-Requested-Resource-URI"
@@ -44,6 +47,7 @@ async def get_osf_user_uri(request: django_http.HttpRequest) -> str | None:
     try:
         return _get_hmac_verified_user_iri(request)
     except hmac_utils.RejectedHmac as e:
+        _logger.critical(f"rejected hmac signature!?\n\tpath:{request.path}")
         raise PermissionDenied(e)
     except hmac_utils.NotUsingHmac:
         pass  # the only acceptable hmac-related error is not using hmac at all
@@ -70,7 +74,10 @@ async def has_osf_permission_on_resource(
             request, resource_uri, required_permission
         )
     except hmac_utils.RejectedHmac:
-        return False  # TODO: something more consequential?
+        _logger.critical(
+            f"rejected hmac signature!?\n\tpath:{request.path}\n\tresource:{resource_uri}"
+        )
+        return False
     except hmac_utils.NotUsingHmac:
         pass  # the only acceptable hmac-related error is not using hmac at all
     # not hmac -- ask osf
@@ -176,7 +183,7 @@ def _iri_from_osfapi_resource(osfapi_resource: dict) -> str:
 
 
 def _get_hmac_verified_user_iri(request: django_http.HttpRequest) -> str | None:
-    _signed_headers = hmac_utils.validate_signed_headers(
+    _signed_headers = hmac_utils.get_signed_headers(
         request,
         settings.OSF_HMAC_KEY,
         settings.OSF_HMAC_EXPIRATION_SECONDS,
@@ -189,7 +196,7 @@ def _has_hmac_verified_osf_permission(
     resource_uri: str,
     required_permission: OSFPermission,
 ) -> bool:
-    _signed_headers = hmac_utils.validate_signed_headers(
+    _signed_headers = hmac_utils.get_signed_headers(
         request,
         settings.OSF_HMAC_KEY,
         settings.OSF_HMAC_EXPIRATION_SECONDS,

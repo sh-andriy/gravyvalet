@@ -88,7 +88,7 @@ class SessionUserMayPerformInvocation(permissions.BasePermission):
 class IsValidHMACSignedRequest(permissions.BasePermission):
     def has_permission(self, request, view):
         try:
-            hmac_utils.validate_signed_headers(
+            hmac_utils.validate_signed_request(
                 request,
                 settings.OSF_HMAC_KEY,
                 settings.OSF_HMAC_EXPIRATION_SECONDS,

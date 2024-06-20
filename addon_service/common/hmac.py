@@ -15,7 +15,8 @@ from django.http import HttpRequest
 
 __all__ = (
     "make_signed_headers",
-    "validate_signed_headers",
+    "get_signed_headers",
+    "validate_signed_request",
     "TIMESTAMP_HEADER",
 )
 
@@ -58,7 +59,7 @@ def make_signed_headers(
 
 
 @functools.lru_cache
-def validate_signed_headers(
+def get_signed_headers(
     request: HttpRequest, hmac_key: str, expiration_seconds: int | None = None
 ) -> dict[str, str]:
     _authorization = request.headers.get("Authorization", "")
@@ -91,30 +92,13 @@ def validate_signed_headers(
     return signed_headers
 
 
-def _validate_timestamp(signed_timestamp: str | None, expiration_seconds: int) -> None:
-    if not signed_timestamp:
-        raise UnsupportedHmacAuthorization(
-            f"HMAC Signed Request missing expected signed header '{TIMESTAMP_HEADER}'"
-        )
-    expiration_time = datetime.now(UTC) - timedelta(seconds=expiration_seconds)
-    request_time = datetime.fromisoformat(signed_timestamp)
-    if request_time < expiration_time:
-        raise ExpiredHmacTimestamp(
-            f"HMAC Signed Request is too old (expected at most {expiration_seconds} seconds)"
-        )
-    elif request_time > datetime.now(UTC):
-        raise FutureHmacTimestamp(
-            "HMAC Signed Request provided a timestamp from the future"
-        )
-
-
-def _validate_content_hash(sha256_hexdigest: str, request_content: bytes) -> None:
-    if sha256_hexdigest and not hmac.compare_digest(
-        sha256_hexdigest, hashlib.sha256(request_content).hexdigest()
-    ):
-        raise IncorrectHmacContentHash(
-            "Computed content hash did not match value from headers"
-        )
+def validate_signed_request(
+    request: HttpRequest, hmac_key: str, expiration_seconds: int | None = None
+) -> None:
+    # will raise error if invalid
+    get_signed_headers(
+        request=request, hmac_key=hmac_key, expiration_seconds=expiration_seconds
+    )
 
 
 ###
@@ -199,3 +183,29 @@ def _get_signed_components(
     # Filter out query string and content_hash if none present
     signed_segments = [segment for segment in possible_signed_segments if segment]
     return signed_segments, signed_headers
+
+
+def _validate_timestamp(signed_timestamp: str | None, expiration_seconds: int) -> None:
+    if not signed_timestamp:
+        raise UnsupportedHmacAuthorization(
+            f"HMAC Signed Request missing expected signed header '{TIMESTAMP_HEADER}'"
+        )
+    expiration_time = datetime.now(UTC) - timedelta(seconds=expiration_seconds)
+    request_time = datetime.fromisoformat(signed_timestamp)
+    if request_time < expiration_time:
+        raise ExpiredHmacTimestamp(
+            f"HMAC Signed Request is too old (expected at most {expiration_seconds} seconds)"
+        )
+    elif request_time > datetime.now(UTC):
+        raise FutureHmacTimestamp(
+            "HMAC Signed Request provided a timestamp from the future"
+        )
+
+
+def _validate_content_hash(sha256_hexdigest: str, request_content: bytes) -> None:
+    if sha256_hexdigest and not hmac.compare_digest(
+        sha256_hexdigest, hashlib.sha256(request_content).hexdigest()
+    ):
+        raise IncorrectHmacContentHash(
+            "Computed content hash did not match value from headers"
+        )

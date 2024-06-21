@@ -18,7 +18,7 @@ from rest_framework import exceptions as drf_exceptions
 from rest_framework.test import APIRequestFactory
 from rest_framework_json_api.utils import get_resource_type_from_model
 
-from addon_service.common.aiohttp_session import get_singleton_client_session__blocking
+from addon_service.common.aiohttp_session import get_singleton_client_session
 
 
 class MockOSF:
@@ -124,9 +124,9 @@ class MockExternalService:
         self._static_access_token = access
         self._static_refresh_token = refresh
 
-    @contextlib.contextmanager
-    def mocking(self):
-        client_session = get_singleton_client_session__blocking()
+    @contextlib.asynccontextmanager
+    async def mocking(self):
+        client_session = await get_singleton_client_session()
         with (
             patch.object(client_session, "get", new=self._route_get),
             patch.object(client_session, "post", new=self._route_post),

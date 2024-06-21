@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 
 from addon_service.common.aiohttp_session import (
     close_singleton_client_session__blocking,
-    get_singleton_client_session__blocking,
+    get_singleton_client_session,
 )
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.models import AuthorizedStorageAccount
@@ -77,9 +77,8 @@ class TestOAuth2Flow(APITestCase):
             self.assertIsNone(_account.credentials)
 
         self._mock_service.set_internal_client(self.client)
-        aiohttp_client_session = get_singleton_client_session__blocking()
-        with self._mock_service.mocking():
-            async_to_sync(aiohttp_client_session.get)(_account.auth_url)
+
+        async_to_sync(self._get)(_account)
 
         _account.refresh_from_db()
         with self.subTest("Credentials set post-exchange"):
@@ -88,3 +87,8 @@ class TestOAuth2Flow(APITestCase):
             self.assertEqual(
                 _account.oauth2_token_metadata.refresh_token, MOCK_REFRESH_TOKEN
             )
+
+    async def _get(self, _account: AuthorizedStorageAccount):
+        aiohttp_client_session = await get_singleton_client_session()
+        async with self._mock_service.mocking():
+            return await aiohttp_client_session.get(_account.auth_url)

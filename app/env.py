@@ -32,6 +32,9 @@ DEBUG = bool(os.environ.get("DEBUG"))
 
 # comma-separated list:
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+CORS_ALLOWED_ORIGINS = tuple(
+    filter(bool, os.environ.get("CORS_ALLOWED_ORIGINS", "").split(","))
+)
 
 ###
 # credentials encryption secrets and parameters

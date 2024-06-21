@@ -1,12 +1,15 @@
 import enum
 import functools
+import logging
 import re
 from http import HTTPStatus
 
 from asgiref.sync import async_to_sync
 from django import http as django_http
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 
+from addon_service.common import hmac as hmac_utils
 from addon_service.common.aiohttp_session import get_singleton_client_session
 from addon_toolkit import AddonCapabilities
 
@@ -16,6 +19,13 @@ __all__ = (
     "get_osf_user_uri",
     "has_osf_permission_on_resource",
 )
+
+_logger = logging.getLogger(__name__)
+
+_OSF_HMAC_USER_HEADER = "X-Requesting-User-URI"
+_OSF_HMAC_RESOURCE_HEADER = "X-Requested-Resource-URI"
+_OSF_HMAC_PERMISSIONS_HEADER = "X-Requested-Resource-Permissions"
+_OSF_HMAC_PERMISSIONS_DELIMITER = ";"  # see https://github.com/CenterForOpenScience/osf.io/blob/00a17ecdb666c07245a520de3ccd0f743822573b/osf/external/gravy_valet/auth_helpers.py#L66
 
 
 class OSFPermission(enum.StrEnum):
@@ -34,6 +44,14 @@ class OSFPermission(enum.StrEnum):
 
 @async_to_sync
 async def get_osf_user_uri(request: django_http.HttpRequest) -> str | None:
+    try:
+        return _get_hmac_verified_user_iri(request)
+    except hmac_utils.RejectedHmac as e:
+        _logger.critical(f"rejected hmac signature!?\n\tpath:{request.path}")
+        raise PermissionDenied(e)
+    except hmac_utils.NotUsingHmac:
+        pass  # the only acceptable hmac-related error is not using hmac at all
+    # not hmac -- ask osf
     _auth_headers = _get_osf_auth_headers(request)
     if not _auth_headers:
         return None
@@ -51,6 +69,18 @@ async def has_osf_permission_on_resource(
     resource_uri: str,
     required_permission: OSFPermission,
 ) -> bool:
+    try:
+        return _has_hmac_verified_osf_permission(
+            request, resource_uri, required_permission
+        )
+    except hmac_utils.RejectedHmac:
+        _logger.critical(
+            f"rejected hmac signature!?\n\tpath:{request.path}\n\tresource:{resource_uri}"
+        )
+        return False
+    except hmac_utils.NotUsingHmac:
+        pass  # the only acceptable hmac-related error is not using hmac at all
+    # not hmac -- ask osf
     _client = await get_singleton_client_session()
     async with _client.get(
         _osfapi_guid_url(resource_uri),
@@ -150,3 +180,32 @@ def _osf_token_auth_headers(request: django_http.HttpRequest) -> _HeaderList:
 def _iri_from_osfapi_resource(osfapi_resource: dict) -> str:
     # osf api object representation has an unambiguous identifier at `links.iri`
     return osfapi_resource["links"]["iri"]
+
+
+def _get_hmac_verified_user_iri(request: django_http.HttpRequest) -> str | None:
+    _signed_headers = hmac_utils.get_signed_headers(
+        request,
+        settings.OSF_HMAC_KEY,
+        settings.OSF_HMAC_EXPIRATION_SECONDS,
+    )
+    return _signed_headers.get(_OSF_HMAC_USER_HEADER)
+
+
+def _has_hmac_verified_osf_permission(
+    request: django_http.HttpRequest,
+    resource_uri: str,
+    required_permission: OSFPermission,
+) -> bool:
+    _signed_headers = hmac_utils.get_signed_headers(
+        request,
+        settings.OSF_HMAC_KEY,
+        settings.OSF_HMAC_EXPIRATION_SECONDS,
+    )
+    _resource_uri = _signed_headers.get(_OSF_HMAC_RESOURCE_HEADER)
+    _permissions = _signed_headers.get(_OSF_HMAC_PERMISSIONS_HEADER)
+    return bool(
+        _resource_uri == resource_uri
+        and _permissions
+        and required_permission.value
+        in _permissions.split(_OSF_HMAC_PERMISSIONS_DELIMITER)
+    )

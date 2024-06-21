@@ -4,7 +4,8 @@ from app import env
 
 
 SECRET_KEY = env.SECRET_KEY
-DEFAULT_HMAC_KEY = env.OSF_HMAC_KEY or "lmaoooooo"
+OSF_HMAC_KEY = env.OSF_HMAC_KEY or "lmaoooooo"
+OSF_HMAC_EXPIRATION_SECONDS = env.OSF_HMAC_EXPIRATION_SECONDS
 
 if not env.DEBUG and not env.GRAVYVALET_ENCRYPT_SECRET:
     raise RuntimeError(
@@ -158,7 +159,9 @@ REST_FRAMEWORK = {
         "rest_framework_json_api.django_filters.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
     ),
-    "DEFAULT_AUTHENTICATION_CLASSES": ("app.authentication.GVCombinedAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "addon_service.authentication.GVCombinedAuthentication",
+    ),
     "SEARCH_PARAM": "filter[search]",
     "TEST_REQUEST_RENDERER_CLASSES": (
         "rest_framework_json_api.renderers.JSONRenderer",

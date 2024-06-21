@@ -167,7 +167,7 @@ class TestResourceReferenceViewSet(TestCase):
             self._resource.resource_uri, public=False
         )
         _anon_resp = self._view(get_test_request(), pk=self._resource.pk)
-        self.assertEqual(_anon_resp.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(_anon_resp.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_unauthorized__public_resource(self):
         self._mock_osf.configure_resource_visibility(

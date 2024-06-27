@@ -38,7 +38,6 @@ DEBUG = env.DEBUG
 USER_REFERENCE_COOKIE = "osf"
 OSF_BASE_URL = env.OSF_BASE_URL.rstrip("/")
 OSF_API_BASE_URL = env.OSF_API_BASE_URL.rstrip("/")
-OSF_BROKER_URL = "amqp://guest:guest@192.168.168.167:5672//"
 ALLOWED_RESOURCE_URI_PREFIXES = {OSF_BASE_URL}
 if DEBUG:
     # allow for local osf shenanigans
@@ -195,10 +194,13 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-# Queue names and routing keys for Rabbit/Celery Messaging
-EXCHANGE_NAME = (
-    "account_status_changes"  # Assuming this is the exchange name used for publishing
-)
-
 OSF_SENSITIVE_DATA_SECRET = env.OSF_SENSITIVE_DATA_SECRET
 OSF_SENSITIVE_DATA_SALT = env.OSF_SENSITIVE_DATA_SALT
+
+
+###
+# amqp/celery
+
+AMQP_BROKER_URL = env.AMQP_BROKER_URL
+OSF_BACKCHANNEL_QUEUE_NAME = env.OSF_BACKCHANNEL_QUEUE_NAME
+GV_QUEUE_NAME_PREFIX = env.GV_QUEUE_NAME_PREFIX

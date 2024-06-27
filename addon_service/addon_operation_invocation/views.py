@@ -5,10 +5,13 @@ from addon_service.common.permissions import (
     SessionUserMayPerformInvocation,
 )
 from addon_service.common.viewsets import RetrieveWriteViewSet
+from addon_service.tasks.invocation import (
+    perform_invocation__blocking,
+    perform_invocation__celery,
+)
 from addon_toolkit import AddonOperationType
 
 from .models import AddonOperationInvocation
-from .perform import perform_invocation__blocking
 from .serializers import AddonOperationInvocationSerializer
 
 
@@ -40,6 +43,6 @@ class AddonOperationInvocationViewSet(RetrieveWriteViewSet):
             case AddonOperationType.REDIRECT | AddonOperationType.IMMEDIATE:
                 perform_invocation__blocking(_invocation)
             case AddonOperationType.EVENTUAL:
-                raise NotImplementedError("TODO: enqueue task")
+                perform_invocation__celery.delay(_invocation.pk)
             case _:
                 raise ValueError(f"unknown operation type: {_operation_type}")

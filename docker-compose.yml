@@ -1,14 +1,15 @@
 version: "3.8"
 
 services:
-  addon_service:
+
+  gravyvalet:
     build: .
     restart: unless-stopped
     command: python manage.py runserver 0.0.0.0:8004
     environment:
+      DEBUG: 1
       DJANGO_SETTINGS_MODULE: app.settings
       PYTHONUNBUFFERED: 1
-      DEBUG: 1
       POSTGRES_HOST: postgres
       POSTGRES_DB: gravyvalet
       POSTGRES_USER: postgres
@@ -18,13 +19,37 @@ services:
       SECRET_KEY: so-secret
       OSF_BASE_URL: "http://192.168.168.167:5000"
       OSF_API_BASE_URL: "http://192.168.168.167:8000"
+      AMQP_BROKER_URL: "amqp://guest:guest@rabbitmq:5672"
     ports:
       - 8004:8004
     stdin_open: true
     volumes:
       - ./:/code:cached
     depends_on:
+      - celeryworker
       - postgres
+
+  celeryworker:
+    build: .
+    restart: unless-stopped
+    command: /usr/local/bin/celery --app app worker --uid daemon -l INFO
+    depends_on:
+      - rabbitmq
+      - postgres
+    volumes:
+      - ./:/code:cached
+    environment:
+      DEBUG: 1
+      DJANGO_SETTINGS_MODULE: app.settings
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: gravyvalet
+      POSTGRES_USER: postgres
+      SECRET_KEY: so-secret
+      OSF_BASE_URL: "http://192.168.168.167:5000"
+      OSF_API_BASE_URL: "http://192.168.168.167:8000"
+      AMQP_BROKER_URL: "amqp://guest:guest@rabbitmq:5672"
+    stdin_open: true
+
   postgres:
     image: postgres:latest
     volumes:
@@ -33,6 +58,18 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_DB: gravyvalet
 
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - 15674:15672
+    volumes:
+      - rabbitmq_vol:/var/lib/rabbitmq
+    stdin_open: true
+
+
+
 volumes:
   postgres_data_vol:
+    external: false
+  rabbitmq_vol:
     external: false

@@ -7,14 +7,8 @@ SECRET_KEY = env.SECRET_KEY
 OSF_HMAC_KEY = env.OSF_HMAC_KEY or "lmaoooooo"
 OSF_HMAC_EXPIRATION_SECONDS = env.OSF_HMAC_EXPIRATION_SECONDS
 
-if not env.DEBUG and not env.GRAVYVALET_ENCRYPT_SECRET:
-    raise RuntimeError(
-        "pls set `GRAVYVALET_ENCRYPT_SECRET` environment variable to something safely random"
-    )
-GRAVYVALET_ENCRYPT_SECRET: bytes = (
-    env.GRAVYVALET_ENCRYPT_SECRET.encode()
-    if env.GRAVYVALET_ENCRYPT_SECRET
-    else b"this is fine"
+GRAVYVALET_ENCRYPT_SECRET: bytes | None = (
+    env.GRAVYVALET_ENCRYPT_SECRET.encode() if env.GRAVYVALET_ENCRYPT_SECRET else None
 )
 GRAVYVALET_ENCRYPT_SECRET_PRIORS: tuple[bytes, ...] = tuple(
     _prior.encode() for _prior in env.GRAVYVALET_ENCRYPT_SECRET_PRIORS

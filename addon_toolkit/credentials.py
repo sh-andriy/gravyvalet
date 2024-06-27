@@ -1,3 +1,6 @@
+"""dataclasses for common shapes of credentials
+"""
+
 import dataclasses
 import typing
 

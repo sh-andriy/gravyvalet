@@ -23,9 +23,14 @@ __all__ = (
 
 
 class AddonOperationType(enum.Enum):
-    REDIRECT = "redirect"  # gravyvalet refers you somewhere helpful
-    IMMEDIATE = "immediate"  # gravyvalet does a simple act, waiting to respond until done (success or problem)
-    EVENTUAL = "eventual"  # gravyvalet starts a potentially long-running act, responding immediately with status
+    """each addon operation has one of these behaviors"""
+
+    REDIRECT = "redirect"
+    """gravyvalet refers you somewhere helpful"""
+    IMMEDIATE = "immediate"
+    """gravyvalet does a simple act, waiting to respond until done (success or problem)"""
+    EVENTUAL = "eventual"
+    """gravyvalet starts a potentially long-running act, responding immediately with status"""
 
 
 @dataclasses.dataclass(frozen=True)

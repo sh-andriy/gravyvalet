@@ -1,1 +1,3 @@
-__all__ = ()
+"""
+.. include:: README.md
+"""

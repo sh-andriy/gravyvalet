@@ -1,3 +1,8 @@
+"""for defining decorators that attach declarative metadata without modifying the decorated object
+
+"declarative" + "decorator" = "declarator"
+"""
+
 import dataclasses
 import weakref
 from typing import (
@@ -14,7 +19,7 @@ DeclarationDataclass = TypeVar("DeclarationDataclass")
 
 @dataclasses.dataclass
 class Declarator(Generic[DeclarationDataclass]):
-    """Declarator: add declarative metadata in python using decorators and dataclasses
+    """Declarator: declarative metadata using decorators and dataclasses
 
     define a dataclass with fields you want declared in your decorator, plus a field
     to hold the object of declaration:

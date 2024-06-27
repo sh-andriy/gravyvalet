@@ -10,3 +10,6 @@ flake8
 black==24.*
 isort
 pre-commit
+
+# building static docs
+pdoc==14.5.1

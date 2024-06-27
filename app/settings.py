@@ -186,6 +186,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
+STATIC_ROOT = BASE_DIR / "static"
 STATIC_URL = "/static/"
 
 OSF_SENSITIVE_DATA_SECRET = env.OSF_SENSITIVE_DATA_SECRET

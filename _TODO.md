@@ -9,23 +9,19 @@
 - concepts and relationships
 - sequence diagrams
 
-as currently implemented
+addon operation invocation thru gravyvalet (as currently implemented)
 ```mermaid
 sequenceDiagram
     participant browser
-    Box #badbee *.osf.io
+    Box cornflowerblue *.osf.io
         participant gravyvalet
         participant osf-api
     end
     Note over browser: browsing files on osf, say
-    browser->>gravyvalet: request directory listing
+    browser->>gravyvalet: request directory listing (create an addon operation invocation)
     gravyvalet->>osf-api: who is this?
-    alt no one
-        osf-api->>gravyvalet: no one
-    else some one
-        osf-api->>gravyvalet: this is who
-    end
-    gravyvalet->>osf-api: can they do what they're asking to?
+    osf-api->>gravyvalet: this is who
+    gravyvalet->>osf-api: may they do what they're asking to?
     alt no
         osf-api->>gravyvalet: no
         gravyvalet->>browser: no
@@ -38,34 +34,55 @@ sequenceDiagram
     end
 ```
 
-hypothetical world where waterbutler talks to gravyvalet... is this any better?
+download a file thru waterbutler, with get_auth and gravyvalet (as currently implemented)
 ```mermaid
 sequenceDiagram
     participant browser
-    Box #badbee *.osf.io
+    Box cornflowerblue *.osf.io
         participant waterbutler
         participant gravyvalet
         participant osf-api
     end
     browser->>waterbutler: request file
-    waterbutler>>gravyvalet: request gravy
+    waterbutler->>osf-v1: get_auth
+    alt no
+        osf-v1->>waterbutler: no
+        waterbutler->>browser: no
+    else yes
+        osf-v1->>gravyvalet: request gravy
+        gravyvalet->>osf-v1: serve gravy
+        osf-v1->>waterbutler: credentials and config
+        waterbutler->>external service: request file
+        external service->>waterbutler: serve file
+        waterbutler->>browser: serve file
+    end
+```
+
+hypothetical world where waterbutler talks to gravyvalet... is this better than get_auth?
+```mermaid
+sequenceDiagram
+    participant browser
+    Box cornflowerblue *.osf.io
+        participant waterbutler
+        participant gravyvalet
+        participant osf-api
+    end
+    browser->>waterbutler: request file
+    waterbutler->>gravyvalet: request gravy
     gravyvalet->>osf-api: who is this?
     osf-api->>gravyvalet: this is who
-    gravyvalet->>osf-api: can they do what they're asking to?
+    gravyvalet->>osf-api: may they do what they're asking to?
     alt no
         osf-api->>gravyvalet: no
-        gravyvalet->>browser: no
+        gravyvalet->>waterbutler: no
+        waterbutler->>browser: no
     else yes
         osf-api->>gravyvalet: yes
-        gravyvalet->>external-service: request directory listing
-        external-service->>gravyvalet: serve directory listing
-        Note over gravyvalet: translate listing into interoperable format
-        gravyvalet->>browser: serve directory listing
+        gravyvalet->>waterbutler: serve gravy
+        waterbutler->>external service: request file
+        external service->>waterbutler: serve file
+        waterbutler->>browser: serve file
     end
-    gravyvalet->>waterbutler: serve gravy
-    waterbutler>>external service: request file
-    external service->>waterbutler: serve file
-    waterbutler>>browser: serve file
 ```
 
 

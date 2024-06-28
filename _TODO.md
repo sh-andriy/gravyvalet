@@ -9,37 +9,63 @@
 - concepts and relationships
 - sequence diagrams
 
+as currently implemented
 ```mermaid
 sequenceDiagram
-    browser->>wb: request file
-    wb->>gv: request gravy
-    gv->>wb: serve gravy
-    wb->>external service: request file
-    external service->>wb: serve file
-    wb->>browser: serve file
-```
-
-```mermaid
-sequenceDiagram
-    Box Blue *.osf.io
-        participant gv
+    participant browser
+    Box #badbee *.osf.io
+        participant gravyvalet
         participant osf-api
     end
     Note over browser: browsing files on osf, say
-    browser->>gv: request directory listing
-    gv->>osf-api: who is this?
-    osf-api->>gv: this is who
-    gv->>osf-api: can they do what they're asking to?
-    alt no
-        osf-api->>gv: no
-        gv->>browser: no
-    else yes
-        osf-api->>gv: yes
-        gv->>external-service: request directory listing
-        external-service->>gv: serve directory listing
-        Note over gv: translate listing into interoperable format
-        gv->>browser: serve directory listing
+    browser->>gravyvalet: request directory listing
+    gravyvalet->>osf-api: who is this?
+    alt no one
+        osf-api->>gravyvalet: no one
+    else some one
+        osf-api->>gravyvalet: this is who
     end
+    gravyvalet->>osf-api: can they do what they're asking to?
+    alt no
+        osf-api->>gravyvalet: no
+        gravyvalet->>browser: no
+    else yes
+        osf-api->>gravyvalet: yes
+        gravyvalet->>external-service: request directory listing
+        external-service->>gravyvalet: serve directory listing
+        Note over gravyvalet: translate listing into interoperable format
+        gravyvalet->>browser: serve directory listing
+    end
+```
+
+hypothetical world where waterbutler talks to gravyvalet... is this any better?
+```mermaid
+sequenceDiagram
+    participant browser
+    Box #badbee *.osf.io
+        participant waterbutler
+        participant gravyvalet
+        participant osf-api
+    end
+    browser->>waterbutler: request file
+    waterbutler>>gravyvalet: request gravy
+    gravyvalet->>osf-api: who is this?
+    osf-api->>gravyvalet: this is who
+    gravyvalet->>osf-api: can they do what they're asking to?
+    alt no
+        osf-api->>gravyvalet: no
+        gravyvalet->>browser: no
+    else yes
+        osf-api->>gravyvalet: yes
+        gravyvalet->>external-service: request directory listing
+        external-service->>gravyvalet: serve directory listing
+        Note over gravyvalet: translate listing into interoperable format
+        gravyvalet->>browser: serve directory listing
+    end
+    gravyvalet->>waterbutler: serve gravy
+    waterbutler>>external service: request file
+    external service->>waterbutler: serve file
+    waterbutler>>browser: serve file
 ```
 
 
@@ -58,7 +84,7 @@ sequenceDiagram
 
 ## how-to/new_storage_imp.md
 - implementing imp
-- required changes to wb? (with mention of ideal "none")
+- required changes to waterbutler? (with mention of ideal "none")
 
 ## how-to/key_rotation.md
 - credentials encryption overview

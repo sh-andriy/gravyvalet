@@ -211,7 +211,7 @@ class TestHmacApiAuth(APITestCase):
         )
         self.assertTrue(HTTPStatus(_response.status_code).is_success)
 
-    def test_get_waterbutler_config__error__invalid_signature(self):
+    def test_hmac_error__invalid_signature(self):
         request_url = reverse(
             "configured-storage-addons-detail",
             kwargs={"pk": self._addon.pk},
@@ -231,7 +231,7 @@ class TestHmacApiAuth(APITestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
-    def test_get_waterbutler_config__error__expired_header(self):
+    def test_hmac_error__expired_header(self):
         request_url = reverse(
             "configured-storage-addons-detail",
             kwargs={"pk": self._addon.pk},
@@ -252,7 +252,7 @@ class TestHmacApiAuth(APITestCase):
         response = self.client.get(request_url, headers=headers)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
-    def test_get_waterbutler_config__error__future_header(self):
+    def test_hmac_error__future_header(self):
         request_url = reverse(
             "configured-storage-addons-detail",
             kwargs={"pk": self._addon.pk},

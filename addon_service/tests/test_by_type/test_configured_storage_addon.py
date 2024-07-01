@@ -1,11 +1,5 @@
 import base64
-from datetime import (
-    UTC,
-    datetime,
-    timedelta,
-)
 from http import HTTPStatus
-from unittest import mock
 
 from django.conf import settings
 from django.test import TestCase
@@ -189,9 +183,9 @@ class TestWBConfigRetrieval(APITestCase):
         cls._user = cls._configured_storage_addon.account_owner
         cls._external_service = cls._configured_storage_addon.external_service
 
-    def test_get_waterbutler_config(self):
+    def test_get_waterbutler_credentials(self):
         request_url = reverse(
-            "configured-storage-addons-waterbutler-config",
+            "configured-storage-addons-waterbutler-credentials",
             kwargs={
                 "pk": self._configured_storage_addon.pk,
             },
@@ -205,84 +199,26 @@ class TestWBConfigRetrieval(APITestCase):
             ),
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(response.json()["data"]["type"], "waterbutler-config")
+        self.assertEqual(response.json()["data"]["type"], "waterbutler-credentials")
 
-        with self.subTest("Confirm Credentials"):
-            self.assertEqual(response.data["credentials"], {"token": "access"})
-        with self.subTest("Confirm Settings"):
-            root_folder = self._configured_storage_addon.root_folder
-            self.assertEqual(
-                response.data["settings"],
-                {
-                    "max_upload_mb": self._external_service.max_upload_mb,
-                    "connected_root_id": root_folder,
-                    "external_account_id": "",
-                    "external_api_url": self._external_service.api_base_url,
-                    "imp_name": "BLARG",
-                },
+        self.assertEqual(response.data["credentials"], {"token": "access"})
+
+    def test_get_waterbutler_credentials__error__no_headers(self):
+        # credentials request requires HMAC-signed headers
+        # Cookie + OSF-side permissions will not suffice
+        self.client.cookies[settings.USER_REFERENCE_COOKIE] = "some auth"
+        _mock_osf = MockOSF()
+        _mock_osf.configure_user_role(
+            self._user.user_uri, self._configured_storage_addon.resource_uri, "admin"
+        )
+        request_url = reverse(
+            "configured-storage-addons-waterbutler-credentials",
+            kwargs={
+                "pk": self._configured_storage_addon.pk,
+            },
+        )
+        with _mock_osf.mocking():
+            response = self.client.get(
+                request_url,
             )
-
-    def test_get_waterbutler_config__error__invalid_signature(self):
-        request_url = reverse(
-            "configured-storage-addons-waterbutler-config",
-            kwargs={
-                "pk": self._configured_storage_addon.pk,
-            },
-        )
-        response = self.client.get(
-            request_url,
-            headers=hmac_utils.make_signed_headers(
-                request_url=request_url,
-                request_method="GET",
-                hmac_key="she'sabadbadkey",
-            ),
-        )
-        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
-
-    def test_get_waterbutler_config__error__no_headers(self):
-        request_url = reverse(
-            "configured-storage-addons-waterbutler-config",
-            kwargs={
-                "pk": self._configured_storage_addon.pk,
-            },
-        )
-        response = self.client.get(
-            request_url,
-        )
-        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
-
-    def test_get_waterbutler_config__error__expired_header(self):
-        request_url = reverse(
-            "configured-storage-addons-waterbutler-config",
-            kwargs={
-                "pk": self._configured_storage_addon.pk,
-            },
-        )
-        five_minutes_ago = datetime.now(UTC) - timedelta(minutes=5)
-        with mock.patch("addon_service.common.hmac.datetime") as mock_datetime:
-            mock_datetime.now.return_value = five_minutes_ago
-            headers = hmac_utils.make_signed_headers(
-                request_url=request_url,
-                request_method="GET",
-                hmac_key=settings.OSF_HMAC_KEY,
-            )
-        response = self.client.get(request_url, headers=headers)
-        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
-
-    def test_get_waterbutler_config__error__future_header(self):
-        request_url = reverse(
-            "configured-storage-addons-waterbutler-config",
-            kwargs={
-                "pk": self._configured_storage_addon.pk,
-            },
-        )
-        five_minutes_from_now = datetime.now(UTC) + timedelta(minutes=5)
-        with mock.patch("addon_service.common.hmac.datetime") as mock_datetime:
-            mock_datetime.now.return_value = five_minutes_from_now
-            headers = hmac_utils.make_signed_headers(
-                request_url=request_url,
-                request_method="GET",
-                hmac_key=settings.OSF_HMAC_KEY,
-            )
-        response = self.client.get(request_url, headers=headers)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

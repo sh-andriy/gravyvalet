@@ -130,6 +130,7 @@ class TestExternalStorageServiceViewSet(TestCase):
                     "id",
                     "addon_imp",
                     "url",
+                    "wb_key",
                 },
             )
         with self.subTest("Confirm expected relationships"):

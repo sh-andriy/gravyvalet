@@ -36,6 +36,9 @@ class ExternalStorageService(AddonsServiceBaseModel):
     max_upload_mb = models.IntegerField(null=False)
     supported_scopes = ArrayField(models.CharField(), null=True, blank=True)
     api_base_url = models.URLField(blank=True, default="")
+    # Used by OSF to map to legacy Addon Configs when generating Waterbutler requests
+    # Distinct from `display_name` to avoid over-coupling
+    wb_key = models.CharField(null=False, blank=True, default="")
 
     oauth2_client_config = models.ForeignKey(
         "addon_service.OAuth2ClientConfig",

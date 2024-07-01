@@ -39,4 +39,5 @@ class ExternalStorageServiceSerializer(serializers.HyperlinkedModelSerializer):
             "max_upload_mb",
             "display_name",
             "url",
+            "wb_key",
         ]

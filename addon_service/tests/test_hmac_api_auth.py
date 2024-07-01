@@ -1,3 +1,8 @@
+from datetime import (
+    UTC,
+    datetime,
+    timedelta,
+)
 from http import HTTPStatus
 from typing import Iterable
 from unittest import mock
@@ -189,9 +194,7 @@ class TestHmacApiAuth(APITestCase):
     def test_valid_hmac_auth(self):
         _request_url = reverse(
             "configured-storage-addons-detail",
-            kwargs={
-                "pk": self._addon.pk,
-            },
+            kwargs={"pk": self._addon.pk},
         )
         _response = self.client.get(
             _request_url,
@@ -207,3 +210,65 @@ class TestHmacApiAuth(APITestCase):
             ),
         )
         self.assertTrue(HTTPStatus(_response.status_code).is_success)
+
+    def test_hmac_error__invalid_signature(self):
+        request_url = reverse(
+            "configured-storage-addons-detail",
+            kwargs={"pk": self._addon.pk},
+        )
+        response = self.client.get(
+            request_url,
+            headers=hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+                hmac_key="she'sabadbadkey",
+                additional_headers={
+                    osf._OSF_HMAC_USER_HEADER: self._user.user_uri,
+                    osf._OSF_HMAC_RESOURCE_HEADER: self._resource.resource_uri,
+                    osf._OSF_HMAC_PERMISSIONS_HEADER: osf.OSFPermission.READ,
+                },
+            ),
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_hmac_error__expired_header(self):
+        request_url = reverse(
+            "configured-storage-addons-detail",
+            kwargs={"pk": self._addon.pk},
+        )
+        five_minutes_ago = datetime.now(UTC) - timedelta(minutes=5)
+        with mock.patch("addon_service.common.hmac.datetime") as mock_datetime:
+            mock_datetime.now.return_value = five_minutes_ago
+            headers = hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+                hmac_key=settings.OSF_HMAC_KEY,
+                additional_headers={
+                    osf._OSF_HMAC_USER_HEADER: self._user.user_uri,
+                    osf._OSF_HMAC_RESOURCE_HEADER: self._resource.resource_uri,
+                    osf._OSF_HMAC_PERMISSIONS_HEADER: osf.OSFPermission.READ,
+                },
+            )
+        response = self.client.get(request_url, headers=headers)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_hmac_error__future_header(self):
+        request_url = reverse(
+            "configured-storage-addons-detail",
+            kwargs={"pk": self._addon.pk},
+        )
+        five_minutes_from_now = datetime.now(UTC) + timedelta(minutes=5)
+        with mock.patch("addon_service.common.hmac.datetime") as mock_datetime:
+            mock_datetime.now.return_value = five_minutes_from_now
+            headers = hmac_utils.make_signed_headers(
+                request_url=request_url,
+                request_method="GET",
+                hmac_key=settings.OSF_HMAC_KEY,
+                additional_headers={
+                    osf._OSF_HMAC_USER_HEADER: self._user.user_uri,
+                    osf._OSF_HMAC_RESOURCE_HEADER: self._resource.resource_uri,
+                    osf._OSF_HMAC_PERMISSIONS_HEADER: osf.OSFPermission.READ,
+                },
+            )
+        response = self.client.get(request_url, headers=headers)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

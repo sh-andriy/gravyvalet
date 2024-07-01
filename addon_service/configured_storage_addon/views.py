@@ -12,7 +12,7 @@ from addon_service.common.permissions import (
     SessionUserMayConnectAddon,
 )
 from addon_service.common.viewsets import RetrieveWriteDeleteViewSet
-from addon_service.common.waterbutler_compat import WaterButlerConfigurationSerializer
+from addon_service.common.waterbutler_compat import WaterButlerCredentialsSerializer
 
 from .models import ConfiguredStorageAddon
 from .serializers import ConfiguredStorageAddonSerializer
@@ -30,7 +30,7 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteDeleteViewSet):
                 return [IsAuthenticated(), SessionUserIsOwner()]
             case "create":
                 return [IsAuthenticated(), SessionUserMayConnectAddon()]
-            case "get_wb_config":
+            case "get_wb_credentials":
                 return [IsValidHMACSignedRequest()]
             case None:
                 return super().get_permissions()
@@ -42,12 +42,12 @@ class ConfiguredStorageAddonViewSet(RetrieveWriteDeleteViewSet):
     @action(
         detail=True,
         methods=[HTTPMethod.GET],
-        url_name="waterbutler-config",
-        url_path="waterbutler-config",
+        url_name="waterbutler-credentials",
+        url_path="waterbutler-credentials",
     )
-    def get_wb_config(self, request, pk=None):
+    def get_wb_credentials(self, request, pk=None):
         addon = self.get_object()
         if addon.external_service.credentials_format is CredentialsFormats.OAUTH2:
             addon.base_account.refresh_oauth_access_token__blocking()
-        self.resource_name = "waterbutler-config"  # for the jsonapi resource type
-        return Response(WaterButlerConfigurationSerializer(addon).data)
+        self.resource_name = "waterbutler-credentials"  # for the jsonapi resource type
+        return Response(WaterButlerCredentialsSerializer(addon).data)

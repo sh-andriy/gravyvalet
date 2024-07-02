@@ -204,25 +204,27 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                 return self.oauth2_auth_url
             case CredentialsFormats.OAUTH1A:
                 return self.oauth1_auth_url
+        return None
 
     @property
-    def oauth1_auth_url(self) -> str:
+    def oauth1_auth_url(self) -> str | None:
         client_config = self.external_service.oauth1_client_config
-        if self._temporary_oauth1_credentials:
+        if client_config and self._temporary_oauth1_credentials:
             return oauth1_utils.build_auth_url(
                 auth_uri=client_config.auth_url,
-                temporary_oauth_token=self.temporary_oauth1_credentials.oauth_token,
+                temporary_oauth_token=self._temporary_oauth1_credentials.oauth_token,
             )
+        return None
 
     @property
     def oauth2_auth_url(self) -> str | None:
-        state_token = self.oauth2_token_metadata.state_token
-        if not state_token:
+        _token_metadata = self.oauth2_token_metadata
+        if not _token_metadata or not _token_metadata.state_token:
             return None
         return oauth2_utils.build_auth_url(
             auth_uri=self.external_service.oauth2_client_config.auth_uri,
             client_id=self.external_service.oauth2_client_config.client_id,
-            state_token=state_token,
+            state_token=_token_metadata.state_token,
             authorized_scopes=self.oauth2_token_metadata.authorized_scopes,
             redirect_uri=self.external_service.oauth2_client_config.auth_callback_url,
         )

@@ -163,7 +163,10 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         Returns None if the ExternalStorageService does not support OAuth2
         or if the initial credentials exchange has already ocurred.
         """
-        if self.credentials_format is not CredentialsFormats.OAUTH2:
+        if (
+            self.credentials_format is not CredentialsFormats.OAUTH2
+            or self.oauth2_token_metadata_id is None
+        ):
             return None
 
         state_token = self.oauth2_token_metadata.state_token

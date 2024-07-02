@@ -56,6 +56,7 @@ def _make_post_payload(
             "attributes": {
                 "authorized_capabilities": capabilities,
                 "api_base_url": api_root,
+                "initiate_oauth": True,
             },
             "relationships": {
                 "external_storage_service": {

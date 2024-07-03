@@ -3,7 +3,9 @@ version: "3.8"
 services:
 
   gravyvalet:
-    build: .
+    build:
+      context: .
+      target: gv-local
     restart: unless-stopped
     command: python manage.py runserver 0.0.0.0:8004
     environment: &gv_environment
@@ -31,7 +33,9 @@ services:
       - postgres
 
   celeryworker:
-    build: .
+    build:
+      context: .
+      target: gv-local
     restart: unless-stopped
     command: /usr/local/bin/celery --app app worker --uid daemon -l INFO
     depends_on:

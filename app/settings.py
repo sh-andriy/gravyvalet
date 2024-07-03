@@ -1,6 +1,22 @@
+import logging
 from pathlib import Path
 
 from app import env
+
+
+_logger = logging.getLogger(__name__)
+
+
+if env.SENTRY_DSN:
+    try:
+        import sentry_sdk
+    except ImportError:
+        _logger.warning("SENTRY_DSN defined but sentry_sdk not installed!")
+    else:
+        sentry_sdk.init(
+            dsn=env.SENTRY_DSN,
+            environment=env.OSF_BASE_URL,
+        )
 
 
 SECRET_KEY = env.SECRET_KEY

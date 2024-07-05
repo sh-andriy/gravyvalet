@@ -77,7 +77,6 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     )
 
     is_oauth1_ready = models.BooleanField(
-        "addon_service.OAuth2TokenMetadata",
         null=True,
         blank=True,
     )

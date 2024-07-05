@@ -1,24 +1,15 @@
 from http import HTTPStatus
 
-from asgiref.sync import (
-    async_to_sync,
-    sync_to_async,
-)
+from asgiref.sync import async_to_sync
 from django.http import HttpResponse
 
 from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
-from addon_service.common.aiohttp_session import get_singleton_client_session
 from addon_service.common.known_imps import AddonImpNumbers
-from addon_service.common.network import GravyvaletHttpRequestor
-from addon_service.models import (
-    OAuth2ClientConfig,
-    OAuth2TokenMetadata,
-)
 from addon_service.oauth1.utils import get_access_token
+from addon_service.oauth_utlis import update_external_account_ids
 
 
 def oauth1_callback_view(request):
-    print(f"{request.headers}=")
     oauth_token = request.GET["oauth_token"]
     oauth_verifier = request.GET["oauth_verifier"]
 
@@ -48,29 +39,4 @@ def update_account_with_additional_data(account: AuthorizedStorageAccount, data:
         case AddonImpNumbers.ZOTERO_ORG:
             account.external_account_id = data["userID"]
     account.save()
-    _update_external_account_ids([account])
-
-
-###
-# module-private helpers
-
-
-@sync_to_async
-def _resolve_state_token(
-    state_token: str,
-) -> tuple[OAuth2TokenMetadata, OAuth2ClientConfig]:
-    _token_metadata = OAuth2TokenMetadata.objects.get_by_state_token(state_token)
-    return (_token_metadata, _token_metadata.client_details)
-
-
-@async_to_sync
-async def _update_external_account_ids(accounts):
-    for _account in accounts:
-        _account.external_account_id = await _account.imp_cls.get_external_account_id(
-            network=GravyvaletHttpRequestor(
-                client_session=await get_singleton_client_session(),
-                prefix_url=_account.external_service.api_base_url,
-                account=_account,
-            ),
-        )
-        await sync_to_async(_account.save)()
+    async_to_sync(update_external_account_ids)([account])

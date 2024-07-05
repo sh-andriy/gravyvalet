@@ -28,7 +28,10 @@ from addon_toolkit.credentials import (
 
 
 VALID_CREDENTIALS_FORMATS = set(CredentialsFormats) - {CredentialsFormats.UNSPECIFIED}
-NON_OAUTH_FORMATS = VALID_CREDENTIALS_FORMATS - {CredentialsFormats.OAUTH2}
+NON_OAUTH_FORMATS = VALID_CREDENTIALS_FORMATS - {
+    CredentialsFormats.OAUTH2,
+    CredentialsFormats.OAUTH1A,
+}
 
 MOCK_CREDENTIALS = {
     CredentialsFormats.OAUTH2: None,

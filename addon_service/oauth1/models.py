@@ -1,19 +1,6 @@
-from enum import (
-    IntEnum,
-    auto,
-    unique,
-)
-
 from django.db import models
 
 from addon_service.common.base_model import AddonsServiceBaseModel
-
-
-@unique
-class OAuth1State(IntEnum):
-    START = auto()
-    WAITING_FOR_USER_AUTHORISATION = auto()
-    READY = auto()
 
 
 class OAuth1ClientConfig(AddonsServiceBaseModel):

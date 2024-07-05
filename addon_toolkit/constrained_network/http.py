@@ -61,7 +61,7 @@ class HttpRequestor(typing.Protocol):
     def response_info_cls(self) -> type[HttpResponseInfo]: ...
 
     # abstract method for subclasses
-    def do_send(
+    def _do_send(
         self, request: HttpRequestInfo
     ) -> contextlib.AbstractAsyncContextManager[HttpResponseInfo]: ...
 
@@ -79,7 +79,7 @@ class HttpRequestor(typing.Protocol):
             query=(query if isinstance(query, Multidict) else Multidict(query)),
             headers=(headers if isinstance(headers, Multidict) else Multidict(headers)),
         )
-        async with self.do_send(_request_info) as _response:
+        async with self._do_send(_request_info) as _response:
             yield _response
 
     # TODO: streaming send/receive (only if/when needed)

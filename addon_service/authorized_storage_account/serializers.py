@@ -95,8 +95,14 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             authorized_account.initiate_oauth2_flow(
                 validated_data.get("authorized_scopes")
             )
+        elif external_service.credentials_format is CredentialsFormats.OAUTH1A:
+            authorized_account.initiate_oauth1_flow()
+            self.context["request"].session[
+                "oauth1a_account_id"
+            ] = authorized_account.pk
         else:
             authorized_account.credentials = validated_data["credentials"]
+
         try:
             authorized_account.save()
         except ModelValidationError as e:

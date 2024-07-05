@@ -10,7 +10,7 @@ from addon_service.models import (
     OAuth2ClientConfig,
     OAuth2TokenMetadata,
 )
-from addon_service.oauth.utils import get_initial_access_token
+from addon_service.oauth2.utils import get_initial_access_token
 
 
 @transaction.non_atomic_requests  # async views and ATOMIC_REQUESTS do not mix

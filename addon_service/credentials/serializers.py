@@ -9,6 +9,7 @@ from addon_service.common.credentials_formats import CredentialsFormats
 SUPPORTED_CREDENTIALS_FORMATS = set(CredentialsFormats) - {
     CredentialsFormats.UNSPECIFIED,
     CredentialsFormats.OAUTH2,
+    CredentialsFormats.OAUTH1A,
 }
 
 

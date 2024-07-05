@@ -96,7 +96,7 @@ class Command(BaseCommand):
         )
         _account.initiate_oauth2_flow()
         self.stdout.write(
-            self.style.SUCCESS("set up for oauth! now do the flow in a browser:")
+            self.style.SUCCESS("set up for oauth2! now do the flow in a browser:")
         )
         self.stdout.write(_account.auth_url)
         self.stdout.write(

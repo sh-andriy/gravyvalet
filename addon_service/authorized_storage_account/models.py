@@ -14,8 +14,9 @@ from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
 from addon_service.common.validators import validate_addon_capability
 from addon_service.credentials.models import ExternalCredentials
-from addon_service.oauth import utils as oauth_utils
-from addon_service.oauth.models import (
+from addon_service.oauth1 import utils as oauth1_utils
+from addon_service.oauth2 import utils as oauth2_utils
+from addon_service.oauth2.models import (
     OAuth2ClientConfig,
     OAuth2TokenMetadata,
 )
@@ -27,7 +28,6 @@ from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class AuthorizedStorageAccountManager(models.Manager):
-
     def active(self):
         """filter to accounts owned by non-deactivated users"""
         return self.get_queryset().filter(account_owner__deactivated__isnull=True)
@@ -74,6 +74,12 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         null=True,
         blank=True,
         related_name="authorized_storage_accounts",
+    )
+
+    is_oauth1_ready = models.BooleanField(
+        "addon_service.OAuth2TokenMetadata",
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -163,13 +169,27 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         Returns None if the ExternalStorageService does not support OAuth2
         or if the initial credentials exchange has already ocurred.
         """
-        if self.credentials_format is not CredentialsFormats.OAUTH2:
-            return None
+        match self.credentials_format:
+            case CredentialsFormats.OAUTH2:
+                return self.oauth2_auth_url
+            case CredentialsFormats.OAUTH1A:
+                return self.oauth1_auth_url
 
+    @property
+    def oauth1_auth_url(self):
+        client_config = self.external_service.oauth1_client_config
+        if self.credentials:
+            return oauth1_utils.build_auth_url(
+                auth_uri=client_config.auth_url,
+                request_token=self.credentials.oauth_token,
+            )
+
+    @property
+    def oauth2_auth_url(self):
         state_token = self.oauth2_token_metadata.state_token
         if not state_token:
             return None
-        return oauth_utils.build_auth_url(
+        return oauth2_utils.build_auth_url(
             auth_uri=self.external_service.oauth2_client_config.auth_uri,
             client_id=self.external_service.oauth2_client_config.client_id,
             state_token=state_token,
@@ -190,14 +210,28 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         return self.external_service.addon_imp.imp_cls
 
     @transaction.atomic
+    def initiate_oauth1_flow(self):
+        if self.credentials_format is not CredentialsFormats.OAUTH1A:
+            raise ValueError("Cannot initiate OAuth1 flow for non-OAuth1 credentials")
+        client_config = self.external_service.oauth1_client_config
+        request_token_result, _ = async_to_sync(oauth1_utils.get_request_token)(
+            client_config.request_token_url,
+            client_config.client_key,
+            client_config.client_secret,
+        )
+        self.is_oauth1_ready = False
+        self.credentials = request_token_result
+        self.save()
+
+    @transaction.atomic
     def initiate_oauth2_flow(self, authorized_scopes=None):
         if self.credentials_format is not CredentialsFormats.OAUTH2:
-            raise ValueError("Cannot initaite OAuth flow for non-OAuth credentials")
+            raise ValueError("Cannot initiate OAuth2 flow for non-OAuth2 credentials")
         self.oauth2_token_metadata = OAuth2TokenMetadata.objects.create(
             authorized_scopes=(
                 authorized_scopes or self.external_service.supported_scopes
             ),
-            state_nonce=oauth_utils.generate_state_nonce(),
+            state_nonce=oauth2_utils.generate_state_nonce(),
         )
         self.save()
 
@@ -249,13 +283,14 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             )
 
     ###
-    # async functions for use in oauth callback flows
+    # async functions for use in oauth2 callback flows
 
     async def refresh_oauth_access_token(self) -> None:
-        _oauth_client_config, _oauth_token_metadata = (
-            await self._load_client_config_and_token_metadata()
-        )
-        _fresh_token_result = await oauth_utils.get_refreshed_access_token(
+        (
+            _oauth_client_config,
+            _oauth_token_metadata,
+        ) = await self._load_client_config_and_token_metadata()
+        _fresh_token_result = await oauth2_utils.get_refreshed_access_token(
             token_endpoint_url=_oauth_client_config.token_endpoint_url,
             refresh_token=_oauth_token_metadata.refresh_token,
             auth_callback_url=_oauth_client_config.auth_callback_url,
@@ -263,7 +298,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             client_secret=_oauth_client_config.client_secret,
         )
         await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
-        await sync_to_async(self.refresh_from_db)()
+        await self.arefresh_from_db()
 
     refresh_oauth_access_token__blocking = async_to_sync(refresh_oauth_access_token)
 

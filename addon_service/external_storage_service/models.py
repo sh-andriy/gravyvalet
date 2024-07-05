@@ -12,6 +12,7 @@ from addon_service.common.validators import (
     validate_service_type,
     validate_storage_imp_number,
 )
+from addon_service.oauth1.models import OAuth1ClientConfig
 
 
 class ExternalStorageService(AddonsServiceBaseModel):
@@ -39,6 +40,14 @@ class ExternalStorageService(AddonsServiceBaseModel):
     # Used by OSF to map to legacy Addon Configs when generating Waterbutler requests
     # Distinct from `display_name` to avoid over-coupling
     wb_key = models.CharField(null=False, blank=True, default="")
+
+    oauth1_client_config: OAuth1ClientConfig = models.ForeignKey(
+        "addon_service.OAuth1ClientConfig",
+        on_delete=models.SET_NULL,
+        related_name="external_storage_services",
+        null=True,
+        blank=True,
+    )
 
     oauth2_client_config = models.ForeignKey(
         "addon_service.OAuth2ClientConfig",

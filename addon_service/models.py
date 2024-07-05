@@ -1,4 +1,4 @@
-""" Import models here so they auto-detect for makemigrations """
+"""Import models here so they auto-detect for makemigrations"""
 
 from addon_service.addon_imp.models import AddonImpModel
 from addon_service.addon_operation.models import AddonOperationModel
@@ -7,7 +7,8 @@ from addon_service.authorized_storage_account.models import AuthorizedStorageAcc
 from addon_service.configured_storage_addon.models import ConfiguredStorageAddon
 from addon_service.credentials.models import ExternalCredentials
 from addon_service.external_storage_service.models import ExternalStorageService
-from addon_service.oauth.models import (
+from addon_service.oauth1.models import OAuth1ClientConfig
+from addon_service.oauth2.models import (
     OAuth2ClientConfig,
     OAuth2TokenMetadata,
 )
@@ -25,6 +26,7 @@ __all__ = (
     "ExternalStorageService",
     "OAuth2ClientConfig",
     "OAuth2TokenMetadata",
+    "OAuth1ClientConfig",
     "ResourceReference",
     "UserReference",
 )

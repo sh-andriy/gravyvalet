@@ -27,6 +27,29 @@ class AccessKeySecretKeyCredentials(Credentials):
     secret_key: str
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class OAuth1TokenCredentials:
+    oauth_token: str
+    oauth_token_secret: str
+    oauth_verifier: str | None = None
+
+    @classmethod
+    def from_dict(cls, payload: dict) -> "tuple[OAuth1TokenCredentials, dict]":
+        """
+        This method returns credentials constructed dict and dict with other attributes,
+        which may contain provider-specific useful info
+        """
+
+        return (
+            OAuth1TokenCredentials(
+                oauth_token=payload.pop("oauth_token"),
+                oauth_token_secret=payload.pop("oauth_token_secret"),
+                oauth_verifier=payload.pop("oauth_verifier", None),
+            ),
+            payload,
+        )
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class UsernamePasswordCredentials(Credentials):
     username: str

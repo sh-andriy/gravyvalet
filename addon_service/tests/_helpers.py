@@ -199,15 +199,6 @@ class MockServiceProvider:
         """Attach a DRF APIClient for making requests internally"""
         self._internal_client = client
 
-    @contextlib.asynccontextmanager
-    async def amocking(self):
-        client_session = await get_singleton_client_session()
-        with (
-            patch.object(client_session, "get", new=self._route_get),
-            patch.object(client_session, "post", new=self._route_post),
-        ):
-            yield self
-
     @contextlib.contextmanager
     def mocking(self):
         with patch(

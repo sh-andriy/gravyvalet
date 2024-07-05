@@ -76,7 +76,7 @@ async def _get_token(
 
 def _construct_params(params_to_encode: dict) -> str:
     return ",".join(
-        [f'{key}="{params_to_encode[key]}"' for key in sorted([*params_to_encode])]
+        [f'{key}="{value}"' for key, value in sorted(params_to_encode.items())]
     )
 
 

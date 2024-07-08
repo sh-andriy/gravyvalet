@@ -114,7 +114,7 @@ class MockOSF:
         return bool(required_permission.lower() in permissions)
 
 
-class MockExternalService:
+class MockOAuth2ExternalService:
     def __init__(self, external_service):
         self._static_access_token = None
         self._static_refresh_token = None
@@ -174,7 +174,7 @@ class MockExternalService:
 
 
 @dataclasses.dataclass
-class MockServiceProvider:
+class MockOAuth1ServiceProvider:
     _external_service: "ExternalStorageOAuth1ServiceFactory"
     _static_request_token: str
     _static_request_secret: str

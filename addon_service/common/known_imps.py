@@ -48,11 +48,6 @@ def get_imp_number(imp: type[AddonImp]) -> int:
 
 ###
 # Static registry of known addon implementations -- add new imps to the enums below
-class RegexEnum(enum.Enum):
-
-    @classmethod
-    def regex(cls):
-        return "(?:" + "|".join(cls) + ")"
 
 
 @enum.unique

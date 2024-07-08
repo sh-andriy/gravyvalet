@@ -49,7 +49,7 @@ class TestOAuth2Flow(APITestCase):
     def setUp(self):
         super().setUp()
         self.addCleanup(close_singleton_client_session__blocking)
-        self._mock_service = _helpers.MockExternalService(self._service)
+        self._mock_service = _helpers.MockOAuth2ExternalService(self._service)
         self._mock_service.configure_static_tokens(
             access=self.MOCK_ACCESS_TOKEN, refresh=self.MOCK_REFRESH_TOKEN
         )
@@ -110,7 +110,7 @@ class TestOAuth1AFlow(APITestCase):
     def setUp(self):
         super().setUp()
         self.addCleanup(close_singleton_client_session__blocking)
-        self._mock_service = _helpers.MockServiceProvider(
+        self._mock_service = _helpers.MockOAuth1ServiceProvider(
             _external_service=self._service,
             _static_request_token=self.MOCK_REQUEST_TOKEN,
             _static_request_secret=self.MOCK_REQUEST_TOKEN_SECRET,

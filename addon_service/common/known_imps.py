@@ -63,7 +63,7 @@ class KnownAddonImps(enum.Enum):
 
 @enum.unique
 @enum_names_same_as(KnownAddonImps)
-class AddonImpNumbers(enum.IntEnum):
+class AddonImpNumbers(enum.Enum):
     """Static mapping from each AddonImp name to a unique integer (for database use)"""
 
     BOX_DOT_COM = 1001

@@ -20,12 +20,12 @@ def oauth1_callback_view(request):
 
     oauth1_client_config = account.external_service.oauth1_client_config
     final_credentials, other_info = async_to_sync(get_access_token)(
-        oauth1_client_config.access_token_url,
-        oauth1_client_config.client_key,
-        oauth1_client_config.client_secret,
-        oauth_token,
-        account.credentials.oauth_token_secret,
-        oauth_verifier,
+        access_token_url=oauth1_client_config.access_token_url,
+        oauth_consumer_key=oauth1_client_config.client_key,
+        oauth_consumer_secret=oauth1_client_config.client_secret,
+        oauth_token=oauth_token,
+        oauth_token_secret=account.credentials.oauth_token_secret,
+        oauth_verifier=oauth_verifier,
     )
     account.credentials = final_credentials
     account.is_oauth1_ready = True

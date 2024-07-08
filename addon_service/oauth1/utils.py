@@ -76,7 +76,7 @@ async def _get_token(
 
 def _construct_params(params_to_encode: dict) -> str:
     return ",".join(
-        [f'{key}="{value}"' for key, value in sorted(params_to_encode.items())]
+        f'{key}="{value}"' for key, value in sorted(params_to_encode.items())
     )
 
 
@@ -104,7 +104,7 @@ def generate_signature(
     oauth_consumer_secret: str,
     oauth_token_secret: str | None = None,
 ) -> str:
-    params_str = "&".join([f"{key}={headers[key]}" for key in sorted([*headers])])
+    params_str = "&".join(f"{key}={value}" for key, value in sorted(headers.items()))
     signature_base = f"{http_method}&{quote_plus(url)}&{quote_plus(params_str)}"
     key = f"{oauth_consumer_secret}&{oauth_token_secret or ''}"
     hmac = HMAC(key.encode(), signature_base.encode(), sha1).digest()

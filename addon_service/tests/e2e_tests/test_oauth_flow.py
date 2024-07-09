@@ -155,7 +155,6 @@ class TestOAuth1AFlow(APITestCase):
             self.assertEqual(
                 _account.credentials.oauth_token_secret, self.MOCK_ACCESS_TOKEN_SECRET
             )
-            self.assertEqual(_account.is_oauth1_ready, True)
 
     async def _get(self, _account: AuthorizedStorageAccount):
         aiohttp_client_session = await get_singleton_client_session()

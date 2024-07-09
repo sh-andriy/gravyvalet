@@ -41,6 +41,7 @@ class OAuth1ClientConfigFactory(DjangoModelFactory):
         model = db.OAuth1ClientConfig
 
     auth_url = "https://api.example/auth/"
+    auth_callback_url = "https://api.example/auth/"
     access_token_url = "https://osf.example/oauth/access"
     request_token_url = "https://api.example.com/oauth/request"
     client_key = factory.Faker("word")
@@ -100,24 +101,13 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
 
 
 class ExternalStorageOAuth2ServiceFactory(ExternalStorageServiceFactory):
+    credentials_format = CredentialsFormats.OAUTH2
     oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)
 
 
 class ExternalStorageOAuth1ServiceFactory(ExternalStorageServiceFactory):
+    credentials_format = CredentialsFormats.OAUTH1A
     oauth1_client_config = factory.SubFactory(OAuth1ClientConfigFactory)
-
-    @classmethod
-    def _create(
-        cls,
-        model_class,
-        credentials_format=CredentialsFormats.OAUTH1A,
-        service_type=ServiceTypes.PUBLIC,
-        *args,
-        **kwargs,
-    ):
-        return super()._create(
-            model_class, credentials_format, service_type, *args, **kwargs
-        )
 
 
 class AuthorizedStorageAccountFactory(DjangoModelFactory):

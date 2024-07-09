@@ -15,6 +15,7 @@ from addon_service.models import (
     ExternalStorageService,
     UserReference,
 )
+from addon_service.osf_models.fields import encrypt_string
 from addon_service.serializer_fields import (
     CredentialsField,
     DataclassRelatedLinkField,
@@ -97,9 +98,9 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             )
         elif external_service.credentials_format is CredentialsFormats.OAUTH1A:
             authorized_account.initiate_oauth1_flow()
-            self.context["request"].session[
-                "oauth1a_account_id"
-            ] = authorized_account.pk
+            self.context["request"].session["oauth1a_account_id"] = encrypt_string(
+                authorized_account.pk
+            )
         else:
             authorized_account.credentials = validated_data["credentials"]
 

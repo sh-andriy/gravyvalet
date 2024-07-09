@@ -21,7 +21,7 @@ class CredentialsFormats(Enum):
             case CredentialsFormats.OAUTH2:
                 return credentials.AccessTokenCredentials
             case CredentialsFormats.OAUTH1A:
-                return credentials.OAuth1TokenCredentials
+                return credentials.OAuth1Credentials
             case CredentialsFormats.ACCESS_KEY_SECRET_KEY:
                 return credentials.AccessKeySecretKeyCredentials
             case CredentialsFormats.PERSONAL_ACCESS_TOKEN:

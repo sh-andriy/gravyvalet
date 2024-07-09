@@ -15,23 +15,23 @@ from urllib.parse import (
 from aiohttp import ContentTypeError
 
 from addon_service.common.aiohttp_session import get_singleton_client_session
-from addon_toolkit.credentials import OAuth1TokenCredentials
+from addon_toolkit.credentials import OAuth1Credentials
 from addon_toolkit.iri_utils import iri_with_query
 
 
 async def get_request_token(
-    request_token_url: str,
+    temporary_token_url: str,
     oauth_consumer_key: str,
     oauth_consumer_secret: str,
-) -> tuple[OAuth1TokenCredentials, dict]:
+) -> tuple[OAuth1Credentials, dict]:
     """
     Obtaining unauthorised request token needed to construct Authorization url
     https://oauth.net/core/1.0a/#auth_step1
     """
     signed_headers = construct_signed_headers(
-        request_token_url, oauth_consumer_key, oauth_consumer_secret
+        temporary_token_url, oauth_consumer_key, oauth_consumer_secret
     )
-    return await _get_token(request_token_url, signed_headers)
+    return await _get_token(temporary_token_url, signed_headers)
 
 
 async def get_access_token(
@@ -41,7 +41,7 @@ async def get_access_token(
     oauth_token: str,
     oauth_token_secret: str,
     oauth_verifier: str,
-) -> tuple[OAuth1TokenCredentials, dict]:
+) -> tuple[OAuth1Credentials, dict]:
     """
     Getting final access token needed to access protected resources from Service provider
 
@@ -59,7 +59,7 @@ async def get_access_token(
 
 async def _get_token(
     request_token_url, signed_headers
-) -> tuple[OAuth1TokenCredentials, dict]:
+) -> tuple[OAuth1Credentials, dict]:
     _client = await get_singleton_client_session()
     async with _client.post(
         request_token_url, headers=signed_headers
@@ -67,11 +67,11 @@ async def _get_token(
         if not HTTPStatus(_token_response.status).is_success:
             raise RuntimeError(await _token_response.text())
         try:
-            return OAuth1TokenCredentials.from_dict(await _token_response.json())
+            return OAuth1Credentials.from_dict(await _token_response.json())
         except ContentTypeError:
             raw_result = parse_qs(await _token_response.text())
             result_dict = {key: value[0] for key, value in raw_result.items() if value}
-            return OAuth1TokenCredentials.from_dict(result_dict)
+            return OAuth1Credentials.from_dict(result_dict)
 
 
 def _construct_params(params_to_encode: dict) -> str:
@@ -132,14 +132,14 @@ def construct_headers(
 def build_auth_url(
     *,
     auth_uri: str,
-    request_token: str,
+    temporary_oauth_token: str,
 ) -> str:
     """build a URL that will initiate authorization when visited by a user
 
     see https://www.rfc-editor.org/rfc/rfc6749.html#section-4.1.1
     """
     query_params = {
-        "oauth_token": request_token,
+        "oauth_token": temporary_oauth_token,
     }
     return iri_with_query(auth_uri, query_params)
 

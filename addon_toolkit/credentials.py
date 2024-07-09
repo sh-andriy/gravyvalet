@@ -28,23 +28,21 @@ class AccessKeySecretKeyCredentials(Credentials):
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class OAuth1TokenCredentials:
+class OAuth1Credentials(Credentials):
     oauth_token: str
     oauth_token_secret: str
-    oauth_verifier: str | None = None
 
     @classmethod
-    def from_dict(cls, payload: dict) -> "tuple[OAuth1TokenCredentials, dict]":
+    def from_dict(cls, payload: dict) -> "tuple[OAuth1Credentials, dict]":
         """
         This method returns credentials constructed dict and dict with other attributes,
         which may contain provider-specific useful info
         """
 
         return (
-            OAuth1TokenCredentials(
+            OAuth1Credentials(
                 oauth_token=payload.pop("oauth_token"),
                 oauth_token_secret=payload.pop("oauth_token_secret"),
-                oauth_verifier=payload.pop("oauth_verifier", None),
             ),
             payload,
         )

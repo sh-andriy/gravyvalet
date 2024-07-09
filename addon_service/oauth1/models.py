@@ -14,6 +14,8 @@ class OAuth1ClientConfig(AddonsServiceBaseModel):
     request_token_url = models.URLField(null=False)
     # URI to which user will be redirected to authenticate
     auth_url = models.URLField(null=False)
+    # URI to which user will be redirected after authentication
+    auth_callback_url = models.URLField(null=False)
     # URI to obtain access token
     access_token_url = models.URLField(null=False)
 

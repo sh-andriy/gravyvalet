@@ -139,18 +139,16 @@ class TestOAuth1AFlow(APITestCase):
         _account = AuthorizedStorageAccount.objects.get(id=_resp.data["id"])
 
         with self.subTest("Account Initial Conditions"):
-            self.assertIsNotNone(_account.credentials)
-            self.assertEqual(_account.is_oauth1_ready, False)
-            self.assertEqual(_account.credentials.oauth_token, self.MOCK_REQUEST_TOKEN)
-            self.assertEqual(
-                _account.credentials.oauth_token_secret, self.MOCK_REQUEST_TOKEN_SECRET
-            )
+            self.assertIsNotNone(_account.temporary_oauth1_credentials)
+            self.assertIsNone(_account.credentials)
 
         self._mock_service.set_internal_client(self.client)
         self._mock_service.initiate_oauth_exchange()
 
         _account.refresh_from_db()
         with self.subTest("Credentials set post-exchange"):
+
+            self.assertIsNone(_account.temporary_oauth1_credentials)
             self.assertEqual(_account.credentials.oauth_token, self.MOCK_ACCESS_TOKEN)
             self.assertEqual(
                 _account.credentials.oauth_token_secret, self.MOCK_ACCESS_TOKEN_SECRET

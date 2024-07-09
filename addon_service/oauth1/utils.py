@@ -19,7 +19,7 @@ from addon_toolkit.credentials import OAuth1Credentials
 from addon_toolkit.iri_utils import iri_with_query
 
 
-async def get_request_token(
+async def get_temporary_token(
     temporary_token_url: str,
     oauth_consumer_key: str,
     oauth_consumer_secret: str,

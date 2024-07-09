@@ -244,7 +244,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         if self.credentials_format is not CredentialsFormats.OAUTH1A:
             raise ValueError("Cannot initiate OAuth1 flow for non-OAuth1 credentials")
         client_config = self.external_service.oauth1_client_config
-        request_token_result, _ = async_to_sync(oauth1_utils.get_request_token)(
+        request_token_result, _ = async_to_sync(oauth1_utils.get_temporary_token)(
             client_config.request_token_url,
             client_config.client_key,
             client_config.client_secret,

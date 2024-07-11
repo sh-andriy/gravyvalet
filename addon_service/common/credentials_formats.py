@@ -29,3 +29,11 @@ class CredentialsFormats(Enum):
             case CredentialsFormats.USERNAME_PASSWORD:
                 return credentials.UsernamePasswordCredentials
         raise ValueError(f"No dataclass support for credentials type {self.name}")
+
+    @property
+    def is_direct_from_user(self):
+        return self in {
+            CredentialsFormats.ACCESS_KEY_SECRET_KEY,
+            CredentialsFormats.USERNAME_PASSWORD,
+            CredentialsFormats.PERSONAL_ACCESS_TOKEN,
+        }

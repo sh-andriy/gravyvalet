@@ -5,12 +5,12 @@ from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.http import HttpResponse
 
+from addon_service.authorized_storage_account.callbacks import after_successful_auth
 from addon_service.models import (
     OAuth2ClientConfig,
     OAuth2TokenMetadata,
 )
 from addon_service.oauth2.utils import get_initial_access_token
-from addon_service.oauth_utlis import update_external_account_id
 
 
 @transaction.non_atomic_requests  # async views and ATOMIC_REQUESTS do not mix
@@ -33,9 +33,7 @@ async def oauth2_callback_view(request):
         client_secret=_oauth_client_config.client_secret,
     )
     _accounts = await _token_metadata.update_with_fresh_token(_fresh_token_result)
-    await asyncio.gather(
-        *[update_external_account_id(_account) for _account in _accounts]
-    )
+    await asyncio.gather(*[after_successful_auth(_account) for _account in _accounts])
     return HttpResponse(status=HTTPStatus.OK)  # TODO: redirect
 
 

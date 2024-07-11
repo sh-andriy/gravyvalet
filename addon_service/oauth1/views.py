@@ -3,10 +3,9 @@ from http import HTTPStatus
 from asgiref.sync import async_to_sync
 from django.http import HttpResponse
 
+from addon_service.authorized_storage_account.callbacks import after_successful_auth
 from addon_service.authorized_storage_account.models import AuthorizedStorageAccount
-from addon_service.common.known_imps import AddonImpNumbers
 from addon_service.oauth1.utils import get_access_token
-from addon_service.oauth_utlis import update_external_account_id
 from addon_service.osf_models.fields import decrypt_string
 
 
@@ -30,13 +29,5 @@ def oauth1_callback_view(request):
     )
     account.credentials = final_credentials
     account.save()
-    update_account_with_additional_data(account, other_info)
+    async_to_sync(after_successful_auth)(account, other_info)
     return HttpResponse(status=HTTPStatus.OK)  # TODO: redirect
-
-
-def update_account_with_additional_data(account: AuthorizedStorageAccount, data: dict):
-    match account.external_service.int_addon_imp:
-        case AddonImpNumbers.ZOTERO_ORG:
-            account.external_account_id = data["userID"]
-    account.save()
-    async_to_sync(update_external_account_id)(account)

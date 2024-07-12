@@ -27,7 +27,7 @@ from addon_service.common.aiohttp_session import get_singleton_client_session
 
 
 if TYPE_CHECKING:
-    from addon_service.tests._factories import ExternalStorageOAuth1ServiceFactory
+    from addon_service.external_storage_service import ExternalStorageService
 
 
 class MockOSF:
@@ -175,7 +175,7 @@ class MockOAuth2ExternalService:
 
 @dataclasses.dataclass
 class MockOAuth1ServiceProvider:
-    _external_service: "ExternalStorageOAuth1ServiceFactory"
+    _external_service: "ExternalStorageService"
     _static_request_token: str
     _static_request_secret: str
     _static_verifier: str

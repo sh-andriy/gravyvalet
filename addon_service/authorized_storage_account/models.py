@@ -235,7 +235,9 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @api_base_url.setter
     def api_base_url(self, value: str):
-        self._api_base_url = value
+        self._api_base_url = (
+            "" if value == self.external_service.api_base_url else value
+        )
 
     @property
     def imp_cls(self) -> type[AddonImp]:
@@ -291,7 +293,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                     "api_base_url": f"Cannot specify an api_base_url for Public-only service {service.display_name}"
                 }
             )
-        if ServiceTypes.PUBLIC not in service.service_type and not self.api_base_url:
+        if ServiceTypes.PUBLIC not in service.service_type and not self._api_base_url:
             raise ValidationError(
                 {
                     "api_base_url": f"Must specify an api_base_url for Hosted-only service {service.display_name}"

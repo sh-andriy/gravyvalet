@@ -146,7 +146,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             raise ValidationError("Trying to set credentials to non-existing field")
         if creds_type is not self.credentials_format.dataclass:
             raise ValidationError(
-                f"Expected credentials of type type {self.credentials_format.dataclass}."
+                f"Expected credentials of type {self.credentials_format.dataclass}."
                 f"Got credentials of type {creds_type}."
             )
         if not getattr(self, credentials_field, None):

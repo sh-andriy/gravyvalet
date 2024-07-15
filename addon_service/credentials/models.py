@@ -94,7 +94,15 @@ class ExternalCredentials(AddonsServiceBaseModel):
         other types of accounts for the same user could point to the same set of credentials
         """
         try:
-            return (self.authorized_storage_account,)
+            return [
+                *filter(
+                    bool,
+                    [
+                        getattr(self, "authorized_storage_account", None),
+                        getattr(self, "temporary_authorized_storage_account", None),
+                    ],
+                )
+            ]
         except ExternalCredentials.authorized_storage_account.RelatedObjectDoesNotExist:
             return None
 

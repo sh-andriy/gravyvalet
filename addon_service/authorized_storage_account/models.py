@@ -14,8 +14,9 @@ from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.service_types import ServiceTypes
 from addon_service.common.validators import validate_addon_capability
 from addon_service.credentials.models import ExternalCredentials
-from addon_service.oauth import utils as oauth_utils
-from addon_service.oauth.models import (
+from addon_service.oauth1 import utils as oauth1_utils
+from addon_service.oauth2 import utils as oauth2_utils
+from addon_service.oauth2.models import (
     OAuth2ClientConfig,
     OAuth2TokenMetadata,
 )
@@ -23,11 +24,14 @@ from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
 )
+from addon_toolkit.credentials import (
+    Credentials,
+    OAuth1Credentials,
+)
 from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class AuthorizedStorageAccountManager(models.Manager):
-
     def active(self):
         """filter to accounts owned by non-deactivated users"""
         return self.get_queryset().filter(account_owner__deactivated__isnull=True)
@@ -68,12 +72,21 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         blank=True,
         related_name="authorized_storage_account",
     )
+    _temporary_oauth1_credentials = models.OneToOneField(
+        "addon_service.ExternalCredentials",
+        on_delete=models.CASCADE,
+        primary_key=False,
+        null=True,
+        blank=True,
+        related_name="temporary_authorized_storage_account",
+    )
     oauth2_token_metadata = models.ForeignKey(
         "addon_service.OAuth2TokenMetadata",
         on_delete=models.CASCADE,  # probs not
         null=True,
         blank=True,
         related_name="authorized_storage_accounts",
+        related_query_name="%(class)s_authorized_storage_account",
     )
 
     class Meta:
@@ -108,17 +121,40 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @credentials.setter
     def credentials(self, credentials_data):
+        if self.temporary_oauth1_credentials:
+            self._temporary_oauth1_credentials.delete()
+            self._temporary_oauth1_credentials = None
+        self._set_credentials("_credentials", credentials_data)
+
+    @property
+    def temporary_oauth1_credentials(self) -> OAuth1Credentials | None:
+        if self._temporary_oauth1_credentials:
+            return self._temporary_oauth1_credentials.decrypted_credentials
+        return None
+
+    @temporary_oauth1_credentials.setter
+    def temporary_oauth1_credentials(self, credentials_data: OAuth1Credentials):
+        if self.credentials_format is not CredentialsFormats.OAUTH1A:
+            raise ValidationError(
+                "Trying to set temporary credentials for non OAuth1A account"
+            )
+        self._set_credentials("_temporary_oauth1_credentials", credentials_data)
+
+    def _set_credentials(self, credentials_field: str, credentials_data: Credentials):
         creds_type = type(credentials_data)
+        if not hasattr(self, credentials_field):
+            raise ValidationError("Trying to set credentials to non-existing field")
         if creds_type is not self.credentials_format.dataclass:
             raise ValidationError(
-                f"Expectd credentials of type type {self.credentials_format.dataclass}."
+                f"Expected credentials of type type {self.credentials_format.dataclass}."
                 f"Got credentials of type {creds_type}."
             )
-        if not self._credentials:
-            self._credentials = ExternalCredentials.new()
+        if not getattr(self, credentials_field, None):
+            setattr(self, credentials_field, ExternalCredentials.new())
         try:
-            self._credentials.decrypted_credentials = credentials_data
-            self._credentials.save()
+            creds = getattr(self, credentials_field)
+            creds.decrypted_credentials = credentials_data
+            creds.save()
         except TypeError as e:
             raise ValidationError(e)
 
@@ -129,7 +165,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @authorized_capabilities.setter
     def authorized_capabilities(self, new_capabilities: AddonCapabilities):
-        """set int_authorized_capabilities without caring it's int"""
+        """set int_authorized_capabilities without caring its int"""
         self.int_authorized_capabilities = new_capabilities.value
 
     @property
@@ -158,18 +194,32 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @property
     def auth_url(self) -> str | None:
-        """Generates the url required to initiate OAuth2 credentials exchange.
+        """Generates the url required to initiate OAuth credentials exchange.
 
-        Returns None if the ExternalStorageService does not support OAuth2
-        or if the initial credentials exchange has already ocurred.
+        Returns None if the ExternalStorageService does not support OAuth
+        or if the initial credentials exchange has already occurred.
         """
-        if self.credentials_format is not CredentialsFormats.OAUTH2:
-            return None
+        match self.credentials_format:
+            case CredentialsFormats.OAUTH2:
+                return self.oauth2_auth_url
+            case CredentialsFormats.OAUTH1A:
+                return self.oauth1_auth_url
 
+    @property
+    def oauth1_auth_url(self) -> str:
+        client_config = self.external_service.oauth1_client_config
+        if self._temporary_oauth1_credentials:
+            return oauth1_utils.build_auth_url(
+                auth_uri=client_config.auth_url,
+                temporary_oauth_token=self.temporary_oauth1_credentials.oauth_token,
+            )
+
+    @property
+    def oauth2_auth_url(self) -> str | None:
         state_token = self.oauth2_token_metadata.state_token
         if not state_token:
             return None
-        return oauth_utils.build_auth_url(
+        return oauth2_utils.build_auth_url(
             auth_uri=self.external_service.oauth2_client_config.auth_uri,
             client_id=self.external_service.oauth2_client_config.client_id,
             state_token=state_token,
@@ -178,11 +228,11 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         )
 
     @property
-    def api_base_url(self):
+    def api_base_url(self) -> str:
         return self._api_base_url or self.external_service.api_base_url
 
     @api_base_url.setter
-    def api_base_url(self, value):
+    def api_base_url(self, value: str):
         self._api_base_url = value
 
     @property
@@ -190,14 +240,27 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
         return self.external_service.addon_imp.imp_cls
 
     @transaction.atomic
+    def initiate_oauth1_flow(self):
+        if self.credentials_format is not CredentialsFormats.OAUTH1A:
+            raise ValueError("Cannot initiate OAuth1 flow for non-OAuth1 credentials")
+        client_config = self.external_service.oauth1_client_config
+        request_token_result, _ = async_to_sync(oauth1_utils.get_temporary_token)(
+            client_config.request_token_url,
+            client_config.client_key,
+            client_config.client_secret,
+        )
+        self.temporary_oauth1_credentials = request_token_result
+        self.save()
+
+    @transaction.atomic
     def initiate_oauth2_flow(self, authorized_scopes=None):
         if self.credentials_format is not CredentialsFormats.OAUTH2:
-            raise ValueError("Cannot initaite OAuth flow for non-OAuth credentials")
+            raise ValueError("Cannot initiate OAuth2 flow for non-OAuth2 credentials")
         self.oauth2_token_metadata = OAuth2TokenMetadata.objects.create(
             authorized_scopes=(
                 authorized_scopes or self.external_service.supported_scopes
             ),
-            state_nonce=oauth_utils.generate_state_nonce(),
+            state_nonce=oauth2_utils.generate_state_nonce(),
         )
         self.save()
 
@@ -209,8 +272,8 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             external_account_id=self.external_account_id,
         )
 
-    def clean(self, *args, **kwargs):
-        super().clean(*args, **kwargs)
+    def clean(self):
+        super().clean()
         self.validate_api_base_url()
         self.validate_oauth_state()
 
@@ -249,13 +312,14 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             )
 
     ###
-    # async functions for use in oauth callback flows
+    # async functions for use in oauth2 callback flows
 
-    async def refresh_oauth_access_token(self) -> None:
-        _oauth_client_config, _oauth_token_metadata = (
-            await self._load_client_config_and_token_metadata()
-        )
-        _fresh_token_result = await oauth_utils.get_refreshed_access_token(
+    async def refresh_oauth2_access_token(self) -> None:
+        (
+            _oauth_client_config,
+            _oauth_token_metadata,
+        ) = await self._load_oauth2_client_config_and_token_metadata()
+        _fresh_token_result = await oauth2_utils.get_refreshed_access_token(
             token_endpoint_url=_oauth_client_config.token_endpoint_url,
             refresh_token=_oauth_token_metadata.refresh_token,
             auth_callback_url=_oauth_client_config.auth_callback_url,
@@ -263,12 +327,12 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             client_secret=_oauth_client_config.client_secret,
         )
         await _oauth_token_metadata.update_with_fresh_token(_fresh_token_result)
-        await sync_to_async(self.refresh_from_db)()
+        await self.arefresh_from_db()
 
-    refresh_oauth_access_token__blocking = async_to_sync(refresh_oauth_access_token)
+    refresh_oauth_access_token__blocking = async_to_sync(refresh_oauth2_access_token)
 
     @sync_to_async
-    def _load_client_config_and_token_metadata(
+    def _load_oauth2_client_config_and_token_metadata(
         self,
     ) -> tuple[OAuth2ClientConfig, OAuth2TokenMetadata]:
         # wrap db access in `sync_to_async`

@@ -28,7 +28,10 @@ from addon_toolkit.credentials import (
 
 
 VALID_CREDENTIALS_FORMATS = set(CredentialsFormats) - {CredentialsFormats.UNSPECIFIED}
-NON_OAUTH_FORMATS = VALID_CREDENTIALS_FORMATS - {CredentialsFormats.OAUTH2}
+NON_OAUTH_FORMATS = VALID_CREDENTIALS_FORMATS - {
+    CredentialsFormats.OAUTH2,
+    CredentialsFormats.OAUTH1A,
+}
 
 MOCK_CREDENTIALS = {
     CredentialsFormats.OAUTH2: None,
@@ -114,7 +117,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
         )
 
     def test_post(self):
-        external_service = _factories.ExternalStorageServiceFactory()
+        external_service = _factories.ExternalStorageOAuth2ServiceFactory()
         self.assertFalse(external_service.authorized_storage_accounts.exists())
 
         _resp = self.client.post(
@@ -132,7 +135,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
     def test_post__sets_credentials(self):
         for creds_format in NON_OAUTH_FORMATS:
-            external_service = _factories.ExternalStorageServiceFactory()
+            external_service = _factories.ExternalStorageOAuth2ServiceFactory()
             external_service.int_credentials_format = creds_format.value
             external_service.save()
 
@@ -151,7 +154,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
                 )
 
     def test_post__sets_auth_url(self):
-        external_service = _factories.ExternalStorageServiceFactory(
+        external_service = _factories.ExternalStorageOAuth2ServiceFactory(
             credentials_format=CredentialsFormats.OAUTH2
         )
 
@@ -167,7 +170,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
     def tet_post__does_not_set_auth_url(self):
         for creds_format in NON_OAUTH_FORMATS:
             with self.subTest(creds_format=creds_format):
-                external_service = _factories.ExternalStorageServiceFactory(
+                external_service = _factories.ExternalStorageOAuth2ServiceFactory(
                     credentials_format=creds_format
                 )
 
@@ -186,7 +189,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
             ServiceTypes.PUBLIC | ServiceTypes.HOSTED,
         ]:
             with self.subTest(service_type=service_type):
-                service = _factories.ExternalStorageServiceFactory(
+                service = _factories.ExternalStorageOAuth2ServiceFactory(
                     service_type=service_type
                 )
                 _resp = self.client.post(
@@ -205,7 +208,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
                     self.assertTrue(account._api_base_url)
 
     def test_post__api_base_url__invalid__required(self):
-        service = _factories.ExternalStorageServiceFactory(
+        service = _factories.ExternalStorageOAuth2ServiceFactory(
             service_type=ServiceTypes.HOSTED
         )
         service.api_base_url = ""
@@ -219,7 +222,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
         self.assertEqual(_resp.status_code, 400)
 
     def test_post__api_base_url__invalid__unsupported(self):
-        service = _factories.ExternalStorageServiceFactory(
+        service = _factories.ExternalStorageOAuth2ServiceFactory(
             service_type=ServiceTypes.PUBLIC
         )
         _resp = self.client.post(
@@ -232,7 +235,7 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
         self.assertEqual(_resp.status_code, 400)
 
     def test_post__api_base_url__invalid__bad_url(self):
-        service = _factories.ExternalStorageServiceFactory(
+        service = _factories.ExternalStorageOAuth2ServiceFactory(
             service_type=ServiceTypes.HOSTED
         )
         _resp = self.client.post(
@@ -355,7 +358,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
 
     def test_initiate_oauth2_flow(self):
         account = db.AuthorizedStorageAccount.objects.create(
-            external_storage_service=_factories.ExternalStorageServiceFactory(
+            external_storage_service=_factories.ExternalStorageOAuth2ServiceFactory(
                 credentials_format=CredentialsFormats.OAUTH2
             ),
             account_owner=self._user,
@@ -384,7 +387,7 @@ class TestAuthorizedStorageAccountModel(TestCase):
 
     def test_set_credentials__create(self):
         for creds_format in NON_OAUTH_FORMATS:
-            external_service = _factories.ExternalStorageServiceFactory(
+            external_service = _factories.ExternalStorageOAuth2ServiceFactory(
                 credentials_format=creds_format
             )
             account = db.AuthorizedStorageAccount(

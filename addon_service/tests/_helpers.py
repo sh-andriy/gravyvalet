@@ -3,8 +3,14 @@ import dataclasses
 import secrets
 from collections import defaultdict
 from http import HTTPStatus
-from typing import Any
-from unittest.mock import patch
+from typing import (
+    TYPE_CHECKING,
+    Any,
+)
+from unittest.mock import (
+    AsyncMock,
+    patch,
+)
 from urllib.parse import (
     parse_qs,
     urlparse,
@@ -18,6 +24,10 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.common.aiohttp_session import get_singleton_client_session
+
+
+if TYPE_CHECKING:
+    from addon_service.external_storage_service import ExternalStorageService
 
 
 class MockOSF:
@@ -45,13 +55,17 @@ class MockOSF:
 
     @contextlib.contextmanager
     def mocking(self):
-        with patch(
-            "addon_service.authentication.GVCombinedAuthentication.authenticate",
-            side_effect=self._mock_user_check,
-        ), patch(
-            "addon_service.common.osf.has_osf_permission_on_resource",
-            side_effect=self._mock_resource_check,
-        ), patch_encryption_key_derivation():
+        with (
+            patch(
+                "addon_service.authentication.GVCombinedAuthentication.authenticate",
+                side_effect=self._mock_user_check,
+            ),
+            patch(
+                "addon_service.common.osf.has_osf_permission_on_resource",
+                side_effect=self._mock_resource_check,
+            ),
+            patch_encryption_key_derivation(),
+        ):
             yield self
 
     def configure_assumed_caller(self, caller_uri):
@@ -100,7 +114,7 @@ class MockOSF:
         return bool(required_permission.lower() in permissions)
 
 
-class MockExternalService:
+class MockOAuth2ExternalService:
     def __init__(self, external_service):
         self._static_access_token = None
         self._static_refresh_token = None
@@ -153,6 +167,70 @@ class MockExternalService:
                     "refresh_token": self._static_refresh_token
                     or secrets.token_hex(12),
                     "expires_in": 3600,
+                },
+            )
+        else:
+            raise RuntimeError(f"Received unrecognized endpoint {url}")
+
+
+@dataclasses.dataclass
+class MockOAuth1ServiceProvider:
+    _external_service: "ExternalStorageService"
+    _static_request_token: str
+    _static_request_secret: str
+    _static_verifier: str
+    _static_oauth_token: str
+    _static_oauth_secret: str
+
+    def __post_init__(self):
+        if self._external_service.oauth1_client_config is not None:
+            self._access_token_url = (
+                self._external_service.oauth1_client_config.access_token_url
+            )
+            self._request_token_url = (
+                self._external_service.oauth1_client_config.request_token_url
+            )
+
+    @property
+    def auth_url(self):
+        return self._external_service.auth_url
+
+    def set_internal_client(self, client):
+        """Attach a DRF APIClient for making requests internally"""
+        self._internal_client = client
+
+    @contextlib.contextmanager
+    def mocking(self):
+        with patch(
+            "addon_service.oauth1.utils.get_singleton_client_session",
+            AsyncMock(return_value=AsyncMock(post=self._route_post)),
+        ):
+            yield self
+
+    def initiate_oauth_exchange(self):
+        self._internal_client.get(
+            reverse("oauth1-callback"),
+            {"oauth_token": "oauth_token", "oauth_verifier": "oauth_verifier"},
+        )
+        return _FakeAiohttpResponse()
+
+    @contextlib.asynccontextmanager
+    async def _route_post(self, url, *args, **kwargs):
+        if url.startswith(self._access_token_url):
+            yield _FakeAiohttpResponse(
+                status=HTTPStatus.CREATED,
+                data={
+                    "oauth_token": self._static_oauth_token,
+                    "oauth_token_secret": self._static_oauth_secret,
+                },
+            )
+        elif url.startswith(self._request_token_url):
+            yield _FakeAiohttpResponse(
+                status=HTTPStatus.CREATED,
+                data={
+                    "oauth_token": self._static_request_token,
+                    "oauth_token_secret": self._static_request_secret,
+                    "oauth_verifier": self._static_verifier,
                 },
             )
         else:

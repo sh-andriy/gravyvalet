@@ -12,6 +12,11 @@ class BoxDotComStorageImp(storage.StorageAddonImp):
     see https://developer.box.com/reference/
     """
 
+    async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
+        async with self.network.GET("/users/me") as _response:
+            _json = await _response.json_content()
+            return str(_json["id"])
+
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         return storage.ItemSampleResult(
             items=[await self.get_item_info(_box_root_id())],

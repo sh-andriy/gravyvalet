@@ -33,3 +33,13 @@ class OAuth2ClientConfigAdmin(GravyvaletModelAdmin):
         "created",
         "modified",
     )
+
+
+@admin.register(models.OAuth1ClientConfig)
+@linked_many_field("external_storage_services")
+class OAuth1ClientConfigAdmin(GravyvaletModelAdmin):
+    readonly_fields = (
+        "id",
+        "created",
+        "modified",
+    )

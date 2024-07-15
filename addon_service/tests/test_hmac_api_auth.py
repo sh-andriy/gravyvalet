@@ -171,7 +171,7 @@ class TestHmacApiAuth(APITestCase):
     def setUpTestData(cls):
         cls._user = _factories.UserReferenceFactory()
         cls._resource = _factories.ResourceReferenceFactory()
-        cls._service = _factories.ExternalStorageServiceFactory()
+        cls._service = _factories.ExternalStorageOAuth2ServiceFactory()
         cls._account = _factories.AuthorizedStorageAccountFactory(
             account_owner=cls._user,
             external_storage_service=cls._service,

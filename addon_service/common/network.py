@@ -14,6 +14,7 @@ from asgiref.sync import sync_to_async
 
 from addon_service import models as db
 from addon_service.common import exceptions
+from addon_service.common.credentials_formats import CredentialsFormats
 from addon_toolkit.constrained_network import (
     HttpRequestInfo,
     HttpRequestor,
@@ -65,12 +66,12 @@ class GravyvaletHttpRequestor(HttpRequestor):
 
     # abstract method from HttpRequestor:
     @contextlib.asynccontextmanager
-    async def do_send(self, request: HttpRequestInfo):
+    async def _do_send(self, request: HttpRequestInfo):
         try:
             async with self._try_send(request) as _response:
                 yield _response
         except exceptions.ExpiredAccessToken:
-            await _PrivateNetworkInfo.get(self).account.refresh_oauth_access_token()
+            await _PrivateNetworkInfo.get(self).account.refresh_oauth2_access_token()
             # if this one fails, don't try refreshing again
             async with self._try_send(request) as _response:
                 yield _response
@@ -86,7 +87,10 @@ class GravyvaletHttpRequestor(HttpRequestor):
             headers=await _private.get_headers(),
             # TODO: content
         ) as _response:
-            if _response.status == HTTPStatus.UNAUTHORIZED:
+            if (
+                _response.status == HTTPStatus.UNAUTHORIZED
+                and _private.account.credentials_format == CredentialsFormats.OAUTH2
+            ):
                 # assume unauthorized because of token expiration.
                 # if not, will fail again after refresh (which is fine)
                 raise exceptions.ExpiredAccessToken

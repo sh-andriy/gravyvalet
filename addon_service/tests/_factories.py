@@ -36,6 +36,18 @@ class OAuth2ClientConfigFactory(DjangoModelFactory):
     client_secret = factory.Faker("word")
 
 
+class OAuth1ClientConfigFactory(DjangoModelFactory):
+    class Meta:
+        model = db.OAuth1ClientConfig
+
+    auth_url = "https://api.example/auth/"
+    auth_callback_url = "https://api.example/auth/"
+    access_token_url = "https://osf.example/oauth/access"
+    request_token_url = "https://api.example.com/oauth/request"
+    client_key = factory.Faker("word")
+    client_secret = factory.Faker("word")
+
+
 class AddonOperationInvocationFactory(DjangoModelFactory):
     class Meta:
         model = db.AddonOperationInvocation
@@ -64,7 +76,6 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     max_concurrent_downloads = factory.Faker("pyint")
     max_upload_mb = factory.Faker("pyint")
     int_addon_imp = known_imps.get_imp_number(known_imps.get_imp_by_name("BLARG"))
-    oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)
     supported_scopes = ["service.url/grant_all"]
 
     @classmethod
@@ -87,6 +98,16 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
             *args,
             **kwargs,
         )
+
+
+class ExternalStorageOAuth2ServiceFactory(ExternalStorageServiceFactory):
+    credentials_format = CredentialsFormats.OAUTH2
+    oauth2_client_config = factory.SubFactory(OAuth2ClientConfigFactory)
+
+
+class ExternalStorageOAuth1ServiceFactory(ExternalStorageServiceFactory):
+    credentials_format = CredentialsFormats.OAUTH1A
+    oauth1_client_config = factory.SubFactory(OAuth1ClientConfigFactory)
 
 
 class AuthorizedStorageAccountFactory(DjangoModelFactory):
@@ -112,7 +133,9 @@ class AuthorizedStorageAccountFactory(DjangoModelFactory):
         account = super()._create(
             model_class=model_class,
             external_storage_service=external_storage_service
-            or ExternalStorageServiceFactory(credentials_format=credentials_format),
+            or ExternalStorageOAuth2ServiceFactory(
+                credentials_format=credentials_format
+            ),
             account_owner=account_owner or UserReferenceFactory(),
             *args,
             **kwargs,

@@ -15,7 +15,7 @@ from addon_service.tests._helpers import get_test_request
 class TestExternalStorageServiceAPI(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls._ess = _factories.ExternalStorageServiceFactory()
+        cls._ess = _factories.ExternalStorageOAuth2ServiceFactory()
 
     @property
     def _detail_path(self):
@@ -58,7 +58,7 @@ class TestExternalStorageServiceAPI(APITestCase):
 class TestExternalStorageServiceModel(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls._ess = _factories.ExternalStorageServiceFactory()
+        cls._ess = _factories.ExternalStorageOAuth2ServiceFactory()
 
     def test_can_load(self):
         _resource_from_db = db.ExternalStorageService.objects.get(id=self._ess.id)
@@ -83,19 +83,19 @@ class TestExternalStorageServiceModel(TestCase):
         )
 
     def test_validation__invalid_format(self):
-        service = _factories.ExternalStorageServiceFactory()
+        service = _factories.ExternalStorageOAuth2ServiceFactory()
         service.int_credentials_format = -1
         with self.assertRaises(ValidationError):
             service.save()
 
     def test_validation__unsupported_format(self):
-        service = _factories.ExternalStorageServiceFactory()
+        service = _factories.ExternalStorageOAuth2ServiceFactory()
         service.int_credentials_format = CredentialsFormats.UNSPECIFIED.value
         with self.assertRaises(ValidationError):
             service.save()
 
     def test_validation__oauth_creds_require_client_config(self):
-        service = _factories.ExternalStorageServiceFactory(
+        service = _factories.ExternalStorageOAuth2ServiceFactory(
             credentials_format=CredentialsFormats.OAUTH2
         )
         service.oauth2_client_config = None
@@ -107,7 +107,7 @@ class TestExternalStorageServiceModel(TestCase):
 class TestExternalStorageServiceViewSet(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls._ess = _factories.ExternalStorageServiceFactory()
+        cls._ess = _factories.ExternalStorageOAuth2ServiceFactory()
         cls._view = ExternalStorageServiceViewSet.as_view({"get": "retrieve"})
         cls._user = _factories.UserReferenceFactory()
 
@@ -158,7 +158,7 @@ class TestExternalStorageServiceViewSet(TestCase):
 class TestExternalStorageServiceRelatedView(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls._ess = _factories.ExternalStorageServiceFactory()
+        cls._ess = _factories.ExternalStorageOAuth2ServiceFactory()
         cls._related_view = ExternalStorageServiceViewSet.as_view(
             {"get": "retrieve_related"},
         )

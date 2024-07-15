@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from django.core.exceptions import ValidationError as ModelValidationError
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import (
@@ -7,6 +8,7 @@ from rest_framework_json_api.relations import (
 from rest_framework_json_api.utils import get_resource_type_from_model
 
 from addon_service.addon_operation.models import AddonOperationModel
+from addon_service.authorized_storage_account.callbacks import after_successful_auth
 from addon_service.common import view_names
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.models import (
@@ -15,6 +17,7 @@ from addon_service.models import (
     ExternalStorageService,
     UserReference,
 )
+from addon_service.osf_models.fields import encrypt_string
 from addon_service.serializer_fields import (
     CredentialsField,
     DataclassRelatedLinkField,
@@ -95,12 +98,21 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             authorized_account.initiate_oauth2_flow(
                 validated_data.get("authorized_scopes")
             )
+        elif external_service.credentials_format is CredentialsFormats.OAUTH1A:
+            authorized_account.initiate_oauth1_flow()
+            self.context["request"].session["oauth1a_account_id"] = encrypt_string(
+                authorized_account.pk
+            )
         else:
             authorized_account.credentials = validated_data["credentials"]
+
         try:
             authorized_account.save()
         except ModelValidationError as e:
             raise serializers.ValidationError(e)
+
+        if external_service.credentials_format.is_direct_from_user:
+            async_to_sync(after_successful_auth)(authorized_account)
 
         return authorized_account
 

@@ -117,7 +117,7 @@ async def _token_request(
     async with _client.post(token_endpoint_url, data=request_body) as _token_response:
         if not HTTPStatus(_token_response.status).is_success:
             raise RuntimeError(await _token_response.json())
-            raise RuntimeError  # TODO: https://www.rfc-editor.org/rfc/rfc6749.html#section-5.2
+            # TODO: https://www.rfc-editor.org/rfc/rfc6749.html#section-5.2
         return FreshTokenResult.from_token_response_json(await _token_response.json())
 
 

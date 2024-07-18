@@ -109,9 +109,11 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
                     authorized_account.pk
                 )
             else:
-                raise serializers.ValidationError({
-                    'initiate_oauth': 'this external service is not configured for oauth'
-                })
+                raise serializers.ValidationError(
+                    {
+                        "initiate_oauth": "this external service is not configured for oauth"
+                    }
+                )
         elif validated_data.get("credentials"):
             authorized_account.credentials = validated_data["credentials"]
 

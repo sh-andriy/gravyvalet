@@ -82,7 +82,7 @@ class ExternalStorageServiceFactory(DjangoModelFactory):
     def _create(
         cls,
         model_class,
-        credentials_format=CredentialsFormats.OAUTH2,
+        credentials_format=CredentialsFormats.PERSONAL_ACCESS_TOKEN,
         service_type=ServiceTypes.PUBLIC,
         *args,
         **kwargs,

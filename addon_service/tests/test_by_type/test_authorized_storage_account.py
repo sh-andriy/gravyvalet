@@ -59,6 +59,7 @@ def _make_post_payload(
     credentials=None,
     api_root="",
     display_name="MY ACCOUNT MINE",
+    initiate_oauth=True,
 ):
     capabilities = capabilities or [AddonCapabilities.ACCESS.name]
     payload = {
@@ -68,7 +69,7 @@ def _make_post_payload(
                 "display_name": display_name,
                 "authorized_capabilities": capabilities,
                 "api_base_url": api_root,
-                "initiate_oauth": True,
+                "initiate_oauth": initiate_oauth,
             },
             "relationships": {
                 "external_storage_service": {
@@ -146,13 +147,15 @@ class TestAuthorizedStorageAccountAPI(APITestCase):
 
     def test_post__sets_credentials(self):
         for creds_format in NON_OAUTH_FORMATS:
-            external_service = _factories.ExternalStorageOAuth2ServiceFactory()
+            external_service = _factories.ExternalStorageServiceFactory()
             external_service.int_credentials_format = creds_format.value
             external_service.save()
 
             _resp = self.client.post(
                 reverse("authorized-storage-accounts-list"),
-                _make_post_payload(external_service=external_service),
+                _make_post_payload(
+                    external_service=external_service, initiate_oauth=False
+                ),
                 format="vnd.api+json",
             )
             self.assertEqual(_resp.status_code, HTTPStatus.CREATED)

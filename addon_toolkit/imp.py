@@ -10,8 +10,11 @@ from asgiref.sync import (
 from . import exceptions
 from .addon_operation_declaration import AddonOperationDeclaration
 from .capabilities import AddonCapabilities
-from .interfaces import AddonInterface
 from .json_arguments import kwargs_from_json
+
+
+if typing.TYPE_CHECKING:
+    from .interfaces import BaseAddonInterface
 
 
 __all__ = ("AddonImp",)
@@ -21,19 +24,10 @@ class AddonImp:
     """base class for all addon implementations"""
 
     # subclasses must set `ADDON_INTERFACE`
-    ADDON_INTERFACE: typing.ClassVar[type[AddonInterface]]
+    ADDON_INTERFACE: "typing.ClassVar[type[BaseAddonInterface]]"
 
     ###
     # class methods
-
-    def __init_subclass__(cls, **kwargs) -> None:
-        super().__init_subclass__(**kwargs)
-        if not (
-            hasattr(cls, "ADDON_INTERFACE")
-            # AddonInterface is a typing.Protocol, but don't want duck-typing here
-            and AddonInterface in cls.ADDON_INTERFACE.__mro__
-        ):
-            raise exceptions.ImpHasNoInterface(cls)
 
     @classmethod
     @functools.cache
@@ -85,7 +79,7 @@ class AddonImp:
         self, operation: AddonOperationDeclaration, json_kwargs: dict
     ):
         _operation_method = getattr(self, operation.name)
-        _kwargs = kwargs_from_json(operation.call_signature, json_kwargs)
+        _kwargs = kwargs_from_json(operation.operation_fn, json_kwargs)
         if not inspect.iscoroutinefunction(_operation_method):
             _operation_method = sync_to_async(_operation_method)
         _result = await _operation_method(**_kwargs)

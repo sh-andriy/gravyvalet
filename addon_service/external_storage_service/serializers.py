@@ -40,4 +40,5 @@ class ExternalStorageServiceSerializer(serializers.HyperlinkedModelSerializer):
             "display_name",
             "url",
             "wb_key",
+            "configurable_api_root",
         ]

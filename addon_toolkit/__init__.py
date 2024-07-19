@@ -9,15 +9,15 @@ from .addon_operation_declaration import (
 from .addon_operation_results import RedirectResult
 from .capabilities import AddonCapabilities
 from .imp import AddonImp
-from .interfaces import AddonInterface
+from .interfaces import BaseAddonInterface
 
 
 __all__ = (
     "AddonCapabilities",
     "AddonImp",
-    "AddonInterface",
     "AddonOperationDeclaration",
     "AddonOperationType",
+    "BaseAddonInterface",
     "RedirectResult",
     "addon_operation",
     "eventual_operation",

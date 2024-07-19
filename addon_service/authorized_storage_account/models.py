@@ -177,7 +177,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     def authorized_operations(self) -> list[AddonOperationModel]:
         _imp_cls = self.imp_cls
         return [
-            AddonOperationModel(_imp_cls, _operation)
+            AddonOperationModel(_imp_cls.ADDON_INTERFACE, _operation)
             for _operation in _imp_cls.implemented_operations_for_capabilities(
                 self.authorized_capabilities
             )

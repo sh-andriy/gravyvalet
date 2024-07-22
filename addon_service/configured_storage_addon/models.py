@@ -119,7 +119,7 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
 
     def storage_imp_config(self) -> StorageConfig:
         return dataclasses.replace(
-            self.base_account.storage_imp_config(),
+            self.base_account.storage_imp_config,
             connected_root_id=self.root_folder,
         )
 

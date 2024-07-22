@@ -13,7 +13,7 @@ class BoxDotComStorageImp(storage.StorageAddonImp):
     """
 
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
-        async with self.network.GET("/users/me") as _response:
+        async with self.network.GET("users/me") as _response:
             _json = await _response.json_content()
             return str(_json["id"])
 

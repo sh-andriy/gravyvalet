@@ -1,18 +1,23 @@
+from typing import TYPE_CHECKING
+
 from asgiref.sync import async_to_sync
 
 from addon_service.common.aiohttp_session import get_singleton_client_session
 from addon_service.common.network import GravyvaletHttpRequestor
-from addon_service.models import AuthorizedStorageAccount
 from addon_toolkit.interfaces.storage import (
     StorageAddonImp,
     StorageConfig,
 )
 
 
+if TYPE_CHECKING:
+    from addon_service.models import AuthorizedStorageAccount
+
+
 async def get_storage_addon_instance(
-    imp_cls: type[StorageAddonImp],
-    account: AuthorizedStorageAccount,
-    config: StorageConfig,
+    imp_cls: "type[StorageAddonImp]",
+    account: "AuthorizedStorageAccount",
+    config: "StorageConfig",
 ) -> StorageAddonImp:
     """create an instance of a `StorageAddonImp`
 

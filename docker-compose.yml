@@ -16,8 +16,8 @@ services:
       POSTGRES_DB: gravyvalet
       POSTGRES_USER: postgres
       # OSFDB_HOST: 192.168.168.167
-      ALLOWED_HOSTS: 0.0.0.0,localhost
-      CORS_ALLOWED_ORIGINS: http://localhost:5000
+      ALLOWED_HOSTS: 0.0.0.0,localhost,192.168.168.167
+      CORS_ALLOWED_ORIGINS: http://localhost:5000,http://192.168.168.167:5000
       SECRET_KEY: so-secret
       OSF_BASE_URL: "http://192.168.168.167:5000"
       OSF_API_BASE_URL: "http://192.168.168.167:8000"

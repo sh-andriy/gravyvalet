@@ -31,6 +31,8 @@ RESOURCE_TYPE = get_resource_type_from_model(AuthorizedStorageAccount)
 
 
 class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer):
+    """api serializer for the `AuthorizedStorageAccount` model"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -35,7 +35,7 @@ class AddonOperationType(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class AddonOperationDeclaration:
-    """dataclass for a declared operation method on an interface
+    """dataclass for a declared operation method on a `addon_toolkit.AddonInterface`
 
     created by decorating a method with one of the "operation" decorators:
     `@redirect_operation`, `@immediate_operation`, `@eventual_operation`
@@ -96,7 +96,7 @@ class AddonOperationDeclaration:
 # declarator for all types of operations -- use operation_type-specific decorators below
 addon_operation = Declarator(
     declaration_dataclass=AddonOperationDeclaration,
-    field_for_target="operation_fn",
+    field_for_subject="operation_fn",
 )
 
 # decorator for operations that may be performed by a client request (e.g. redirect to waterbutler)

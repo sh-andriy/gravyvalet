@@ -20,6 +20,8 @@ RESOURCE_TYPE = get_resource_type_from_model(AddonOperationInvocation)
 
 
 class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer):
+    """api serializer for the `AddonOperationInvocation` model"""
+
     class Meta:
         model = AddonOperationInvocation
         fields = [

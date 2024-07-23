@@ -81,6 +81,8 @@ class RetrieveWriteViewSet(
     drf_mixins.UpdateModelMixin,
     GenericViewSet,
 ):
+    """viewset allowing create, retrieve, update"""
+
     http_method_names = ["get", "post", "patch", "head", "options"]
 
 
@@ -92,10 +94,14 @@ class RetrieveWriteDeleteViewSet(
     drf_mixins.DestroyModelMixin,
     GenericViewSet,
 ):
+    """viewset allowing create, retrieve, update, delete"""
+
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
 
 class StaticDataclassViewset(ViewSet, RelatedMixin):
+    """viewset for read-only access to any `StaticDataclassModel`"""
+
     http_method_names = ["get", "head", "options"]
     authentication_classes = ()  # as public as the code they're generated from
 

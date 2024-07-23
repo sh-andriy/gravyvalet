@@ -8,10 +8,10 @@ from addon_service.common.static_dataclass_model import StaticDataclassModel
 from addon_toolkit import AddonImp
 
 
-# dataclass wrapper for a concrete subclass of AddonImp which
-# meets rest_framework_json_api expectations on a model class
 @dataclasses.dataclass(frozen=True)
 class AddonImpModel(StaticDataclassModel):
+    """each `AddonImpModel` represents a statically defined subclass of `AddonImp`"""
+
     imp_cls: type[AddonImp]
 
     ###

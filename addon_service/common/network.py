@@ -55,6 +55,8 @@ class _AiohttpResponseInfo(HttpResponseInfo):
 
 
 class GravyvaletHttpRequestor(HttpRequestor):
+    """an `HttpRequestor` implementation using aiohttp"""
+
     # abstract property from HttpRequestor:
     response_info_cls = _AiohttpResponseInfo
 

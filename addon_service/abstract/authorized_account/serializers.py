@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError as ModelValidationError
 from rest_framework_json_api import serializers
 from rest_framework_json_api.utils import get_resource_type_from_model
 
+from addon_service.abstract.authorized_account.models import AuthorizedAccount
 from addon_service.addon_operation.models import AddonOperationModel
-from addon_service.authorized_account.models import AuthorizedAccount
 from addon_service.common import view_names
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.models import (

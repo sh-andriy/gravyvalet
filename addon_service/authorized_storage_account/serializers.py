@@ -6,7 +6,9 @@ from rest_framework_json_api.relations import (
 )
 from rest_framework_json_api.utils import get_resource_type_from_model
 
-from addon_service.authorized_account.serializers import AuthorizedAccountSerializer
+from addon_service.abstract.authorized_account.serializers import (
+    AuthorizedAccountSerializer,
+)
 from addon_service.common import view_names
 from addon_service.models import (
     AuthorizedStorageAccount,

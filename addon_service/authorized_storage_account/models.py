@@ -1,7 +1,7 @@
 from django.db import models
 
+from addon_service.abstract.authorized_account.models import AuthorizedAccount
 from addon_service.addon_imp.instantiation import get_storage_addon_instance
-from addon_service.authorized_account.models import AuthorizedAccount
 from addon_service.external_storage_service import ExternalStorageService
 from addon_toolkit.interfaces.storage import StorageConfig
 

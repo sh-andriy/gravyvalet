@@ -1,4 +1,5 @@
-from ..authorized_account.views import AuthorizedAccountViewSet
+from addon_service.abstract.authorized_account.views import AuthorizedAccountViewSet
+
 from .models import AuthorizedStorageAccount
 from .serializers import AuthorizedStorageAccountSerializer
 

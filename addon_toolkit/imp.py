@@ -78,6 +78,7 @@ class AddonImp:
     async def invoke_operation(
         self, operation: AddonOperationDeclaration, json_kwargs: dict
     ):
+        """try to run an operation on this imp"""
         _operation_method = getattr(self, operation.name)
         _kwargs = kwargs_from_json(operation.operation_fn, json_kwargs)
         if not inspect.iscoroutinefunction(_operation_method):
@@ -87,6 +88,7 @@ class AddonImp:
         return _result
 
     invoke_operation__blocking = async_to_sync(invoke_operation)
+    """try to run an operation on this imp (and wait until done)"""
 
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
         """to be implemented by addons which require an external account id"""

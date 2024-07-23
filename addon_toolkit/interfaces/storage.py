@@ -7,7 +7,7 @@ from collections import abc
 
 from addon_toolkit.addon_operation_declaration import immediate_operation
 from addon_toolkit.capabilities import AddonCapabilities
-from addon_toolkit.constrained_network import HttpRequestor
+from addon_toolkit.constrained_network.http import HttpRequestor
 from addon_toolkit.cursor import Cursor
 from addon_toolkit.imp import AddonImp
 

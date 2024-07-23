@@ -12,15 +12,18 @@ from urllib.parse import (
 import aiohttp
 from asgiref.sync import sync_to_async
 
-from addon_service import models as db
 from addon_service.common import exceptions
 from addon_service.common.credentials_formats import CredentialsFormats
-from addon_toolkit.constrained_network import (
+from addon_toolkit.constrained_network.http import (
     HttpRequestInfo,
     HttpRequestor,
     HttpResponseInfo,
 )
 from addon_toolkit.iri_utils import Multidict
+
+
+if typing.TYPE_CHECKING:
+    from addon_service.models import AuthorizedStorageAccount
 
 
 __all__ = ("GravyvaletHttpRequestor",)
@@ -52,6 +55,8 @@ class _AiohttpResponseInfo(HttpResponseInfo):
 
 
 class GravyvaletHttpRequestor(HttpRequestor):
+    """an `HttpRequestor` implementation using aiohttp"""
+
     # abstract property from HttpRequestor:
     response_info_cls = _AiohttpResponseInfo
 
@@ -60,7 +65,7 @@ class GravyvaletHttpRequestor(HttpRequestor):
         *,
         client_session: aiohttp.ClientSession,
         prefix_url: str,
-        account: db.AuthorizedStorageAccount,
+        account: "AuthorizedStorageAccount",
     ):
         _PrivateNetworkInfo(client_session, prefix_url, account).assign(self)
 
@@ -144,7 +149,7 @@ class _PrivateNetworkInfo(_PrivateInfo):
 
     # keep network constraints away from imps
     prefix_url: str
-    account: db.AuthorizedStorageAccount
+    account: "AuthorizedStorageAccount"
 
     @sync_to_async
     def get_headers(self) -> Multidict:

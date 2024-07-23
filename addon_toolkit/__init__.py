@@ -1,3 +1,15 @@
+"""
+.. include:: README.md
+"""
+
+from . import (
+    credentials,
+    cursor,
+    declarator,
+    exceptions,
+    iri_utils,
+    json_arguments,
+)
 from .addon_operation_declaration import (
     AddonOperationDeclaration,
     AddonOperationType,
@@ -23,4 +35,11 @@ __all__ = (
     "eventual_operation",
     "immediate_operation",
     "redirect_operation",
+    # whole modules:
+    "credentials",
+    "cursor",
+    "declarator",
+    "exceptions",
+    "iri_utils",
+    "json_arguments",
 )

@@ -1,3 +1,6 @@
+"""build and validate json kwargs from python type annotations
+"""
+
 from __future__ import annotations
 
 import dataclasses
@@ -11,12 +14,12 @@ from . import exceptions
 
 
 __all__ = (
+    "JsonschemaDocBuilder",
+    "JsonschemaObjectBuilder",
     "dataclass_from_json",
     "json_for_dataclass",
     "json_for_kwargs",
     "json_for_typed_value",
-    "JsonschemaDocBuilder",
-    "JsonschemaObjectBuilder",
     "kwargs_from_json",
     "typed_value_from_json",
 )
@@ -263,6 +266,7 @@ def kwargs_from_json(
     annotated_callable: typing.Any,
     args_from_json: dict,
 ) -> dict:
+    """parse json into python kwargs"""
     _signature = inspect.signature(annotated_callable)
     _annotations = inspect.get_annotations(annotated_callable)
     try:
@@ -284,6 +288,7 @@ def kwargs_from_json(
 
 
 def dataclass_from_json(dataclass: type, dataclass_json: dict):
+    """parse json into an instance of the given dataclass"""
     _kwargs = kwargs_from_json(dataclass, dataclass_json)
     return dataclass(**_kwargs)
 
@@ -291,6 +296,7 @@ def dataclass_from_json(dataclass: type, dataclass_json: dict):
 def typed_value_from_json(
     type_annotation: type, json_value: typing.Any, self_type: type | None = None
 ) -> typing.Any:
+    """parse json into a python value of the given type"""
     _type, _contained_type, _is_optional = _unwrap_type(
         type_annotation, self_type=self_type
     )

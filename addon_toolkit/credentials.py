@@ -4,6 +4,8 @@ import typing
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Credentials(typing.Protocol):
+    """abstract base for dataclasses representing common shapes of credentials"""
+
     def iter_headers(self) -> typing.Iterator[tuple[str, str]]:
         yield from ()
 

@@ -23,14 +23,19 @@ __all__ = (
 
 
 class AddonOperationType(enum.Enum):
-    REDIRECT = "redirect"  # gravyvalet refers you somewhere helpful
-    IMMEDIATE = "immediate"  # gravyvalet does a simple act, waiting to respond until done (success or problem)
-    EVENTUAL = "eventual"  # gravyvalet starts a potentially long-running act, responding immediately with status
+    """each addon operation has one of these behaviors"""
+
+    REDIRECT = "redirect"
+    """gravyvalet refers you somewhere helpful"""
+    IMMEDIATE = "immediate"
+    """gravyvalet does a simple act, waiting to respond until done (success or problem)"""
+    EVENTUAL = "eventual"
+    """gravyvalet starts a potentially long-running act, responding immediately with status"""
 
 
 @dataclasses.dataclass(frozen=True)
 class AddonOperationDeclaration:
-    """dataclass for a declared operation method on an interface
+    """dataclass for a declared operation method on a `addon_toolkit.AddonInterface`
 
     created by decorating a method with one of the "operation" decorators:
     `@redirect_operation`, `@immediate_operation`, `@eventual_operation`
@@ -91,7 +96,7 @@ class AddonOperationDeclaration:
 # declarator for all types of operations -- use operation_type-specific decorators below
 addon_operation = Declarator(
     declaration_dataclass=AddonOperationDeclaration,
-    field_for_target="operation_fn",
+    field_for_subject="operation_fn",
 )
 
 # decorator for operations that may be performed by a client request (e.g. redirect to waterbutler)

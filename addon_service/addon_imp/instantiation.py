@@ -14,6 +14,10 @@ async def get_storage_addon_instance(
     account: AuthorizedStorageAccount,
     config: StorageConfig,
 ) -> StorageAddonImp:
+    """create an instance of a `StorageAddonImp`
+
+    (TODO: decide on a common constructor for all `AddonImp`s, remove this)
+    """
     assert issubclass(imp_cls, StorageAddonImp)
     return imp_cls(
         config=config,
@@ -26,3 +30,7 @@ async def get_storage_addon_instance(
 
 
 get_storage_addon_instance__blocking = async_to_sync(get_storage_addon_instance)
+"""create an instance of a `StorageAddonImp`
+
+(same as `get_storage_addon_instance`, for use in synchronous context
+"""

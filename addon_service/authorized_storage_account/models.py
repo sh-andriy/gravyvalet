@@ -146,7 +146,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
             raise ValidationError("Trying to set credentials to non-existing field")
         if creds_type is not self.credentials_format.dataclass:
             raise ValidationError(
-                f"Expected credentials of type type {self.credentials_format.dataclass}."
+                f"Expected credentials of type {self.credentials_format.dataclass}."
                 f"Got credentials of type {creds_type}."
             )
         if not getattr(self, credentials_field, None):
@@ -177,7 +177,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
     def authorized_operations(self) -> list[AddonOperationModel]:
         _imp_cls = self.imp_cls
         return [
-            AddonOperationModel(_imp_cls, _operation)
+            AddonOperationModel(_imp_cls.ADDON_INTERFACE, _operation)
             for _operation in _imp_cls.implemented_operations_for_capabilities(
                 self.authorized_capabilities
             )
@@ -204,25 +204,27 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                 return self.oauth2_auth_url
             case CredentialsFormats.OAUTH1A:
                 return self.oauth1_auth_url
+        return None
 
     @property
-    def oauth1_auth_url(self) -> str:
+    def oauth1_auth_url(self) -> str | None:
         client_config = self.external_service.oauth1_client_config
-        if self._temporary_oauth1_credentials:
+        if client_config and self._temporary_oauth1_credentials:
             return oauth1_utils.build_auth_url(
                 auth_uri=client_config.auth_url,
-                temporary_oauth_token=self.temporary_oauth1_credentials.oauth_token,
+                temporary_oauth_token=self._temporary_oauth1_credentials.oauth_token,
             )
+        return None
 
     @property
     def oauth2_auth_url(self) -> str | None:
-        state_token = self.oauth2_token_metadata.state_token
-        if not state_token:
+        _token_metadata = self.oauth2_token_metadata
+        if not _token_metadata or not _token_metadata.state_token:
             return None
         return oauth2_utils.build_auth_url(
             auth_uri=self.external_service.oauth2_client_config.auth_uri,
             client_id=self.external_service.oauth2_client_config.client_id,
-            state_token=state_token,
+            state_token=_token_metadata.state_token,
             authorized_scopes=self.oauth2_token_metadata.authorized_scopes,
             redirect_uri=self.external_service.oauth2_client_config.auth_callback_url,
         )
@@ -233,11 +235,17 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
 
     @api_base_url.setter
     def api_base_url(self, value: str):
-        self._api_base_url = value
+        self._api_base_url = (
+            "" if value == self.external_service.api_base_url else value
+        )
 
     @property
     def imp_cls(self) -> type[AddonImp]:
         return self.external_service.addon_imp.imp_cls
+
+    @property
+    def credentials_available(self) -> bool:
+        return self._credentials is not None
 
     @transaction.atomic
     def initiate_oauth1_flow(self):
@@ -285,7 +293,7 @@ class AuthorizedStorageAccount(AddonsServiceBaseModel):
                     "api_base_url": f"Cannot specify an api_base_url for Public-only service {service.display_name}"
                 }
             )
-        if ServiceTypes.PUBLIC not in service.service_type and not self.api_base_url:
+        if ServiceTypes.PUBLIC not in service.service_type and not self._api_base_url:
             raise ValidationError(
                 {
                     "api_base_url": f"Must specify an api_base_url for Hosted-only service {service.display_name}"

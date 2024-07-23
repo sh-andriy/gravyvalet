@@ -41,6 +41,9 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE), required=False
     )
+    display_name = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False, max_length=256
+    )
     authorized_capabilities = EnumNameMultipleChoiceField(enum_cls=AddonCapabilities)
     authorized_operation_names = serializers.ListField(
         child=serializers.CharField(),
@@ -69,6 +72,7 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     credentials = CredentialsField(write_only=True, required=False)
+    initiate_oauth = serializers.BooleanField(write_only=True, required=False)
 
     included_serializers = {
         "account_owner": "addon_service.serializers.UserReferenceSerializer",
@@ -94,16 +98,23 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
         except ModelValidationError as e:
             raise serializers.ValidationError(e)
 
-        if external_service.credentials_format is CredentialsFormats.OAUTH2:
-            authorized_account.initiate_oauth2_flow(
-                validated_data.get("authorized_scopes")
-            )
-        elif external_service.credentials_format is CredentialsFormats.OAUTH1A:
-            authorized_account.initiate_oauth1_flow()
-            self.context["request"].session["oauth1a_account_id"] = encrypt_string(
-                authorized_account.pk
-            )
-        else:
+        if validated_data.get("initiate_oauth", False):
+            if external_service.credentials_format is CredentialsFormats.OAUTH2:
+                authorized_account.initiate_oauth2_flow(
+                    validated_data.get("authorized_scopes")
+                )
+            elif external_service.credentials_format is CredentialsFormats.OAUTH1A:
+                authorized_account.initiate_oauth1_flow()
+                self.context["request"].session["oauth1a_account_id"] = encrypt_string(
+                    authorized_account.pk
+                )
+            else:
+                raise serializers.ValidationError(
+                    {
+                        "initiate_oauth": "this external service is not configured for oauth"
+                    }
+                )
+        elif validated_data.get("credentials"):
             authorized_account.credentials = validated_data["credentials"]
 
         try:
@@ -115,6 +126,26 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             async_to_sync(after_successful_auth)(authorized_account)
 
         return authorized_account
+
+    def update(self, instance, validated_data):
+        # only these fields may be PATCHed:
+        if "display_name" in validated_data:
+            instance.display_name = validated_data["display_name"]
+        if "authorized_capabilities" in validated_data:
+            instance.authorized_capabilities = validated_data["authorized_capabilities"]
+        if "api_base_url" in validated_data:
+            instance.api_base_url = validated_data["api_base_url"]
+        if "default_root_folder" in validated_data:
+            instance.default_root_folder = validated_data["default_root_folder"]
+        if validated_data.get("credentials"):
+            instance.credentials = validated_data["credentials"]
+        instance.save()  # may raise ValidationError
+        if (
+            validated_data.get("initiate_oauth", False)
+            and instance.credentials_format is CredentialsFormats.OAUTH2
+        ):
+            instance.initiate_oauth2_flow(validated_data.get("authorized_scopes"))
+        return instance
 
     class Meta:
         model = AuthorizedStorageAccount
@@ -132,4 +163,6 @@ class AuthorizedStorageAccountSerializer(serializers.HyperlinkedModelSerializer)
             "credentials",
             "default_root_folder",
             "external_storage_service",
+            "initiate_oauth",
+            "credentials_available",
         ]

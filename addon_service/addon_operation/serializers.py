@@ -23,10 +23,9 @@ class AddonOperationSerializer(serializers.Serializer):
 
     name = serializers.CharField(read_only=True)
     docstring = serializers.CharField(read_only=True)
-    implementation_docstring = serializers.CharField(read_only=True)
     capability = EnumNameChoiceField(enum_cls=AddonCapabilities, read_only=True)
-    params_jsonschema = serializers.JSONField()
-    result_jsonschema = serializers.JSONField()
+    kwargs_jsonschema = serializers.JSONField(read_only=True)
+    result_jsonschema = serializers.JSONField(read_only=True)
 
     ###
     # relationships
@@ -35,7 +34,7 @@ class AddonOperationSerializer(serializers.Serializer):
         dataclass_model=AddonImpModel,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
         read_only=True,
-        many=False,
+        many=True,
     )
 
     ###
@@ -47,3 +46,11 @@ class AddonOperationSerializer(serializers.Serializer):
 
     class Meta:
         model = AddonOperationModel
+        fields = [
+            "id",
+            "name",
+            "docstring",
+            "capability",
+            "kwargs_jsonschema",
+            "result_jsonschema",
+        ]

@@ -2,8 +2,8 @@ import dataclasses
 import enum
 import inspect
 from typing import (
+    Any,
     Callable,
-    Iterator,
 )
 
 from . import exceptions
@@ -54,7 +54,7 @@ class AddonOperationDeclaration:
     def __post_init__(self):
         if len(self.capability) != 1:
             raise exceptions.OperationNotValid
-        _return_type = self.call_signature.return_annotation
+        _return_type = self.return_annotation
         if self.result_dataclass is type(None):
             # no result_dataclass declared; infer from type annotation
             assert dataclasses.is_dataclass(
@@ -84,16 +84,8 @@ class AddonOperationDeclaration:
         return self.operation_fn.__doc__ or ""
 
     @property
-    def call_signature(self) -> inspect.Signature:
-        return inspect.signature(self.operation_fn)
-
-    def param_dataclasses(self) -> Iterator[type]:
-        for _param_name, _param in self.call_signature.parameters.items():
-            if not dataclasses.is_dataclass(_param.annotation):
-                raise exceptions.OperationNotValid(
-                    f"operation parameters must have dataclass annotations (TODO: decorator to infer dataclass from annotated kwargs), got `{_param_name}: {_param.annotation}`"
-                )
-            yield _param.annotation
+    def return_annotation(self) -> Any:
+        return inspect.get_annotations(self.operation_fn)["return"]
 
 
 # declarator for all types of operations -- use operation_type-specific decorators below

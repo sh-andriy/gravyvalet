@@ -73,7 +73,7 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
         try:
             jsonschema.validate(
                 instance=self.operation_kwargs,
-                schema=self.operation.params_jsonschema,
+                schema=self.operation.kwargs_jsonschema,
             )
         except jsonschema.exceptions.ValidationError as _exception:
             raise ValidationError(_exception)

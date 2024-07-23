@@ -93,7 +93,7 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
         _user_uri = _request.session.get("user_reference_uri")
         _user, _ = UserReference.objects.get_or_create(user_uri=_user_uri)
         return AddonOperationInvocation(
-            operation=AddonOperationModel(_imp_cls, _operation),
+            operation=AddonOperationModel(_imp_cls.ADDON_INTERFACE, _operation),
             operation_kwargs=validated_data["operation_kwargs"],
             thru_addon=_thru_addon,
             thru_account=_thru_account,

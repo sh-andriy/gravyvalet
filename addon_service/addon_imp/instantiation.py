@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from asgiref.sync import async_to_sync
@@ -15,9 +17,9 @@ if TYPE_CHECKING:
 
 
 async def get_storage_addon_instance(
-    imp_cls: "type[StorageAddonImp]",
-    account: "AuthorizedStorageAccount",
-    config: "StorageConfig",
+    imp_cls: type[StorageAddonImp],
+    account: AuthorizedStorageAccount,
+    config: StorageConfig,
 ) -> StorageAddonImp:
     """create an instance of a `StorageAddonImp`
 

@@ -1,42 +1,41 @@
+from __future__ import annotations
+
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError as ModelValidationError
 from rest_framework_json_api import serializers
-from rest_framework_json_api.utils import get_resource_type_from_model
 
-from addon_service.abstract.authorized_account.models import AuthorizedAccount
-from addon_service.addon_operation.models import AddonOperationModel
-from addon_service.common import view_names
 from addon_service.common.credentials_formats import CredentialsFormats
-from addon_service.models import (
-    AuthorizedStorageAccount,
-    ExternalStorageService,
-    UserReference,
-)
 from addon_service.osf_models.fields import encrypt_string
 from addon_service.serializer_fields import (
     CredentialsField,
-    DataclassRelatedLinkField,
     EnumNameMultipleChoiceField,
-    ReadOnlyResourceRelatedField,
 )
 from addon_toolkit import AddonCapabilities
 
 
-RESOURCE_TYPE = get_resource_type_from_model(AuthorizedStorageAccount)
+if TYPE_CHECKING:
+    from addon_service.abstract.authorized_account.models import AuthorizedAccount
+    from addon_service.models import ExternalStorageService
+
+REQUIRED_FIELDS = frozenset(["url", "account_owner", "authorized_operations"])
 
 
 class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Check whether subclasses declare all of required fields
+        if not REQUIRED_FIELDS.issubset(set(self.fields.keys())):
+            raise Exception(
+                f"{self.__class__.__name__} requires {self.REQUIRED_FIELDS} to be instantiated"
+            )
+
         # Check if it's a POST request and remove the field as it's not in our FE spec
         if "context" in kwargs and kwargs["context"]["request"].method == "POST":
             self.fields.pop("configured_storage_addons", None)
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name=view_names.detail_view(RESOURCE_TYPE), required=False
-    )
     authorized_capabilities = EnumNameMultipleChoiceField(enum_cls=AddonCapabilities)
     authorized_operation_names = serializers.ListField(
         child=serializers.CharField(),
@@ -44,15 +43,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
     )
     auth_url = serializers.CharField(read_only=True)
     api_base_url = serializers.URLField(allow_blank=True, required=False)
-    account_owner = ReadOnlyResourceRelatedField(
-        many=False,
-        queryset=UserReference.objects.all(),
-        related_link_view_name=view_names.related_view(RESOURCE_TYPE),
-    )
-    authorized_operations = DataclassRelatedLinkField(
-        dataclass_model=AddonOperationModel,
-        related_link_view_name=view_names.related_view(RESOURCE_TYPE),
-    )
+
     credentials = CredentialsField(write_only=True, required=False)
     initiate_oauth = serializers.BooleanField(write_only=True, required=False)
 

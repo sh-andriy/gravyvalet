@@ -84,9 +84,10 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
                 {"thru_addon": "thru_addon and thru_account must agree"}
             )
 
+    @property
     def storage_imp_config(self) -> StorageConfig:
         if self.thru_addon:
-            return self.thru_addon.storage_imp_config()
+            return self.thru_addon.storage_imp_config
         return self.thru_account.storage_imp_config
 
     def set_exception(self, exception: BaseException) -> None:

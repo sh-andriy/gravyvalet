@@ -117,6 +117,7 @@ class ConfiguredStorageAddon(AddonsServiceBaseModel):
     def imp_cls(self) -> type[AddonImp]:
         return self.base_account.imp_cls
 
+    @property
     def storage_imp_config(self) -> StorageConfig:
         return dataclasses.replace(
             self.base_account.storage_imp_config,

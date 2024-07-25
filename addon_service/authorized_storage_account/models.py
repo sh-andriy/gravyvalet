@@ -21,6 +21,36 @@ class AuthorizedStorageAccount(AuthorizedAccount):
         related_name="authorized_storage_accounts",
     )
 
+    account_owner = models.ForeignKey(
+        "addon_service.UserReference",
+        on_delete=models.CASCADE,
+        related_name="authorized_storage_accounts",
+    )
+    _credentials = models.OneToOneField(
+        "addon_service.ExternalCredentials",
+        on_delete=models.CASCADE,
+        primary_key=False,
+        null=True,
+        blank=True,
+        related_name="authorized_storage_account",
+    )
+    _temporary_oauth1_credentials = models.OneToOneField(
+        "addon_service.ExternalCredentials",
+        on_delete=models.CASCADE,
+        primary_key=False,
+        null=True,
+        blank=True,
+        related_name="temporary_authorized_storage_account",
+    )
+    oauth2_token_metadata = models.ForeignKey(
+        "addon_service.OAuth2TokenMetadata",
+        on_delete=models.CASCADE,  # probs not
+        null=True,
+        blank=True,
+        related_name="authorized_storage_accounts",
+        related_query_name="%(class)s_authorized_storage_account",
+    )
+
     class Meta:
         verbose_name = "Authorized Storage Account"
         verbose_name_plural = "Authorized Storage Accounts"
@@ -35,7 +65,9 @@ class AuthorizedStorageAccount(AuthorizedAccount):
 
     async def execute_post_auth_hook(self, auth_extras: dict | None = None):
         imp = await get_storage_addon_instance(
-            self.imp_cls, self, self.storage_imp_config
+            self.imp_cls,
+            self,
+            self.storage_imp_config,
         )
         self.external_account_id = await imp.get_external_account_id(auth_extras or {})
         await self.asave()

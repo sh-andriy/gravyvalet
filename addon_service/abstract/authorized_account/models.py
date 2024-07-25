@@ -54,36 +54,6 @@ class AuthorizedAccount(AddonsServiceBaseModel):
     )
     _api_base_url = models.URLField(blank=True)
 
-    account_owner = models.ForeignKey(
-        "addon_service.UserReference",
-        on_delete=models.CASCADE,
-        related_name="authorized_storage_accounts",
-    )
-    _credentials = models.OneToOneField(
-        "addon_service.ExternalCredentials",
-        on_delete=models.CASCADE,
-        primary_key=False,
-        null=True,
-        blank=True,
-        related_name="authorized_storage_account",
-    )
-    _temporary_oauth1_credentials = models.OneToOneField(
-        "addon_service.ExternalCredentials",
-        on_delete=models.CASCADE,
-        primary_key=False,
-        null=True,
-        blank=True,
-        related_name="temporary_authorized_storage_account",
-    )
-    oauth2_token_metadata = models.ForeignKey(
-        "addon_service.OAuth2TokenMetadata",
-        on_delete=models.CASCADE,  # probs not
-        null=True,
-        blank=True,
-        related_name="authorized_storage_accounts",
-        related_query_name="%(class)s_authorized_storage_account",
-    )
-
     class Meta:
         abstract = True
 

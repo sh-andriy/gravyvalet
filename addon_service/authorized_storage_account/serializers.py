@@ -9,7 +9,12 @@ from rest_framework_json_api.utils import get_resource_type_from_model
 from addon_service.abstract.authorized_account.serializers import (
     AuthorizedAccountSerializer,
 )
+from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common import view_names
+from addon_service.common.serializer_fields import (
+    DataclassRelatedLinkField,
+    ReadOnlyResourceRelatedField,
+)
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
@@ -32,6 +37,18 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
         queryset=ConfiguredStorageAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
         required=False,
+    )
+    url = serializers.HyperlinkedIdentityField(
+        view_name=view_names.detail_view(RESOURCE_TYPE), required=False
+    )
+    account_owner = ReadOnlyResourceRelatedField(
+        many=False,
+        queryset=UserReference.objects.all(),
+        related_link_view_name=view_names.related_view(RESOURCE_TYPE),
+    )
+    authorized_operations = DataclassRelatedLinkField(
+        dataclass_model=AddonOperationModel,
+        related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
 
     included_serializers = {

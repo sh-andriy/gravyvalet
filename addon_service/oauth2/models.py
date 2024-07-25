@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -17,7 +19,7 @@ from .utils import FreshTokenResult
 
 
 if TYPE_CHECKING:
-    from addon_service.abstract.authorized_account import AuthorizedAccount
+    from addon_service.abstract.authorized_account.models import AuthorizedAccount
 
 
 class OAuth2ClientConfig(AddonsServiceBaseModel):
@@ -115,7 +117,7 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
     @transaction.atomic
     def update_with_fresh_token(
         self, fresh_token_result: FreshTokenResult
-    ) -> "tuple[AuthorizedAccount]":
+    ) -> tuple[AuthorizedAccount]:
         # update this record's fields
         self.state_nonce = None  # one-time-use, now used
         self.refresh_token = fresh_token_result.refresh_token

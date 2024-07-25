@@ -29,22 +29,6 @@ class ExternalService(AddonsServiceBaseModel):
     supported_scopes = ArrayField(models.CharField(), null=True, blank=True)
     api_base_url = models.URLField(blank=True, default="")
 
-    oauth1_client_config = models.ForeignKey(
-        "addon_service.OAuth1ClientConfig",
-        on_delete=models.SET_NULL,
-        related_name="external_storage_services",
-        null=True,
-        blank=True,
-    )
-
-    oauth2_client_config = models.ForeignKey(
-        "addon_service.OAuth2ClientConfig",
-        on_delete=models.SET_NULL,
-        related_name="external_storage_services",
-        null=True,
-        blank=True,
-    )
-
     class Meta:
         abstract = True
 

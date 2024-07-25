@@ -13,6 +13,21 @@ class ExternalStorageService(ExternalService):
     max_concurrent_downloads = models.IntegerField(null=False)
     max_upload_mb = models.IntegerField(null=False)
     wb_key = models.CharField(null=False, blank=True, default="")
+    oauth1_client_config = models.ForeignKey(
+        "addon_service.OAuth1ClientConfig",
+        on_delete=models.SET_NULL,
+        related_name="external_storage_services",
+        null=True,
+        blank=True,
+    )
+
+    oauth2_client_config = models.ForeignKey(
+        "addon_service.OAuth2ClientConfig",
+        on_delete=models.SET_NULL,
+        related_name="external_storage_services",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "External Storage Service"

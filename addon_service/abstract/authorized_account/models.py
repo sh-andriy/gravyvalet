@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from asgiref.sync import (
     async_to_sync,
@@ -32,6 +33,10 @@ from addon_toolkit.credentials import (
 )
 
 
+if TYPE_CHECKING:
+    from addon_service.user_reference.models import UserReference
+
+
 class AuthorizedAccountManager(models.Manager):
     def active(self):
         """filter to accounts owned by non-deactivated users"""
@@ -44,6 +49,12 @@ class AuthorizedAccount(AddonsServiceBaseModel):
     This model collects all of the information required to actually perform remote
     operations against the service and to aggregate accounts under a known user.
     """
+
+    if TYPE_CHECKING:
+        _credentials: ExternalCredentials
+        _temporary_oauth1_credentials: ExternalCredentials
+        account_owner: UserReference
+        oauth2_token_metadata: OAuth2TokenMetadata
 
     objects = AuthorizedAccountManager()
 

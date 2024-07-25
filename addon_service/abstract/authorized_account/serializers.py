@@ -23,6 +23,7 @@ REQUIRED_FIELDS = frozenset(["url", "account_owner", "authorized_operations"])
 
 
 class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -36,6 +37,9 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         if "context" in kwargs and kwargs["context"]["request"].method == "POST":
             self.fields.pop("configured_storage_addons", None)
 
+    display_name = serializers.CharField(
+        allow_blank=True, allow_null=True, required=False, max_length=256
+    )
     authorized_capabilities = EnumNameMultipleChoiceField(enum_cls=AddonCapabilities)
     authorized_operation_names = serializers.ListField(
         child=serializers.CharField(),
@@ -117,12 +121,11 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             instance.credentials = validated_data["credentials"]
         instance.save()  # may raise ValidationError
         if (
-                validated_data.get("initiate_oauth", False)
-                and instance.credentials_format is CredentialsFormats.OAUTH2
+            validated_data.get("initiate_oauth", False)
+            and instance.credentials_format is CredentialsFormats.OAUTH2
         ):
             instance.initiate_oauth2_flow(validated_data.get("authorized_scopes"))
         return instance
-
 
     class Meta:
         fields = [
@@ -136,5 +139,6 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             "authorized_operations",
             "authorized_operation_names",
             "credentials",
-            "external_storage_service",
+            "initiate_oauth",
+            "credentials_available",
         ]

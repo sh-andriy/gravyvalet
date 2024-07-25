@@ -39,7 +39,7 @@ class AuthorizedAccountManager(models.Manager):
 
 
 class AuthorizedAccount(AddonsServiceBaseModel):
-    """Model for descirbing a user's account on an ExternalService.
+    """Model for describing a user's account on an ExternalService.
 
     This model collects all of the information required to actually perform remote
     operations against the service and to aggregate accounts under a known user.
@@ -226,7 +226,7 @@ class AuthorizedAccount(AddonsServiceBaseModel):
             raise ValueError("Cannot initiate OAuth2 flow for non-OAuth2 credentials")
         self.oauth2_token_metadata = OAuth2TokenMetadata.objects.create(
             authorized_scopes=(
-                    authorized_scopes or self.external_service.supported_scopes
+                authorized_scopes or self.external_service.supported_scopes
             ),
             state_nonce=oauth2_utils.generate_state_nonce(),
         )

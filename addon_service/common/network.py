@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import dataclasses
 import logging
@@ -24,7 +26,6 @@ from addon_toolkit.iri_utils import Multidict
 
 if typing.TYPE_CHECKING:
     from addon_service import models as db
-    from addon_service.models import AuthorizedStorageAccount
 
 
 __all__ = ("GravyvaletHttpRequestor",)

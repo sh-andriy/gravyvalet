@@ -2,12 +2,12 @@ from django.db import models
 
 from addon_service.abstract.authorized_account.models import AuthorizedAccount
 from addon_service.addon_imp.instantiation import get_storage_addon_instance
-from addon_service.external_storage_service import ExternalStorageService
+from addon_service.external_storage_service.models import ExternalStorageService
 from addon_toolkit.interfaces.storage import StorageConfig
 
 
 class AuthorizedStorageAccount(AuthorizedAccount):
-    """Model for descirbing a user's account on an ExternalStorageService.
+    """Model for describing a user's account on an ExternalService.
 
     This model collects all of the information required to actually perform remote
     operations against the service and to aggregate accounts under a known user.

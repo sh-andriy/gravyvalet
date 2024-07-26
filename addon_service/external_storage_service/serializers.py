@@ -15,6 +15,7 @@ RESOURCE_TYPE = get_resource_type_from_model(ExternalStorageService)
 
 class ExternalStorageServiceSerializer(ExternalServiceSerializer):
     """api serializer for the `ExternalService` model"""
+
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE)
     )

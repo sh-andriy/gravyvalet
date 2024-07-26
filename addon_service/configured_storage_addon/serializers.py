@@ -2,6 +2,9 @@ from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.utils import get_resource_type_from_model
 
+from addon_service.abstract.configured_addon.serializers import (
+    ConfiguredAddonSerializer,
+)
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common import view_names
 from addon_service.common.enum_serializers import EnumNameMultipleChoiceField
@@ -16,7 +19,7 @@ from addon_toolkit import AddonCapabilities
 RESOURCE_TYPE = get_resource_type_from_model(ConfiguredStorageAddon)
 
 
-class ConfiguredStorageAddonSerializer(serializers.HyperlinkedModelSerializer):
+class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
     """api serializer for the `ConfiguredStorageAddon` model"""
 
     root_folder = serializers.CharField(required=False, allow_blank=True)

@@ -1,17 +1,25 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.validators import validate_addon_capability
-from addon_service.resource_reference.models import ResourceReference
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
 )
 
 
-class ConnectedStorageAddonManager(models.Manager):
+if TYPE_CHECKING:
+    from addon_service.abstract.authorized_account.models import AuthorizedAccount
+    from addon_service.resource_reference.models import ResourceReference
+
+
+class ConnectedAddonManager(models.Manager):
 
     def active(self):
         """filter to addons owned by non-deactivated users"""
@@ -21,24 +29,16 @@ class ConnectedStorageAddonManager(models.Manager):
 
 
 class ConfiguredAddon(AddonsServiceBaseModel):
-    objects = ConnectedStorageAddonManager()
+    objects = ConnectedAddonManager()
 
     _display_name = models.CharField(null=False, blank=True, default="")
-    root_folder = models.CharField(blank=True)
     int_connected_capabilities = models.IntegerField(
         validators=[validate_addon_capability]
     )
 
-    base_account = models.ForeignKey(
-        "addon_service.AuthorizedAccount",
-        on_delete=models.CASCADE,
-        related_name="configured_storage_addons",
-    )
-    authorized_resource = models.ForeignKey(
-        "addon_service.ResourceReference",
-        on_delete=models.CASCADE,
-        related_name="configured_storage_addons",
-    )
+    if TYPE_CHECKING:
+        base_account: AuthorizedAccount
+        authorized_resource: ResourceReference
 
     class Meta:
         abstract = True

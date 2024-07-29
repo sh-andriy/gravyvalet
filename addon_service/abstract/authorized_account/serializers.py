@@ -71,7 +71,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         external_service: ExternalStorageService,
         validated_data: dict,
     ) -> AuthorizedAccount:
-    """Handles creation of the appropriate AuthorizedAccount subclass"""
+        """Handles creation of the appropriate AuthorizedAccount subclass"""
 
     def create(self, validated_data: dict) -> AuthorizedAccount:
         external_service = self.get_external_service(validated_data)

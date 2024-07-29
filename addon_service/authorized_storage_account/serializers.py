@@ -58,7 +58,8 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
-    def create_external_service(self, validated_data: dict) -> ExternalStorageService:
+    @staticmethod
+    def get_external_service(validated_data: dict) -> ExternalStorageService:
         return validated_data["external_storage_service"]
 
     def create_authorized_account(

@@ -58,9 +58,9 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
+    @staticmethod
     @abstractmethod
-    def create_external_service(
-        self,
+    def get_external_service(
         validated_data: dict,
     ) -> ExternalStorageService:  # TODO: change to ExternalService once implemented
         ...
@@ -73,11 +73,20 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
     ) -> AuthorizedAccount: ...
 
     def create(self, validated_data: dict) -> AuthorizedAccount:
-        external_service = self.create_external_service(validated_data)
+        external_service = self.get_external_service(validated_data)
         authorized_account = self.create_authorized_account(
             external_service, validated_data
         )
+        return self.process_and_set_auth(
+            external_service, authorized_account, validated_data
+        )
 
+    def process_and_set_auth(
+        self,
+        external_service: ExternalStorageService,
+        authorized_account: AuthorizedAccount,
+        validated_data: dict,
+    ) -> AuthorizedAccount:
         if validated_data.get("initiate_oauth", False):
             if external_service.credentials_format is CredentialsFormats.OAUTH2:
                 authorized_account.initiate_oauth2_flow(

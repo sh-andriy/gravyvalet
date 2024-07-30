@@ -21,6 +21,7 @@ from addon_service.models import (
     ExternalStorageService,
     UserReference,
 )
+from addon_toolkit import AddonCapabilities
 
 
 RESOURCE_TYPE = get_resource_type_from_model(AuthorizedStorageAccount)
@@ -59,13 +60,18 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
     }
 
     @staticmethod
-    def get_external_service(validated_data: dict) -> ExternalStorageService:
-        return validated_data["external_storage_service"]
+    def get_external_service(
+        external_storage_service: ExternalStorageService, **kwargs
+    ) -> ExternalStorageService:
+        return external_storage_service
 
     def create_authorized_account(
         self,
         external_service: ExternalStorageService,
-        validated_data: dict,
+        authorized_capabilities: AddonCapabilities,
+        display_name: str = "",
+        api_base_url: str = "",
+        **kwargs,
     ) -> AuthorizedStorageAccount:
         session_user_uri = self.context["request"].session.get("user_reference_uri")
         account_owner, _ = UserReference.objects.get_or_create(
@@ -73,11 +79,11 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
         )
         try:
             return AuthorizedStorageAccount.objects.create(
-                _display_name=validated_data.get("display_name", ""),
+                _display_name=display_name,
                 external_storage_service=external_service,
                 account_owner=account_owner,
-                authorized_capabilities=validated_data.get("authorized_capabilities"),
-                api_base_url=validated_data.get("api_base_url", ""),
+                authorized_capabilities=authorized_capabilities,
+                api_base_url=api_base_url,
             )
         except ModelValidationError as e:
             raise serializers.ValidationError(e)

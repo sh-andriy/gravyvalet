@@ -65,7 +65,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data: dict) -> AuthorizedAccount:
         authorized_account = self.create_authorized_account(**validated_data)
-        return self.process_and_set_auth(authorized_account)
+        return self.process_and_set_auth(authorized_account, validated_data)
 
     def process_and_set_auth(
         self,

@@ -59,15 +59,9 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
-    @staticmethod
-    def get_external_service(
-        external_storage_service: ExternalStorageService, **kwargs
-    ) -> ExternalStorageService:
-        return external_storage_service
-
     def create_authorized_account(
         self,
-        external_service: ExternalStorageService,
+        external_storage_service: ExternalStorageService,
         authorized_capabilities: AddonCapabilities,
         display_name: str = "",
         api_base_url: str = "",
@@ -80,7 +74,7 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
         try:
             return AuthorizedStorageAccount.objects.create(
                 _display_name=display_name,
-                external_storage_service=external_service,
+                external_storage_service=external_storage_service,
                 account_owner=account_owner,
                 authorized_capabilities=authorized_capabilities,
                 api_base_url=api_base_url,

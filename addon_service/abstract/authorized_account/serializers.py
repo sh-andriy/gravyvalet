@@ -17,13 +17,11 @@ from addon_toolkit import AddonCapabilities
 
 if TYPE_CHECKING:
     from addon_service.abstract.authorized_account.models import AuthorizedAccount
-    from addon_service.models import ExternalStorageService
 
 REQUIRED_FIELDS = frozenset(["url", "account_owner", "authorized_operations"])
 
 
 class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -58,42 +56,28 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
-    @staticmethod
-    @abstractmethod
-    def get_external_service(
-        **kwargs: dict,
-    ) -> ExternalStorageService:  # TODO: change to ExternalService once implemented
-        """Handles retrieval of the appropriate ExternalService instance from the validated serializer data."""
-
     @abstractmethod
     def create_authorized_account(
         self,
-        external_service: ExternalStorageService,
         **kwargs,
     ) -> AuthorizedAccount:
         """Handles creation of the appropriate AuthorizedAccount subclass"""
 
     def create(self, validated_data: dict) -> AuthorizedAccount:
-        external_service = self.get_external_service(**validated_data)
-        authorized_account = self.create_authorized_account(
-            external_service, **validated_data
-        )
-        return self.process_and_set_auth(
-            external_service, authorized_account, validated_data
-        )
+        authorized_account = self.create_authorized_account(**validated_data)
+        return self.process_and_set_auth(authorized_account)
 
     def process_and_set_auth(
         self,
-        external_service: ExternalStorageService,
         authorized_account: AuthorizedAccount,
         validated_data: dict,
     ) -> AuthorizedAccount:
         if validated_data.get("initiate_oauth", False):
-            if external_service.credentials_format is CredentialsFormats.OAUTH2:
+            if authorized_account.credentials_format is CredentialsFormats.OAUTH2:
                 authorized_account.initiate_oauth2_flow(
                     validated_data.get("authorized_scopes")
                 )
-            elif external_service.credentials_format is CredentialsFormats.OAUTH1A:
+            elif authorized_account.credentials_format is CredentialsFormats.OAUTH1A:
                 authorized_account.initiate_oauth1_flow()
                 self.context["request"].session["oauth1a_account_id"] = encrypt_string(
                     authorized_account.pk
@@ -112,7 +96,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         except ModelValidationError as e:
             raise serializers.ValidationError(e)
 
-        if external_service.credentials_format.is_direct_from_user:
+        if authorized_account.credentials_format.is_direct_from_user:
             authorized_account.execute_post_auth_hook()
 
         return authorized_account

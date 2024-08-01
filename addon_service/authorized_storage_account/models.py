@@ -48,7 +48,6 @@ class AuthorizedStorageAccount(AuthorizedAccount):
         null=True,
         blank=True,
         related_name="authorized_storage_accounts",
-        related_query_name="%(class)s_authorized_storage_account",
     )
 
     class Meta:

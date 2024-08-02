@@ -7,13 +7,11 @@ from addon_service.abstract.configured_addon.serializers import (
 )
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common import view_names
-from addon_service.common.enum_serializers import EnumNameMultipleChoiceField
 from addon_service.common.serializer_fields import DataclassRelatedLinkField
 from addon_service.models import (
     AuthorizedStorageAccount,
     ConfiguredStorageAddon,
 )
-from addon_toolkit import AddonCapabilities
 
 
 RESOURCE_TYPE = get_resource_type_from_model(ConfiguredStorageAddon)
@@ -26,14 +24,6 @@ class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE)
     )
-    display_name = serializers.CharField(
-        allow_blank=True, allow_null=True, required=False, max_length=256
-    )
-    connected_capabilities = EnumNameMultipleChoiceField(enum_cls=AddonCapabilities)
-    connected_operation_names = serializers.ListField(
-        child=serializers.CharField(),
-        read_only=True,
-    )
     connected_operations = DataclassRelatedLinkField(
         dataclass_model=AddonOperationModel,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
@@ -43,9 +33,6 @@ class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
         queryset=AuthorizedStorageAccount.objects.all(),
         many=False,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
-    )
-    authorized_resource_uri = serializers.CharField(
-        required=False, source="resource_uri", write_only=True
     )
     authorized_resource = ResourceRelatedField(
         many=False,

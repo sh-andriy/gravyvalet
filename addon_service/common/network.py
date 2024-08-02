@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import dataclasses
 import logging
@@ -23,7 +25,7 @@ from addon_toolkit.iri_utils import Multidict
 
 
 if typing.TYPE_CHECKING:
-    from addon_service.models import AuthorizedStorageAccount
+    from addon_service import models as db
 
 
 __all__ = ("GravyvaletHttpRequestor",)
@@ -65,7 +67,7 @@ class GravyvaletHttpRequestor(HttpRequestor):
         *,
         client_session: aiohttp.ClientSession,
         prefix_url: str,
-        account: "AuthorizedStorageAccount",
+        account: db.AuthorizedStorageAccount,
     ):
         _PrivateNetworkInfo(client_session, prefix_url, account).assign(self)
 
@@ -149,7 +151,7 @@ class _PrivateNetworkInfo(_PrivateInfo):
 
     # keep network constraints away from imps
     prefix_url: str
-    account: "AuthorizedStorageAccount"
+    account: db.AuthorizedStorageAccount
 
     @sync_to_async
     def get_headers(self) -> Multidict:

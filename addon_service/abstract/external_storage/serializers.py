@@ -4,10 +4,23 @@ from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.enum_serializers import EnumNameChoiceField
 
 
+REQUIRED_FIELDS = frozenset(["url", "addon_imp"])
+
+
 class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Check whether subclasses declare all of required fields
+        if not REQUIRED_FIELDS.issubset(set(self.fields.keys())):
+            raise Exception(
+                f"{self.__class__.__name__} requires {self.REQUIRED_FIELDS} to be instantiated"
+            )
+
     credentials_format = EnumNameChoiceField(
-        enum_cls=CredentialsFormats, read_only=True
+        enum_cls=CredentialsFormats,
+        read_only=True,
     )
 
     included_serializers = {

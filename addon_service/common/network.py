@@ -30,7 +30,6 @@ if typing.TYPE_CHECKING:
 
 __all__ = ("GravyvaletHttpRequestor",)
 
-
 _logger = logging.getLogger(__name__)
 
 

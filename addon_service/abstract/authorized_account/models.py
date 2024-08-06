@@ -104,7 +104,7 @@ class AuthorizedAccount(AddonsServiceBaseModel):
         return None
 
     @temporary_oauth1_credentials.setter
-    def temporary_oauth1_credentials(self, credentials_data: OAuth1Credentials):
+    def temporary_oauth1_credentials(self, credentials_data: OAuth1Credentials) -> None:
         if self.credentials_format is not CredentialsFormats.OAUTH1A:
             raise ValidationError(
                 "Trying to set temporary credentials for non OAuth1A account"

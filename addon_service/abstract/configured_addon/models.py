@@ -8,6 +8,7 @@ from django.db import models
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.common.validators import validate_addon_capability
+from addon_service.resource_reference.models import ResourceReference
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
@@ -16,7 +17,6 @@ from addon_toolkit import (
 
 if TYPE_CHECKING:
     from addon_service.abstract.authorized_account.models import AuthorizedAccount
-    from addon_service.resource_reference.models import ResourceReference
 
 
 class ConnectedAddonManager(models.Manager):

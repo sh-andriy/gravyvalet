@@ -13,9 +13,11 @@ __all__ = (
 )
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class CitationConfig:
-    pass
+    external_api_url: str
+    connected_root_id: str | None = None
+    external_account_id: str | None = None
 
 
 class CitationAddonInterface(BaseAddonInterface, typing.Protocol):

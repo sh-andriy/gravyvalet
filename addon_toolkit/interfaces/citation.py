@@ -19,6 +19,7 @@ class CitationConfig:
     connected_root_id: str | None = None
     external_account_id: str | None = None
 
+
 class CitationAddonInterface(BaseAddonInterface, typing.Protocol):
     pass
 

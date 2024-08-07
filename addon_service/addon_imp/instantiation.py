@@ -10,10 +10,13 @@ from addon_toolkit.interfaces.storage import (
     StorageAddonImp,
     StorageConfig,
 )
-
+from addon_toolkit.interfaces.citation import (
+    CitationAddonImp,
+    CitationConfig,
+)
 
 if TYPE_CHECKING:
-    from addon_service.models import AuthorizedStorageAccount
+    from addon_service.models import AuthorizedStorageAccount, AuthorizedCitationAccount
 
 
 async def get_storage_addon_instance(
@@ -41,3 +44,11 @@ get_storage_addon_instance__blocking = async_to_sync(get_storage_addon_instance)
 
 (same as `get_storage_addon_instance`, for use in synchronous context
 """
+
+
+async def get_citation_addon_instance(
+    imp_cls: type[CitationAddonImp],
+    account: AuthorizedCitationAccount,
+    config: CitationConfig,
+) -> CitationAddonImp:
+    """create an instance of a `CitationAddonImp`"""

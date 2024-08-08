@@ -9,6 +9,7 @@ from addon_service.common import view_names
 from addon_service.common.serializer_fields import DataclassRelatedDataField
 from addon_service.models import ExternalCitationService
 
+
 RESOURCE_TYPE = get_resource_type_from_model(ExternalCitationService)
 
 
@@ -30,8 +31,6 @@ class ExternalCitationServiceSerializer(ExternalServiceSerializer):
             "addon_imp",
             "auth_uri",
             "credentials_format",
-            "max_concurrent_downloads",
-            "max_upload_mb",
             "display_name",
             "url",
             "wb_key",

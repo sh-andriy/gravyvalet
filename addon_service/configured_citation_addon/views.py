@@ -3,6 +3,6 @@ from .models import ConfiguredCitationAddon
 from .serializers import ConfiguredCitationAddonSerializer
 
 
-class ConfiguredStorageAddonViewSet(ConfiguredAddonViewSet):
+class ConfiguredCitationAddonViewSet(ConfiguredAddonViewSet):
     queryset = ConfiguredCitationAddon.objects.active()
     serializer_class = ConfiguredCitationAddonSerializer

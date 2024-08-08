@@ -8,6 +8,7 @@ class ExternalCitationService(ExternalService):
         null=False,
         verbose_name="Addon implementation",
     )
+    # Do we need the wb_key field for ExternalCitationService ?
     wb_key = models.CharField(null=False, blank=True, default="")
     oauth1_client_config = models.ForeignKey(
         "addon_service.OAuth1ClientConfig",

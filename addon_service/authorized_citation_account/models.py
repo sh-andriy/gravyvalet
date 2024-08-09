@@ -74,7 +74,6 @@ class AuthorizedCitationAccount(AuthorizedAccount):
     @property
     def citation_imp_config(self) -> CitationConfig:
         return CitationConfig(
-            max_upload_mb=self.external_service.max_upload_mb,
             external_api_url=self.api_base_url,
             connected_root_id=self.default_root_folder,
             external_account_id=self.external_account_id,

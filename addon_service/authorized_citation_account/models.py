@@ -7,7 +7,7 @@ from addon_toolkit.interfaces.citation import CitationConfig
 
 
 class AuthorizedCitationAccount(AuthorizedAccount):
-    """Model for describing a user's account on an ExternalService.
+    """Model for describing a user's account on an ExternalCitationService.
 
     This model collects all of the information required to actually perform remote
     operations against the service and to aggregate accounts under a known user.

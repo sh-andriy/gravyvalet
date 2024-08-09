@@ -51,7 +51,7 @@ def _validate_imp_number(value, cls):
         raise ValidationError(f"invalid imp number: {value}")
 
     if not issubclass(_imp_cls, cls):
-        raise ValidationError(f"expected storage imp (got {_imp_cls})")
+        raise ValidationError(f"expected {cls.__name__} subclass (got {_imp_cls})")
 
 
 def validate_storage_imp_number(value):

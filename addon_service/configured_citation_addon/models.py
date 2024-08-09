@@ -1,5 +1,3 @@
-import dataclasses
-
 from django.db import models
 
 from addon_service.abstract.configured_addon.models import ConfiguredAddon
@@ -7,8 +5,6 @@ from addon_toolkit.interfaces.citation import CitationConfig
 
 
 class ConfiguredCitationAddon(ConfiguredAddon):
-
-    root_folder = models.CharField(blank=True)
 
     base_account = models.ForeignKey(
         "addon_service.AuthorizedCitationAccount",
@@ -31,7 +27,4 @@ class ConfiguredCitationAddon(ConfiguredAddon):
 
     @property
     def citation_imp_config(self) -> CitationConfig:
-        return dataclasses.replace(
-            self.base_account.citation_imp_config,
-            connected_root_id=self.root_folder,
-        )
+        return self.base_account.citation_imp_config

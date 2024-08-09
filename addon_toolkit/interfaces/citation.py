@@ -7,11 +7,10 @@ from enum import (
 
 
 __all__ = (
-    "ItemResult",
     "ItemSampleResult",
     "CitationConfig",
     "ItemType",
-    "RootItemResult",
+    "ItemResult",
     "CitationServiceInterface",
     "CitationAddonImp",
 )
@@ -25,7 +24,7 @@ from addon_toolkit import (
 from addon_toolkit.constrained_network.http import HttpRequestor
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class CitationConfig:
     external_api_url: str
     connected_root_id: str | None = None
@@ -38,21 +37,17 @@ class ItemType(Enum):
 
 
 @dataclasses.dataclass(slots=True)
-class RootItemResult:
+class ItemResult:
     item_id: int
     item_name: str
     item_type: ItemType
-    item_path: typing.Optional[typing.List[str]] = None
-
-
-@dataclasses.dataclass
-class ItemResult(RootItemResult, slots=True):
+    item_path: list[str] | None = None
     csl: dict | None = None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class ItemSampleResult:
-    items: typing.List[RootItemResult]
+    items: list[ItemResult]
     total_count: typing.Optional[int] = None
     next_sample_cursor: str | None = None
     prev_sample_cursor: str | None = None

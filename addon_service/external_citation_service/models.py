@@ -1,15 +1,15 @@
 from django.db import models
 
 from addon_service.abstract.external_storage.models import ExternalService
+from addon_service.common.validators import validate_citation_imp_number
 
 
 class ExternalCitationService(ExternalService):
     int_addon_imp = models.IntegerField(
         null=False,
+        validators=[validate_citation_imp_number],
         verbose_name="Addon implementation",
     )
-    # Do we need the wb_key field for ExternalCitationService ?
-    wb_key = models.CharField(null=False, blank=True, default="")
     oauth1_client_config = models.ForeignKey(
         "addon_service.OAuth1ClientConfig",
         on_delete=models.SET_NULL,

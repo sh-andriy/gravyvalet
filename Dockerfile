@@ -30,7 +30,7 @@ FROM gv-base AS gv-dev-deps
 # install dev and non-dev dependencies:
 RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
 RUN python -m venv ./.venv
-RUN poetry install --only dev
+RUN poetry install --without release
 # END gv-dev-deps
 
 # BEGIN gv-dev
@@ -54,7 +54,7 @@ FROM gv-base AS gv-deploy-deps
 # install non-dev and release-only dependencies:
 RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
 RUN python -m venv venv
-RUN poetry install --only release
+RUN poetry install --without dev
 # copy auto-generated static docs (without the dev dependencies that built them)
 COPY --from=gv-docs /code/addon_service/static/gravyvalet_code_docs/ /code/addon_service/static/gravyvalet_code_docs/
 # collect static files into a single directory:

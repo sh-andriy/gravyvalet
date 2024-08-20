@@ -35,7 +35,7 @@ jobs:
       - name: install poetry
         run: curl -sSL https://install.python-poetry.org | python - --version 1.8.3
       - name: install py dependencies
-        run: poetry install --only dev
+        run: poetry install --without release
       - name: set up pre-commit cache
         uses: actions/cache@v4
         with:

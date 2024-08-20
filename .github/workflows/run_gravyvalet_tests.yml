@@ -39,7 +39,7 @@ jobs:
       - name: set up venv cache
         uses: actions/cache@v4
         with:
-          path: .venv/lib/python${{matrix.python-version}}/site-packages
+          path: .venv
           key: ${{hashfiles('poetry.lock')}}
       - name: install py dependencies
         run: poetry install --without release

@@ -32,7 +32,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry
       - name: install poetry
         run: curl -sSL https://install.python-poetry.org | python - --version 1.8.3
       - name: install py dependencies

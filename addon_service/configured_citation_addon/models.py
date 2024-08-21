@@ -6,6 +6,8 @@ from addon_toolkit.interfaces.citation import CitationConfig
 
 class ConfiguredCitationAddon(ConfiguredAddon):
 
+    root_folder = models.CharField(blank=True)
+
     base_account = models.ForeignKey(
         "addon_service.AuthorizedCitationAccount",
         on_delete=models.CASCADE,

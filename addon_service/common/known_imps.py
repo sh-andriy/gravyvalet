@@ -5,7 +5,10 @@ import and add new implementations here to make them available in the api
 
 import enum
 
-from addon_imps.citations import zotero_org
+from addon_imps.citations import (
+    mendeley,
+    zotero_org,
+)
 from addon_imps.storage import box_dot_com
 from addon_service.common.enum_decorators import enum_names_same_as
 from addon_toolkit import AddonImp
@@ -56,6 +59,7 @@ class KnownAddonImps(enum.Enum):
 
     BOX_DOT_COM = box_dot_com.BoxDotComStorageImp
     ZOTERO_ORG = zotero_org.ZoteroOrgCitationImp
+    MENDELEY = mendeley.MendeleyCitationImp
 
     if __debug__:
         BLARG = my_blarg.MyBlargStorage
@@ -68,6 +72,7 @@ class AddonImpNumbers(enum.Enum):
 
     BOX_DOT_COM = 1001
     ZOTERO_ORG = 1002
+    MENDELEY = 1003
 
     if __debug__:
         BLARG = -7

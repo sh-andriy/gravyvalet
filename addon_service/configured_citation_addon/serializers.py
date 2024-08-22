@@ -6,21 +6,18 @@ from addon_service.abstract.configured_addon.serializers import (
     ConfiguredAddonSerializer,
 )
 from addon_service.addon_operation.models import AddonOperationModel
+from addon_service.authorized_citation_account.models import AuthorizedCitationAccount
 from addon_service.common import view_names
 from addon_service.common.serializer_fields import DataclassRelatedLinkField
-from addon_service.models import (
-    AuthorizedStorageAccount,
-    ConfiguredStorageAddon,
-)
+from addon_service.configured_citation_addon.models import ConfiguredCitationAddon
 
 
-RESOURCE_TYPE = get_resource_type_from_model(ConfiguredStorageAddon)
+RESOURCE_TYPE = get_resource_type_from_model(ConfiguredCitationAddon)
 
 
-class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
-    """api serializer for the `ConfiguredStorageAddon` model"""
+class ConfiguredCitationAddonSerializer(ConfiguredAddonSerializer):
+    """api serializer for the `ConfiguredCitationAddon` model"""
 
-    root_folder = serializers.CharField(required=False, allow_blank=True)
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE)
     )
@@ -30,7 +27,7 @@ class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
         read_only=True,
     )
     base_account = ResourceRelatedField(
-        queryset=AuthorizedStorageAccount.objects.all(),
+        queryset=AuthorizedCitationAccount.objects.all(),
         many=False,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
@@ -42,14 +39,14 @@ class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
 
     included_serializers = {
         "base_account": (
-            "addon_service.serializers.AuthorizedStorageAccountSerializer"
+            "addon_service.serializers.AuthorizedCitationAccountSerializer"
         ),
         "authorized_resource": "addon_service.serializers.ResourceReferenceSerializer",
         "connected_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
     class Meta:
-        model = ConfiguredStorageAddon
+        model = ConfiguredCitationAddon
         fields = [
             "id",
             "url",

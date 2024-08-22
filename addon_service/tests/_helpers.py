@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import dataclasses
 import secrets
@@ -175,7 +177,7 @@ class MockOAuth2ExternalService:
 
 @dataclasses.dataclass
 class MockOAuth1ServiceProvider:
-    _external_service: "ExternalStorageService"
+    _external_service: ExternalStorageService
     _static_request_token: str
     _static_request_secret: str
     _static_verifier: str

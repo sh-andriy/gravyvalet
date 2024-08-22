@@ -16,26 +16,26 @@ from addon_service.common.serializer_fields import (
     ReadOnlyResourceRelatedField,
 )
 from addon_service.models import (
-    AuthorizedStorageAccount,
-    ConfiguredStorageAddon,
-    ExternalStorageService,
+    AuthorizedCitationAccount,
+    ConfiguredCitationAddon,
+    ExternalCitationService,
     UserReference,
 )
 from addon_toolkit import AddonCapabilities
 
 
-RESOURCE_TYPE = get_resource_type_from_model(AuthorizedStorageAccount)
+RESOURCE_TYPE = get_resource_type_from_model(AuthorizedCitationAccount)
 
 
-class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
-    external_storage_service = ResourceRelatedField(
-        queryset=ExternalStorageService.objects.all(),
+class AuthorizedCitationAccountSerializer(AuthorizedAccountSerializer):
+    external_citation_service = ResourceRelatedField(
+        queryset=ExternalCitationService.objects.all(),
         many=False,
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
-    configured_storage_addons = HyperlinkedRelatedField(
+    configured_citation_addons = HyperlinkedRelatedField(
         many=True,
-        queryset=ConfiguredStorageAddon.objects.active(),
+        queryset=ConfiguredCitationAddon.objects.active(),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
         required=False,
     )
@@ -54,27 +54,27 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
 
     included_serializers = {
         "account_owner": "addon_service.serializers.UserReferenceSerializer",
-        "external_storage_service": "addon_service.serializers.ExternalStorageServiceSerializer",
-        "configured_storage_addons": "addon_service.serializers.ConfiguredStorageAddonSerializer",
+        "external_citation_service": "addon_service.serializers.ExternalCitationServiceSerializer",
+        "configured_citation_addons": "addon_service.serializers.ConfiguredCitationAddonSerializer",
         "authorized_operations": "addon_service.serializers.AddonOperationSerializer",
     }
 
     def create_authorized_account(
         self,
-        external_storage_service: ExternalStorageService,
+        external_citation_service: ExternalCitationService,
         authorized_capabilities: AddonCapabilities,
         display_name: str = "",
         api_base_url: str = "",
         **kwargs,
-    ) -> AuthorizedStorageAccount:
+    ) -> AuthorizedCitationAccount:
         session_user_uri = self.context["request"].session.get("user_reference_uri")
         account_owner, _ = UserReference.objects.get_or_create(
             user_uri=session_user_uri
         )
         try:
-            return AuthorizedStorageAccount.objects.create(
+            return AuthorizedCitationAccount.objects.create(
                 _display_name=display_name,
-                external_storage_service=external_storage_service,
+                external_citation_service=external_citation_service,
                 account_owner=account_owner,
                 authorized_capabilities=authorized_capabilities,
                 api_base_url=api_base_url,
@@ -83,7 +83,7 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
             raise serializers.ValidationError(e)
 
     class Meta:
-        model = AuthorizedStorageAccount
+        model = AuthorizedCitationAccount
         fields = [
             "id",
             "url",
@@ -94,10 +94,10 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
             "authorized_capabilities",
             "authorized_operations",
             "authorized_operation_names",
-            "configured_storage_addons",
+            "configured_citation_addons",
             "credentials",
             "default_root_folder",
-            "external_storage_service",
+            "external_citation_service",
             "initiate_oauth",
             "credentials_available",
         ]

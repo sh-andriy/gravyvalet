@@ -7,14 +7,14 @@ from addon_service.abstract.external_storage.serializers import (
 from addon_service.addon_imp.models import AddonImpModel
 from addon_service.common import view_names
 from addon_service.common.serializer_fields import DataclassRelatedDataField
-from addon_service.models import ExternalStorageService
+from addon_service.models import ExternalCitationService
 
 
-RESOURCE_TYPE = get_resource_type_from_model(ExternalStorageService)
+RESOURCE_TYPE = get_resource_type_from_model(ExternalCitationService)
 
 
-class ExternalStorageServiceSerializer(ExternalServiceSerializer):
-    """api serializer for the `ExternalService` model"""
+class ExternalCitationServiceSerializer(ExternalServiceSerializer):
+    """api serializer for the `ExternalCitation` model"""
 
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE)
@@ -25,16 +25,13 @@ class ExternalStorageServiceSerializer(ExternalServiceSerializer):
     )
 
     class Meta:
-        model = ExternalStorageService
+        model = ExternalCitationService
         fields = [
             "id",
             "addon_imp",
             "auth_uri",
             "credentials_format",
-            "max_concurrent_downloads",
-            "max_upload_mb",
             "display_name",
             "url",
-            "wb_key",
             "configurable_api_root",
         ]

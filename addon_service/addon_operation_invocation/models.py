@@ -68,6 +68,12 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
     def imp_cls(self) -> type[AddonImp]:
         return self.thru_account.imp_cls
 
+    @property
+    def storage_imp_config(self) -> StorageConfig:
+        if self.thru_addon:
+            return self.thru_addon.storage_imp_config
+        return self.thru_account.storage_imp_config
+
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)
         try:
@@ -83,11 +89,6 @@ class AddonOperationInvocation(AddonsServiceBaseModel):
             raise ValidationError(
                 {"thru_addon": "thru_addon and thru_account must agree"}
             )
-
-    def storage_imp_config(self) -> StorageConfig:
-        if self.thru_addon:
-            return self.thru_addon.storage_imp_config()
-        return self.thru_account.storage_imp_config()
 
     def set_exception(self, exception: BaseException) -> None:
         self.invocation_status = InvocationStatus.ERROR

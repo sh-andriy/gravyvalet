@@ -11,6 +11,8 @@ from addon_toolkit.interfaces.citation import (
     CitationConfig,
 )
 from addon_toolkit.interfaces.storage import (
+    StorageAddonClientRequestorImp,
+    StorageAddonHttpRequestorImp,
     StorageAddonImp,
     StorageConfig,
 )
@@ -33,14 +35,19 @@ async def get_storage_addon_instance(
     (TODO: decide on a common constructor for all `AddonImp`s, remove this)
     """
     assert issubclass(imp_cls, StorageAddonImp)
-    return imp_cls(
-        config=config,
-        network=GravyvaletHttpRequestor(
-            client_session=await get_singleton_client_session(),
-            prefix_url=config.external_api_url,
-            account=account,
-        ),
-    )
+    if issubclass(imp_cls, StorageAddonHttpRequestorImp):
+        imp = imp_cls(
+            config=config,
+            network=GravyvaletHttpRequestor(
+                client_session=await get_singleton_client_session(),
+                prefix_url=config.external_api_url,
+                account=account,
+            ),
+        )
+    if issubclass(imp_cls, StorageAddonClientRequestorImp):
+        imp = imp_cls(credentials=await account.get_credentials__async(), config=config)
+
+    return imp
 
 
 get_storage_addon_instance__blocking = async_to_sync(get_storage_addon_instance)

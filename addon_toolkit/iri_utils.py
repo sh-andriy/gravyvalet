@@ -94,17 +94,17 @@ def iri_with_query(iri: str, query_params: KeyValuePairs | Multidict) -> str:
 
     `query_params` may be a dictionary (with string keys and values):
     >>> iri_with_query('http://foo.example/hello?q=p', {'a': 'z'})
-    'http://foo.example/hello?a=z'
+    'http://foo.example/hello?a=z&q=p'
 
     ...or an iterable of key-value pairs:
     >>> iri_with_query('http://foo.example/hello?q=p', [('a', 'z')])
-    'http://foo.example/hello?a=z'
+    'http://foo.example/hello?a=z&q=p'
 
     ...or a Multidict instance:
     >>> _qp = Multidict()
     >>> _qp.add('a', 'z')
     >>> iri_with_query('http://foo.example/hello?q=p', _qp)
-    'http://foo.example/hello?a=z'
+    'http://foo.example/hello?a=z&q=p'
     """
     _qp_multidict = (
         query_params if isinstance(query_params, Multidict) else Multidict(query_params)

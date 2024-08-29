@@ -3,6 +3,7 @@ from collections.abc import (
     Mapping,
 )
 from urllib.parse import (
+    parse_qs,
     urlencode,
     urlsplit,
     urlunsplit,
@@ -89,7 +90,7 @@ class Multidict(Headers):
 
 
 def iri_with_query(iri: str, query_params: KeyValuePairs | Multidict) -> str:
-    """build a new iri with the given query params (replacing the iri's query string)
+    """build a new iri with the given query params (appending the iri's query string)
 
     `query_params` may be a dictionary (with string keys and values):
     >>> iri_with_query('http://foo.example/hello?q=p', {'a': 'z'})
@@ -108,4 +109,9 @@ def iri_with_query(iri: str, query_params: KeyValuePairs | Multidict) -> str:
     _qp_multidict = (
         query_params if isinstance(query_params, Multidict) else Multidict(query_params)
     )
-    return urlunsplit(urlsplit(iri)._replace(query=_qp_multidict.as_query_string()))
+    split = urlsplit(iri)
+    old_query = parse_qs(split.query)
+    for key, values in old_query.items():
+        _qp_multidict.add_many((key, value) for value in values)
+
+    return urlunsplit(split._replace(query=_qp_multidict.as_query_string()))

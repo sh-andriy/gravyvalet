@@ -311,7 +311,7 @@ def typed_value_from_json(
             raise exceptions.JsonValueInvalidForType(json_value, _type)
         return dataclass_from_json(_type, json_value)
     if isinstance(_type, type) and issubclass(_type, enum.Enum):
-        return _type(json_value)
+        return _type(json_value.lower() if isinstance(json_value, str) else json_value)
     if _type in (str, int, float):
         if not isinstance(json_value, _type):
             raise exceptions.JsonValueInvalidForType(json_value, _type)

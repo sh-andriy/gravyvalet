@@ -1,6 +1,6 @@
 import dataclasses
 from enum import (
-    Enum,
+    StrEnum,
     auto,
 )
 
@@ -31,7 +31,7 @@ class CitationConfig:
     external_account_id: str | None = None
 
 
-class ItemType(Enum):
+class ItemType(StrEnum):
     DOCUMENT = auto()
     COLLECTION = auto()
 
@@ -58,7 +58,6 @@ class ItemSampleResult:
 
 
 class CitationServiceInterface(BaseAddonInterface):
-
     @immediate_operation(capability=AddonCapabilities.ACCESS)
     def list_root_collections(self) -> ItemSampleResult:
         """Lists directories (or collections) inside root"""

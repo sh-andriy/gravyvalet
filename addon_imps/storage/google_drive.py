@@ -10,10 +10,10 @@ from addon_toolkit.interfaces.storage import (
 )
 
 
-class GoogleDriveStorageImp(storage.StorageAddonImp):
-    """storage on box.com
+class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
+    """storage on google drive
 
-    see https://developer.box.com/reference/
+    see https://developers.google.com/drive/api/reference/rest/v3/
     """
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
@@ -26,7 +26,7 @@ class GoogleDriveStorageImp(storage.StorageAddonImp):
         )
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
-        assert item_id, "item_id must not be empty"
+        item_id = item_id or "root"
         async with self.network.GET(f"drive/v3/files/{item_id}") as response:
             if response.http_status == 200:
                 json = await response.json_content()

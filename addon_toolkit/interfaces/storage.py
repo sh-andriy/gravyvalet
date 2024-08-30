@@ -37,7 +37,7 @@ class StorageConfig:
     external_account_id: str | None = None
 
 
-class ItemType(enum.Enum):
+class ItemType(enum.StrEnum):
     FILE = enum.auto()
     FOLDER = enum.auto()
 

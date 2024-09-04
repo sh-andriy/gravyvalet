@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from addon_service.common.exceptions import (
+    ItemNotFound,
+    UnexpectedAddonError,
+)
 from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import (
     ItemResult,
@@ -31,8 +35,10 @@ class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
             if response.http_status == 200:
                 json = await response.json_content()
                 return File(**json).item_result
+            elif response.http_status == 404:
+                raise ItemNotFound
             else:
-                print(await response.json_content(), flush=True)
+                raise UnexpectedAddonError
 
     async def list_child_items(
         self,

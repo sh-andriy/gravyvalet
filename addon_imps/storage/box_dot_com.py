@@ -4,6 +4,7 @@ import typing
 
 from addon_toolkit.cursor import OffsetCursor
 from addon_toolkit.interfaces import storage
+from addon_toolkit.interfaces.storage import ItemType
 
 
 class BoxDotComStorageImp(storage.StorageAddonHttpRequestorImp):
@@ -69,8 +70,10 @@ def _make_item_id(item_type: storage.ItemType, item_id: str) -> str:
 
 def _parse_item_id(item_id: str) -> tuple[storage.ItemType, str]:
     try:
+        if not item_id:
+            return ItemType.FOLDER, "0"  # return root if empty
         (_type, _box_item_id) = item_id.split(":", maxsplit=1)
-        return (storage.ItemType(int(_type)), _box_item_id)
+        return (storage.ItemType(_type), _box_item_id)
     except ValueError:
         raise ValueError(
             f'expected id of format "typeint:id", e.g. "1:1235" (got "{item_id}")'

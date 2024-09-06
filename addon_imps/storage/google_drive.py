@@ -24,10 +24,7 @@ class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
         return ""
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
-        return await self.list_child_items(
-            item_id="root",
-            page_cursor=page_cursor,
-        )
+        return ItemSampleResult(items=[await self.get_item_info("root")], total_count=1)
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         item_id = item_id or "root"

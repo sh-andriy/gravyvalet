@@ -137,13 +137,6 @@ class FigshareStorageImp(storage.StorageAddonHttpRequestorImp):
             or (article_id.startswith("articles/") and article_id.count("/") == 1)
         )
 
-    def _is_file_id(self, article_id: str) -> bool:
-        return (
-            "files" in article_id
-            and (article_id.startswith("projects/") and article_id.count("/") == 5)
-            or (article_id.startswith("articles/") and article_id.count("/") == 3)
-        )
-
     @staticmethod
     def _is_project_id(project_id: str) -> bool:
         return project_id.startswith("projects/") and project_id.count("/") == 1
@@ -162,8 +155,8 @@ class FigshareStorageImp(storage.StorageAddonHttpRequestorImp):
 
 
 class ItemResultable(ABC, Protocol):
-    @abstractmethod
     @property
+    @abstractmethod
     def item_result(self) -> ItemResult: ...
 
 

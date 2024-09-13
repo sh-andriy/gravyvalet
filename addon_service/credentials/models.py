@@ -99,11 +99,16 @@ class ExternalCredentials(AddonsServiceBaseModel):
                     bool,
                     [
                         getattr(self, "authorized_storage_account", None),
+                        getattr(self, "authorized_citation_account", None),
                         getattr(self, "temporary_authorized_storage_account", None),
+                        getattr(self, "temporary_authorized_citation_account", None),
                     ],
                 )
             ]
-        except ExternalCredentials.authorized_storage_account.RelatedObjectDoesNotExist:
+        except (
+            ExternalCredentials.authorized_storage_account.RelatedObjectDoesNotExist
+            or ExternalCredentials.authorized_citation_account.RelatedObjectDoesNotExist
+        ):
             return None
 
     @property

@@ -177,6 +177,8 @@ class JsonschemaObjectBuilder:
             return {"type": "string"}
         if _type in (int, float):
             return {"type": "number"}
+        if _type is dict:
+            return {"type": "dict"}
         raise exceptions.TypeNotJsonable(_type)
 
 

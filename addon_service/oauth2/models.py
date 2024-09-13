@@ -81,7 +81,10 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
 
     @property
     def linked_accounts(self):
-        return self.authorized_storage_accounts.all()
+        return (
+            self.authorized_storage_accounts.all()
+            or self.authorized_citation_accounts.all()
+        )
 
     @property
     def client_details(self):

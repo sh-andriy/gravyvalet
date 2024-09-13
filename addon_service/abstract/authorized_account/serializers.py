@@ -44,7 +44,9 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
     auth_url = serializers.CharField(read_only=True)
-    api_base_url = serializers.URLField(allow_blank=True, required=False)
+    api_base_url = serializers.URLField(
+        allow_blank=True, required=False, allow_null=True
+    )
 
     credentials = CredentialsField(write_only=True, required=False)
     initiate_oauth = serializers.BooleanField(write_only=True, required=False)
@@ -80,7 +82,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             elif authorized_account.credentials_format is CredentialsFormats.OAUTH1A:
                 authorized_account.initiate_oauth1_flow()
                 self.context["request"].session["oauth1a_account_id"] = encrypt_string(
-                    authorized_account.pk
+                    f"{authorized_account.__class__.__name__}/{authorized_account.pk}"
                 )
             else:
                 raise serializers.ValidationError(

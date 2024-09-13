@@ -1,5 +1,4 @@
 import dataclasses
-import typing
 from enum import (
     Enum,
     auto,
@@ -18,10 +17,11 @@ __all__ = (
 from addon_toolkit import (
     AddonCapabilities,
     AddonImp,
-    BaseAddonInterface,
     immediate_operation,
 )
 from addon_toolkit.constrained_network.http import HttpRequestor
+
+from ._base import BaseAddonInterface
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -38,7 +38,7 @@ class ItemType(Enum):
 
 @dataclasses.dataclass(slots=True)
 class ItemResult:
-    item_id: int
+    item_id: str
     item_name: str
     item_type: ItemType
     item_path: list[str] | None = None
@@ -48,7 +48,7 @@ class ItemResult:
 @dataclasses.dataclass(slots=True)
 class ItemSampleResult:
     items: list[ItemResult]
-    total_count: typing.Optional[int] = None
+    total_count: int = None
     next_sample_cursor: str | None = None
     prev_sample_cursor: str | None = None
 

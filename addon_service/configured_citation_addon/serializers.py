@@ -18,6 +18,7 @@ RESOURCE_TYPE = get_resource_type_from_model(ConfiguredCitationAddon)
 class ConfiguredCitationAddonSerializer(ConfiguredAddonSerializer):
     """api serializer for the `ConfiguredCitationAddon` model"""
 
+    root_folder = serializers.CharField(required=False, allow_blank=True)
     url = serializers.HyperlinkedIdentityField(
         view_name=view_names.detail_view(RESOURCE_TYPE)
     )

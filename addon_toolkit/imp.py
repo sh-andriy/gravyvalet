@@ -89,7 +89,7 @@ class AddonImp:
         _result = await _operation_method(**_kwargs)
         assert isinstance(
             _result, operation.result_dataclass
-        ), f"expected {operation.result_dataclass.__name__} type to bre returned from method {_operation_method.__name__}, got {_result.__class__.__name__}"
+        ), f"expected {operation.result_dataclass.__name__} type to be returned from method {_operation_method.__name__}, got {_result.__class__.__name__}"
         return _result
 
     invoke_operation__blocking = async_to_sync(invoke_operation)

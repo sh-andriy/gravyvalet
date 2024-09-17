@@ -37,7 +37,7 @@ async def get_storage_addon_instance(
     assert issubclass(imp_cls, StorageAddonImp)
     assert (
         imp_cls is not StorageAddonImp
-    ), "Addons shouldn't directly extent storage addon imp, but "
+    ), "Addons shouldn't directly extend storage addon imp, but "
     if issubclass(imp_cls, StorageAddonHttpRequestorImp):
         imp = imp_cls(
             config=config,

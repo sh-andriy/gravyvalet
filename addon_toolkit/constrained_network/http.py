@@ -26,7 +26,7 @@ class HttpRequestInfo:
     uri_path: str
     query: Multidict
     headers: Multidict
-
+    json: dict
     # TODO: content (when needed)
 
 
@@ -74,12 +74,14 @@ class HttpRequestor(typing.Protocol):
         uri_path: str,
         query: Multidict | KeyValuePairs | None = None,
         headers: Multidict | KeyValuePairs | None = None,
+        json: dict | None = None,
     ):
         _request_info = HttpRequestInfo(
             http_method=http_method,
             uri_path=uri_path,
             query=query,
             headers=(headers if isinstance(headers, Multidict) else Multidict(headers)),
+            json=json,
         )
         async with self._do_send(_request_info) as _response:
             yield _response

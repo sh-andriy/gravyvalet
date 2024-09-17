@@ -17,6 +17,7 @@ from ._base import BaseAddonInterface
 
 __all__ = (
     "ItemResult",
+    "ItemType",
     "ItemSampleResult",
     "PossibleSingleItemResult",
     "StorageAddonInterface",

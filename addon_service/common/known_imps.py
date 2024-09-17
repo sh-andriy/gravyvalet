@@ -8,6 +8,7 @@ import enum
 from addon_imps.citations import zotero_org
 from addon_imps.storage import (
     box_dot_com,
+    figshare,
     google_drive,
     s3,
 )
@@ -62,6 +63,7 @@ class KnownAddonImps(enum.Enum):
     S3 = s3.S3StorageImp
     ZOTERO_ORG = zotero_org.ZoteroOrgCitationImp
     GOOGLE_DRIVE = google_drive.GoogleDriveStorageImp
+    FIGSHARE = figshare.FigshareStorageImp
 
     if __debug__:
         BLARG = my_blarg.MyBlargStorage
@@ -76,6 +78,7 @@ class AddonImpNumbers(enum.Enum):
     ZOTERO_ORG = 1002
     S3 = 1003
     GOOGLE_DRIVE = 1005
+    FIGSHARE = 1007
 
     if __debug__:
         BLARG = -7

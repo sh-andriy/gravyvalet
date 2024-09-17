@@ -78,7 +78,7 @@ class HttpRequestor(typing.Protocol):
         _request_info = HttpRequestInfo(
             http_method=http_method,
             uri_path=uri_path,
-            query=(query if isinstance(query, Multidict) else Multidict(query)),
+            query=query,
             headers=(headers if isinstance(headers, Multidict) else Multidict(headers)),
         )
         async with self._do_send(_request_info) as _response:

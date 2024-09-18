@@ -24,7 +24,6 @@ __all__ = (
     "typed_value_from_json",
 )
 
-
 ###
 # building jsonschema
 
@@ -209,6 +208,8 @@ def json_for_typed_value(
         if not _is_optional:
             raise exceptions.ValueNotJsonableWithType(value, type_annotation)
         return None
+    if _type is typing.Any:
+        return value
     if dataclasses.is_dataclass(_type):
         if isinstance(value, dict):
             return json_for_kwargs(_type, value)
@@ -224,6 +225,18 @@ def json_for_typed_value(
             raise exceptions.ValueNotJsonableWithType(value, _type)
         assert issubclass(_type, (str, int, float))  # assertion for type-checker
         return _type(value)
+    if _type is dict:
+        if isinstance(value, dict):
+            return {k: json_for_typed_value(typing.Any, v) for k, v in value.items()}
+        raise exceptions.ValueNotJsonableWithType(value, _type)
+
+    if _type is list:
+        if isinstance(value, list):
+            return [
+                json_for_typed_value(_contained_type or typing.Any, _item_value)
+                for _item_value in value
+            ]
+        raise exceptions.ValueNotJsonableWithType(value, _type)
     if (
         isinstance(_type, type)
         and issubclass(_type, abc.Collection)

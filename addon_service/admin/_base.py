@@ -26,7 +26,15 @@ class EnumNameMultipleChoiceField(forms.MultipleChoiceField):
 
     def prepare_value(self, value):
         value = super().prepare_value(value)
-        return [item.value for item in self.enum_cls(value)]
+        if type(value) is list:
+            return [
+                item.value
+                for item in self.enum_cls(combine_flags([int(item) for item in value]))
+            ]
+        elif isinstance(value, int):
+            return [item.value for item in self.enum_cls(value)]
+        else:
+            return []
 
     def validate(self, value) -> None:
         return True

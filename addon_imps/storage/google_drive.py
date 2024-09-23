@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import (
+    dataclass,
+    fields,
+)
 
 from addon_service.common.exceptions import (
     ItemNotFound,
@@ -31,7 +34,7 @@ class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
         async with self.network.GET(f"drive/v3/files/{item_id}") as response:
             if response.http_status == 200:
                 json = await response.json_content()
-                return File(**json).item_result
+                return File.from_json(json).item_result
             elif response.http_status == 404:
                 raise ItemNotFound
             else:
@@ -52,7 +55,7 @@ class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
             query["q"] += " and mimeType!='application/vnd.google-apps.folder'"
 
         async with self.network.GET("drive/v3/files", query=query) as response:
-            return _GoogleDriveResult.from_json(
+            return GoogleDriveResult.from_json(
                 await response.json_content()
             ).item_sample_result
 
@@ -61,10 +64,13 @@ class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
 # module-local helpers
 @dataclass(frozen=True, slots=True)
 class File:
-    kind: str
     mimeType: str
     id: str
     name: str
+
+    @classmethod
+    def from_json(cls, json: dict):
+        return cls(**{key.name: json.get(key.name, key.default) for key in fields(cls)})
 
     @property
     def item_result(self) -> ItemResult:
@@ -80,18 +86,15 @@ class File:
 
 
 @dataclass(frozen=True, slots=True)
-class _GoogleDriveResult:
-    kind: str
-    incomplete_search: bool
+class GoogleDriveResult:
     files: list[File]
     nextPageToken: str | None = None
 
     @classmethod
-    def from_json(cls, json: dict) -> _GoogleDriveResult:
+    def from_json(cls, json: dict) -> GoogleDriveResult:
         return cls(
-            kind=json["kind"],
-            incomplete_search=json["incompleteSearch"],
-            files=[File(**file) for file in json["files"]],
+            files=[File.from_json(file) for file in json["files"]],
+            nextPageToken=json.get("nextPageToken"),
         )
 
     @property

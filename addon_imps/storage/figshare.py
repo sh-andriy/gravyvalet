@@ -191,10 +191,6 @@ class Project(ItemResultable):
             item_type=ItemType.FOLDER,
         )
 
-    @classmethod
-    def from_json(cls, json: dict):
-        return cls(**{key.name: json.get(key.name, key.default) for key in fields(cls)})
-
 
 @dataclass(frozen=True, slots=True)
 class Article(ItemResultable):

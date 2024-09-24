@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import (
-    dataclass,
-    fields,
-)
+from dataclasses import dataclass
 
+from addon_imps.storage.utils import ItemResultable
 from addon_service.common.exceptions import (
     ItemNotFound,
     UnexpectedAddonError,
@@ -63,14 +61,10 @@ class GoogleDriveStorageImp(storage.StorageAddonHttpRequestorImp):
 ###
 # module-local helpers
 @dataclass(frozen=True, slots=True)
-class File:
+class File(ItemResultable):
     mimeType: str
     id: str
     name: str
-
-    @classmethod
-    def from_json(cls, json: dict):
-        return cls(**{key.name: json.get(key.name, key.default) for key in fields(cls)})
 
     @property
     def item_result(self) -> ItemResult:

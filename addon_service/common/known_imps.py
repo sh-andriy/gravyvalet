@@ -18,6 +18,7 @@ from addon_imps.storage import (
     gitlab,
     google_drive,
     onedrive,
+    owncloud,
     s3,
 )
 from addon_service.common.enum_decorators import enum_names_same_as
@@ -74,6 +75,7 @@ class KnownAddonImps(enum.Enum):
     FIGSHARE = figshare.FigshareStorageImp
     MENDELEY = mendeley.MendeleyCitationImp
     DATAVERSE = dataverse.DataverseStorageImp
+    OWNCLOUD = owncloud.OwnCloudStorageImp
 
     GIT_HUB = github.GitHubStorageImp
     GITLAB = gitlab.GitlabStorageImp
@@ -96,6 +98,7 @@ class AddonImpNumbers(enum.Enum):
     DROPBOX = 1006
     FIGSHARE = 1007
     ONEDRIVE = 1008
+    OWNCLOUD = 1009
     DATAVERSE = 1010
     GITLAB = 1011
 

@@ -79,6 +79,8 @@ class KnownAddonImps(enum.Enum):
     GITLAB = gitlab.GitlabStorageImp
     DROPBOX = dropbox.DropboxStorageImp
 
+    GIT_HUB = github.GitHubStorageImp
+
     if __debug__:
         BLARG = my_blarg.MyBlargStorage
 

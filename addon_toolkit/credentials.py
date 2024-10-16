@@ -20,8 +20,8 @@ class AccessTokenCredentials(Credentials):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class AccessKeySecretKeyCredentials(Credentials):
-    access_key: str
-    secret_key: str
+    accessKey: str
+    secretKey: str
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

@@ -2,6 +2,7 @@ import boto3
 from botocore import exceptions as BotoExceptions
 from django.core.exceptions import ValidationError
 
+from addon_toolkit.credentials import AccessKeySecretKeyCredentials
 from addon_toolkit.interfaces import storage
 
 
@@ -17,9 +18,9 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
             raise ValidationError("Fail to validate access key and secret key")
 
     @staticmethod
-    def create_client(credentials):
-        access_key = credentials.accessKey
-        secret_key = credentials.secretKey
+    def create_client(credentials: AccessKeySecretKeyCredentials):
+        access_key = credentials.access_key
+        secret_key = credentials.secret_key
         return boto3.client(
             "s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key
         )

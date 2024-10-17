@@ -24,7 +24,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
         self.config = StorageConfig(external_api_url=self.base_url, max_upload_mb=123)
         self.client = MagicMock()
         self.credentials = AccessKeySecretKeyCredentials(
-            accessKey="123", secretKey="456"
+            access_key="123", secret_key="456"
         )
         self.imp = S3StorageImp(config=self.config, credentials=self.credentials)
         self.imp.client = self.client
@@ -48,7 +48,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
 
     @patch.object(S3StorageImp, "create_client")
     def test_confirm_credentials_success(self, create_client_mock):
-        creds = AccessKeySecretKeyCredentials(accessKey="123", secretKey="456")
+        creds = AccessKeySecretKeyCredentials(access_key="123", secret_key="456")
         self.imp.confirm_credentials(creds)
 
         create_client_mock.assert_called_once_with(creds)
@@ -56,7 +56,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
 
     @patch.object(S3StorageImp, "create_client")
     def test_confirm_credentials_fail(self, create_client_mock):
-        creds = AccessKeySecretKeyCredentials(accessKey="123", secretKey="456")
+        creds = AccessKeySecretKeyCredentials(access_key="123", secret_key="456")
         create_client_mock.return_value.list_buckets.side_effect = ClientError(
             error_response={"Error": {"Code": "NoSuchBucket"}},
             operation_name="list_buckets",
@@ -69,7 +69,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
 
     @patch(f"{S3StorageImp.__module__}.boto3.client")
     def test_create_client(self, create_mock):
-        creds = AccessKeySecretKeyCredentials(accessKey="123", secretKey="456")
+        creds = AccessKeySecretKeyCredentials(access_key="123", secret_key="456")
         self.imp.create_client(creds)
         create_mock.assert_called_once_with(
             "s3", aws_access_key_id="123", aws_secret_access_key="456"

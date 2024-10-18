@@ -2,7 +2,7 @@ import boto3
 from botocore import exceptions as BotoExceptions
 from django.core.exceptions import ValidationError
 
-# from addon_toolkit.cursor import OffsetCursor
+from addon_toolkit.credentials import AccessKeySecretKeyCredentials
 from addon_toolkit.interfaces import storage
 
 
@@ -11,18 +11,14 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
 
     @classmethod
     def confirm_credentials(cls, credentials):
-        access_key = credentials.access_key
-        secret_key = credentials.secret_key
-        s3 = boto3.client(
-            "s3", aws_access_key_id=access_key, aws_secret_access_key=secret_key
-        )
+        s3 = cls.create_client(credentials)
         try:
             s3.list_buckets()
         except BotoExceptions.ClientError:
             raise ValidationError("Fail to validate access key and secret key")
 
     @staticmethod
-    def create_client(credentials):
+    def create_client(credentials: AccessKeySecretKeyCredentials):
         access_key = credentials.access_key
         secret_key = credentials.secret_key
         return boto3.client(
@@ -69,6 +65,8 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                     )
                 except BotoExceptions.ClientError:
                     pass
+
+        # This causes errors in addons UI
         return None
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
@@ -84,16 +82,16 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
         page_cursor: str = "",
         item_type: storage.ItemType | None = None,
     ) -> storage.ItemSampleResult:
-        bucket = item_id.split("/", 1)[0]
-        key = item_id.split("/", 1)[1]
-        if key.endswith("/"):
-            # That means this is a folder
+        if "/" not in item_id:
+            return
+        bucket, key = item_id.split("/", 1)
+        if not key or key.endswith("/"):
             response = self.client.list_objects(
                 Bucket=bucket, Prefix=key, Delimiter="/"
             )
             results = []
             if response.get("CommonPrefixes") and (
-                item_type is not storage.ItemType.FILE or item_type is None
+                item_type is not storage.ItemType.FILE
             ):
                 for folder in response["CommonPrefixes"]:
                     results.append(
@@ -103,9 +101,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                             item_type=storage.ItemType.FOLDER,
                         )
                     )
-            if response.get("Contents") and (
-                item_type is not storage.ItemType.FOLDER or item_type is None
-            ):
+            if response.get("Contents") and (item_type is not storage.ItemType.FOLDER):
                 for file in response["Contents"]:
                     results.append(
                         storage.ItemResult(
@@ -118,7 +114,6 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                 items=results,
                 total_count=len(results),
             )
-        return None
 
     def list_buckets(self):
         for bucket in self.client.list_buckets()["Buckets"]:

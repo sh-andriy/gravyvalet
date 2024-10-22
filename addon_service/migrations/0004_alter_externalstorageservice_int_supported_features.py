@@ -5,7 +5,7 @@ from django.db import (
     models,
 )
 
-import addon_service.external_storage_service.models
+import addon_service.external_service.storage.models
 
 
 class Migration(migrations.Migration):
@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 validators=[
-                    addon_service.external_storage_service.models.validate_supported_features
+                    addon_service.external_service.storage.models.validate_supported_features
                 ],
             ),
         ),

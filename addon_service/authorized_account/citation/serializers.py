@@ -27,7 +27,7 @@ class AuthorizedCitationAccountSerializer(AuthorizedAccountSerializer):
     external_citation_service = ResourceRelatedField(
         queryset=ExternalCitationService.objects.all(),
         many=False,
-        source="external_service",
+        source="external_service.externalcitationservice",
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     configured_citation_addons = HyperlinkedRelatedField(

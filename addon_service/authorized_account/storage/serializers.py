@@ -27,7 +27,7 @@ class AuthorizedStorageAccountSerializer(AuthorizedAccountSerializer):
     external_storage_service = ResourceRelatedField(
         queryset=ExternalStorageService.objects.all(),
         many=False,
-        source="external_service",
+        source="external_service.externalstorageservice",
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     configured_storage_addons = HyperlinkedRelatedField(

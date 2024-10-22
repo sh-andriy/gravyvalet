@@ -28,6 +28,7 @@ class ConfiguredCitationAddonSerializer(ConfiguredAddonSerializer):
     base_account = ResourceRelatedField(
         queryset=AuthorizedCitationAccount.objects.all(),
         many=False,
+        source="base_account.authorizedcitationaccount",
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     authorized_resource = ResourceRelatedField(

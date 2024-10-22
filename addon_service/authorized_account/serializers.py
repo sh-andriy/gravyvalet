@@ -83,8 +83,15 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             raise serializers.ValidationError(e)
 
     def create(self, validated_data: dict) -> AuthorizedAccount:
+        validated_data = self.fix_dotted_external_service(validated_data)
         authorized_account = self.create_authorized_account(**validated_data)
         return self.process_and_set_auth(authorized_account, validated_data)
+
+    @staticmethod
+    def fix_dotted_external_service(validated_data):
+        if base_account_dict := validated_data.get("external_service"):
+            validated_data["external_service"] = list(base_account_dict.values())[0]
+        return validated_data
 
     def process_and_set_auth(
         self,
@@ -124,6 +131,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         return authorized_account
 
     def update(self, instance, validated_data):
+        validated_data = self.fix_dotted_base_account(validated_data)
         # only these fields may be PATCHed:
         if "display_name" in validated_data:
             instance.display_name = validated_data["display_name"]

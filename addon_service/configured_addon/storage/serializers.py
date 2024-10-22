@@ -30,6 +30,7 @@ class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
     base_account = ResourceRelatedField(
         queryset=AuthorizedStorageAccount.objects.all(),
         many=False,
+        source="base_account.authorizedstorageaccount",
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     authorized_resource = ResourceRelatedField(

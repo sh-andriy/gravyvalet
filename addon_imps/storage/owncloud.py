@@ -1,5 +1,3 @@
-import base64
-import functools
 import typing
 import xml.etree.ElementTree as ET
 from urllib.parse import (
@@ -11,24 +9,12 @@ from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import ItemType
 
 
-def _get_basic_auth_header(username: str, password: str) -> str:
-    credentials = f"{username}:{password}"
-    return "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
-
-
 class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
-    """Storage implementation for ownCloud using WebDAV."""
-
-    username = "username"
-    password = "password"
-
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
         headers = {
             "Depth": "0",
-            "Authorization": _get_basic_auth_header(self.username, self.password),
         }
-        async with self.network.request(
-            http_method="PROPFIND",
+        async with self.network.PROPFIND(
             uri_path="",
             headers=headers,
             content=self._build_propfind_current_user_principal(),
@@ -38,12 +24,10 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
                 response_xml
             )
 
-        # Remove leading slash to keep it relative
         if current_user_principal_url.startswith("/"):
             current_user_principal_url = current_user_principal_url.lstrip("/")
 
-        async with self.network.request(
-            http_method="PROPFIND",
+        async with self.network.PROPFIND(
             uri_path=current_user_principal_url,
             headers=headers,
             content=self._build_propfind_displayname(),
@@ -53,7 +37,6 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
             return displayname
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
-        # Adjusted to list child items of the root folder
         return await self.list_child_items(_owncloud_root_id(), page_cursor)
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
@@ -62,20 +45,14 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
         headers = {
             "Depth": "0",
-            "Authorization": _get_basic_auth_header(self.username, self.password),
         }
 
-        async with self.network.request(
-            http_method="PROPFIND",
+        async with self.network.PROPFIND(
             uri_path=url,
             headers=headers,
             content=self._build_propfind_allprops(),
         ) as response:
             response_xml = await response.text_content()
-
-            # For debugging: print the response XML
-            print("Response XML in get_item_info:", response_xml)
-
             parsed_item = self._parse_item(response_xml, path)
             return parsed_item
 
@@ -90,54 +67,43 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
         headers = {
             "Depth": "1",
-            "Authorization": _get_basic_auth_header(self.username, self.password),
         }
 
-        async with self.network.request(
-            http_method="PROPFIND",
+        async with self.network.PROPFIND(
             uri_path=url,
             headers=headers,
             content=self._build_propfind_allprops(),
         ) as response:
             response_xml = await response.text_content()
-
-            # For debugging: print the response XML
-            print("Response XML in list_child_items:", response_xml)
-
             parsed_items = self._parse_items(
                 response_xml, base_path=path, item_type=item_type
             )
-            return storage.ItemSampleResult(
-                items=list(parsed_items),
-            )
+            return storage.ItemSampleResult(items=list(parsed_items))
 
     def _build_url(self, path: str) -> str:
-        if path == "/":
-            return ""  # Root path
-        else:
-            return f"{path.lstrip('/')}"
+        return path.lstrip("/")
 
     def _build_propfind_current_user_principal(self) -> str:
         return """<?xml version="1.0" encoding="UTF-8"?>
-<d:propfind xmlns:d="DAV:">
-    <d:prop>
-        <d:current-user-principal/>
-    </d:prop>
-</d:propfind>"""
+        <d:propfind xmlns:d="DAV:">
+            <d:prop>
+                <d:current-user-principal/>
+            </d:prop>
+        </d:propfind>"""
 
     def _build_propfind_displayname(self) -> str:
         return """<?xml version="1.0" encoding="UTF-8"?>
-<d:propfind xmlns:d="DAV:">
-    <d:prop>
-        <d:displayname/>
-    </d:prop>
-</d:propfind>"""
+        <d:propfind xmlns:d="DAV:">
+            <d:prop>
+                <d:displayname/>
+            </d:prop>
+        </d:propfind>"""
 
     def _build_propfind_allprops(self) -> str:
         return """<?xml version="1.0" encoding="UTF-8"?>
-<d:propfind xmlns:d="DAV:">
-    <d:allprop/>
-</d:propfind>"""
+        <d:propfind xmlns:d="DAV:">
+            <d:allprop/>
+        </d:propfind>"""
 
     def _parse_current_user_principal(self, response_xml: str) -> str:
         ns = {"d": "DAV:"}
@@ -241,10 +207,6 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         return path or "/"
 
 
-###
-# Module-local helpers
-
-
 def _make_item_id(item_type: storage.ItemType, path: str) -> str:
     return f"{item_type.value}:{path}"
 
@@ -261,6 +223,5 @@ def _parse_item_id(item_id: str) -> tuple[storage.ItemType, str]:
         )
 
 
-@functools.cache
 def _owncloud_root_id() -> str:
     return _make_item_id(storage.ItemType.FOLDER, "/")

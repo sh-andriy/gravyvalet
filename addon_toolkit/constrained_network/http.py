@@ -104,3 +104,4 @@ class HttpRequestor(typing.Protocol):
     POST: _MethodRequestMethod = partialmethod(request, HTTPMethod.POST)
     PUT: _MethodRequestMethod = partialmethod(request, HTTPMethod.PUT)
     DELETE: _MethodRequestMethod = partialmethod(request, HTTPMethod.DELETE)
+    PROPFIND: _MethodRequestMethod = partialmethod(request, "PROPFIND")

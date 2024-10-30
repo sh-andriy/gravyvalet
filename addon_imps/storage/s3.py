@@ -84,7 +84,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
     ) -> storage.ItemSampleResult:
         if "/" not in item_id:
             return
-        bucket, key = item_id.split("/", 1)
+        bucket, key = item_id.split(":/", 1)
         if not key or key.endswith("/"):
             response = self.client.list_objects(
                 Bucket=bucket, Prefix=key, Delimiter="/"
@@ -96,7 +96,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                 for folder in response["CommonPrefixes"]:
                     results.append(
                         storage.ItemResult(
-                            item_id=folder["Prefix"],
+                            item_id=f'{item_id.removesuffix('/')}/{folder["Prefix"]}',
                             item_name=folder["Prefix"],
                             item_type=storage.ItemType.FOLDER,
                         )
@@ -105,7 +105,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                 for file in response["Contents"]:
                     results.append(
                         storage.ItemResult(
-                            item_id=file["Key"],
+                            item_id=f'{item_id.removesuffix('/')}/{file["Key"]}',
                             item_name=file["Key"],
                             item_type=storage.ItemType.FILE,
                         )
@@ -118,7 +118,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
     def list_buckets(self):
         for bucket in self.client.list_buckets()["Buckets"]:
             yield storage.ItemResult(
-                item_id=bucket["Name"] + "/",
+                item_id=bucket["Name"] + ":/",
                 item_name=bucket["Name"] + "/",
                 item_type=storage.ItemType.FOLDER,
             )

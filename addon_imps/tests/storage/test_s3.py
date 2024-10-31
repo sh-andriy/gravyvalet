@@ -105,7 +105,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
                 }
             ]
         }
-        result = await self.imp.get_item_info("123/456")
+        result = await self.imp.get_item_info("123:/456")
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -128,7 +128,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
                 },
             ]
         }
-        result = await self.imp.get_item_info("123/456")
+        result = await self.imp.get_item_info("123:/456")
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -136,13 +136,13 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             Delimiter="/",
         )
         assert result == ItemResult(
-            item_name="123/456", item_id="123/456", item_type=ItemType.FOLDER
+            item_name="123:/456", item_id="123:/456", item_type=ItemType.FOLDER
         )
         self.client.head_bucket.assert_not_called()
 
     async def test_get_item_info_in_bucket_none(self):
         self.client.list_objects.return_value = {"Contents": []}
-        result = await self.imp.get_item_info("123/456")
+        result = await self.imp.get_item_info("123:/456")
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -154,7 +154,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
 
     async def test_get_item_info_in_bucket_none2(self):
         self.client.list_objects.return_value = {}
-        result = await self.imp.get_item_info("123/456")
+        result = await self.imp.get_item_info("123:/456")
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -165,13 +165,13 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
         self.client.head_bucket.assert_not_called()
 
     async def test_get_item_info_bucket(self):
-        result = await self.imp.get_item_info("123/")
+        result = await self.imp.get_item_info("123:/")
 
         self.client.head_bucket.assert_called_once_with(
             Bucket="123",
         )
         assert result == ItemResult(
-            item_name="123/", item_id="123/", item_type=ItemType.FOLDER
+            item_name="123/", item_id="123:/", item_type=ItemType.FOLDER
         )
 
     async def test_get_item_info_bucket_error(self):
@@ -179,7 +179,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             error_response={"Error": {"Code": "NoSuchBucket"}},
             operation_name="head_bucket",
         )
-        result = await self.imp.get_item_info("123/")
+        result = await self.imp.get_item_info("123:/")
 
         self.client.head_bucket.assert_called_once_with(
             Bucket="123",

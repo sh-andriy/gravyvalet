@@ -56,11 +56,11 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                 try:
                     # see if the bucket exists
                     self.client.head_bucket(
-                        Bucket=item_id.strip("/"),
+                        Bucket=item_id.strip(":/"),
                     )
                     return storage.ItemResult(
                         item_id=item_id,
-                        item_name=item_id,
+                        item_name=item_id.replace(":/", "/"),
                         item_type=storage.ItemType.FOLDER,
                     )
                 except BotoExceptions.ClientError:

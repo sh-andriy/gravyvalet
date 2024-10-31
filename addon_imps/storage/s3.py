@@ -82,7 +82,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
         page_cursor: str = "",
         item_type: storage.ItemType | None = None,
     ) -> storage.ItemSampleResult:
-        if "/" not in item_id:
+        if ":/" not in item_id:
             return
         bucket, key = item_id.split(":/", 1)
         if not key or key.endswith("/"):

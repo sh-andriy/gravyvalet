@@ -41,8 +41,8 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             ]
         }
         assert [
-            ItemResult(item_name="123/", item_id="123/", item_type=ItemType.FOLDER),
-            ItemResult(item_name="456/", item_id="456/", item_type=ItemType.FOLDER),
+            ItemResult(item_name="123/", item_id="123:/", item_type=ItemType.FOLDER),
+            ItemResult(item_name="456/", item_id="456:/", item_type=ItemType.FOLDER),
         ] == [*self.imp.list_buckets()]
         self.client.list_buckets.assert_called_once_with()
 
@@ -197,7 +197,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             "CommonPrefixes": [{"Prefix": "hello/"}],
             "Contents": [{"Key": "4324.htmx"}],
         }
-        result = await self.imp.list_child_items("123/")
+        result = await self.imp.list_child_items("123:/")
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -209,11 +209,13 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             ItemSampleResult(
                 items=[
                     ItemResult(
-                        item_name="hello/", item_id="hello/", item_type=ItemType.FOLDER
+                        item_name="hello/",
+                        item_id="123:/hello/",
+                        item_type=ItemType.FOLDER,
                     ),
                     ItemResult(
                         item_name="4324.htmx",
-                        item_id="4324.htmx",
+                        item_id="123:/4324.htmx",
                         item_type=ItemType.FILE,
                     ),
                 ],
@@ -226,7 +228,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             "CommonPrefixes": [{"Prefix": "hello/"}],
             "Contents": [{"Key": "4324.htmx"}],
         }
-        result = await self.imp.list_child_items("123/", item_type=ItemType.FOLDER)
+        result = await self.imp.list_child_items("123:/", item_type=ItemType.FOLDER)
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -238,7 +240,9 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             ItemSampleResult(
                 items=[
                     ItemResult(
-                        item_name="hello/", item_id="hello/", item_type=ItemType.FOLDER
+                        item_name="hello/",
+                        item_id="123:/hello/",
+                        item_type=ItemType.FOLDER,
                     ),
                 ],
                 total_count=1,
@@ -250,7 +254,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
             "CommonPrefixes": [{"Prefix": "hello/"}],
             "Contents": [{"Key": "4324.htmx"}],
         }
-        result = await self.imp.list_child_items("123/", item_type=ItemType.FILE)
+        result = await self.imp.list_child_items("123:/", item_type=ItemType.FILE)
 
         self.client.list_objects.assert_called_once_with(
             Bucket="123",
@@ -263,7 +267,7 @@ class TestS3StorageImp(IsolatedAsyncioTestCase):
                 items=[
                     ItemResult(
                         item_name="4324.htmx",
-                        item_id="4324.htmx",
+                        item_id="123:/4324.htmx",
                         item_type=ItemType.FILE,
                     ),
                 ],

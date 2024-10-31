@@ -26,9 +26,9 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
         )
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
-        if item_id and "/" in item_id:
+        if item_id and ":/" in item_id:
             # All item_ids should contain a '/'
-            bucket, key = item_id.split("/", 1)
+            bucket, key = item_id.split(":/", 1)
             if key:
                 # This is item in a bucket
                 response = self.client.list_objects(
@@ -96,7 +96,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                 for folder in response["CommonPrefixes"]:
                     results.append(
                         storage.ItemResult(
-                            item_id=f'{item_id.removesuffix('/')}/{folder["Prefix"]}',
+                            item_id=f'{item_id}{folder["Prefix"]}',
                             item_name=folder["Prefix"],
                             item_type=storage.ItemType.FOLDER,
                         )
@@ -105,7 +105,7 @@ class S3StorageImp(storage.StorageAddonClientRequestorImp):
                 for file in response["Contents"]:
                     results.append(
                         storage.ItemResult(
-                            item_id=f'{item_id.removesuffix('/')}/{file["Key"]}',
+                            item_id=f'{item_id}{file["Key"]}',
                             item_name=file["Key"],
                             item_type=storage.ItemType.FILE,
                         )

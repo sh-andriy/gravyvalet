@@ -67,10 +67,16 @@ class TestGitHubStorageImp(unittest.IsolatedAsyncioTestCase):
         result = await self.imp.list_root_items()
         expected_items = [
             ItemResult(
-                item_id="testuser/repo1:", item_name="repo1", item_type=ItemType.FOLDER
+                item_id="testuser/repo1:",
+                item_name="repo1",
+                item_type=ItemType.FOLDER,
+                may_contain_root_candidates=False,
             ),
             ItemResult(
-                item_id="testuser/repo2:", item_name="repo2", item_type=ItemType.FOLDER
+                item_id="testuser/repo2:",
+                item_name="repo2",
+                item_type=ItemType.FOLDER,
+                may_contain_root_candidates=False,
             ),
         ]
         expected_result = ItemSampleResult(items=expected_items, total_count=2)
@@ -98,7 +104,10 @@ class TestGitHubStorageImp(unittest.IsolatedAsyncioTestCase):
         self._patch_get(mock_response)
         result = await self.imp.get_item_info("testuser/repo1:")
         expected_result = ItemResult(
-            item_id="testuser/repo1:", item_name="repo1", item_type=ItemType.FOLDER
+            item_id="testuser/repo1:",
+            item_name="repo1",
+            item_type=ItemType.FOLDER,
+            may_contain_root_candidates=False,
         )
         self.assertEqual(result, expected_result)
         self._assert_get("repos/testuser/repo1")
@@ -136,10 +145,18 @@ class TestGitHubStorageImp(unittest.IsolatedAsyncioTestCase):
         result = await self.imp.list_child_items("testuser/repo1:")
         expected_items = [
             ItemResult(
-                item_id="testuser/repo1:src", item_name="src", item_type=ItemType.FOLDER
+                item_id="testuser/repo1:src",
+                item_name="src",
+                item_type=ItemType.FOLDER,
+                may_contain_root_candidates=False,
+                can_be_root=False,
             ),
             ItemResult(
-                item_id="README.md", item_name="README.md", item_type=ItemType.FILE
+                item_id="README.md",
+                item_name="README.md",
+                item_type=ItemType.FILE,
+                may_contain_root_candidates=False,
+                can_be_root=False,
             ),
         ]
         expected_result = ItemSampleResult(items=expected_items, total_count=2)

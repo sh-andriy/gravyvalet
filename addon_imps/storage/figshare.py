@@ -188,6 +188,7 @@ class Article(ItemResultable):
             item_id=f"article/{self.id}",
             item_name=self.title,
             item_type=ItemType.FOLDER,
+            may_contain_root_candidates=False,
         )
 
     @classmethod

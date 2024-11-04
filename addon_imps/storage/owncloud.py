@@ -1,4 +1,3 @@
-import typing
 import xml.etree.ElementTree as ET
 from urllib.parse import (
     unquote,
@@ -9,6 +8,26 @@ from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import ItemType
 
 
+_BUILD_PROPFIND_CURRENT_USER_PRINCIPAL = """<?xml version="1.0" encoding="UTF-8"?>
+<d:propfind xmlns:d="DAV:">
+    <d:prop>
+        <d:current-user-principal/>
+    </d:prop>
+</d:propfind>"""
+
+_BUILD_PROPFIND_DISPLAYNAME = """<?xml version="1.0" encoding="UTF-8"?>
+<d:propfind xmlns:d="DAV:">
+    <d:prop>
+        <d:displayname/>
+    </d:prop>
+</d:propfind>"""
+
+_BUILD_PROPFIND_ALLPROPS = """<?xml version="1.0" encoding="UTF-8"?>
+<d:propfind xmlns:d="DAV:">
+    <d:allprop/>
+</d:propfind>"""
+
+
 class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
         headers = {
@@ -17,7 +36,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         async with self.network.PROPFIND(
             uri_path="",
             headers=headers,
-            content=self._build_propfind_current_user_principal(),
+            content=_BUILD_PROPFIND_CURRENT_USER_PRINCIPAL,
         ) as response:
             response_xml = await response.text_content()
             current_user_principal_url = self._parse_current_user_principal(
@@ -30,7 +49,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         async with self.network.PROPFIND(
             uri_path=current_user_principal_url,
             headers=headers,
-            content=self._build_propfind_displayname(),
+            content=_BUILD_PROPFIND_DISPLAYNAME,
         ) as response:
             response_xml = await response.text_content()
             displayname = self._parse_displayname(response_xml)
@@ -50,11 +69,17 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         async with self.network.PROPFIND(
             uri_path=url,
             headers=headers,
-            content=self._build_propfind_allprops(),
+            content=_BUILD_PROPFIND_ALLPROPS,
         ) as response:
             response_xml = await response.text_content()
-            parsed_item = self._parse_item(response_xml, path)
-            return parsed_item
+            root = ET.fromstring(response_xml)
+            response_element = root.find(
+                "d:response", {"d": "DAV:", "oc": "http://owncloud.org/ns"}
+            )
+            if response_element is None:
+                raise ValueError("No response element found in PROPFIND response")
+            item_result = self._parse_response_element(response_element, path)
+            return item_result
 
     async def list_child_items(
         self,
@@ -72,64 +97,33 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         async with self.network.PROPFIND(
             uri_path=url,
             headers=headers,
-            content=self._build_propfind_allprops(),
+            content=_BUILD_PROPFIND_ALLPROPS,
         ) as response:
             response_xml = await response.text_content()
-            parsed_items = self._parse_items(
-                response_xml, base_path=path, item_type=item_type
-            )
-            return storage.ItemSampleResult(items=list(parsed_items))
+            root = ET.fromstring(response_xml)
+            items = []
+            ns = {"d": "DAV:", "oc": "http://owncloud.org/ns"}
+            for response_element in root.findall("d:response", ns):
+                href_element = response_element.find("d:href", ns)
+                if href_element is None or not href_element.text:
+                    continue
+                href = href_element.text
+                item_path = self._href_to_path(href)
 
-    def _build_url(self, path: str) -> str:
-        return path.lstrip("/")
+                if item_path.rstrip("/") == path.rstrip("/"):
+                    continue
 
-    def _build_propfind_current_user_principal(self) -> str:
-        return """<?xml version="1.0" encoding="UTF-8"?>
-        <d:propfind xmlns:d="DAV:">
-            <d:prop>
-                <d:current-user-principal/>
-            </d:prop>
-        </d:propfind>"""
+                item_result = self._parse_response_element(response_element, item_path)
+                if item_type is not None and item_result.item_type != item_type:
+                    continue
+                items.append(item_result)
 
-    def _build_propfind_displayname(self) -> str:
-        return """<?xml version="1.0" encoding="UTF-8"?>
-        <d:propfind xmlns:d="DAV:">
-            <d:prop>
-                <d:displayname/>
-            </d:prop>
-        </d:propfind>"""
+            return storage.ItemSampleResult(items=items)
 
-    def _build_propfind_allprops(self) -> str:
-        return """<?xml version="1.0" encoding="UTF-8"?>
-        <d:propfind xmlns:d="DAV:">
-            <d:allprop/>
-        </d:propfind>"""
-
-    def _parse_current_user_principal(self, response_xml: str) -> str:
-        ns = {"d": "DAV:"}
-        root = ET.fromstring(response_xml)
-        current_user_principal = root.find(".//d:current-user-principal/d:href", ns)
-        if current_user_principal is not None and current_user_principal.text:
-            return current_user_principal.text
-        else:
-            raise ValueError("current-user-principal not found in response")
-
-    def _parse_displayname(self, response_xml: str) -> str:
-        ns = {"d": "DAV:"}
-        root = ET.fromstring(response_xml)
-        displayname = root.find(".//d:displayname", ns)
-        if displayname is not None and displayname.text:
-            return displayname.text
-        else:
-            raise ValueError("displayname not found in response")
-
-    def _parse_item(self, response_xml: str, path: str) -> storage.ItemResult:
+    def _parse_response_element(
+        self, response_element: ET.Element, path: str
+    ) -> storage.ItemResult:
         ns = {"d": "DAV:", "oc": "http://owncloud.org/ns"}
-        root = ET.fromstring(response_xml)
-        response_element = root.find("d:response", ns)
-        if response_element is None:
-            raise ValueError("No response element found in PROPFIND response")
-
         resourcetype = response_element.find(".//d:resourcetype", ns)
         if (
             resourcetype is not None
@@ -152,47 +146,26 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         )
         return item_result
 
-    def _parse_items(
-        self,
-        response_xml: str,
-        base_path: str,
-        item_type: storage.ItemType | None = None,
-    ) -> typing.Iterator[storage.ItemResult]:
-        ns = {"d": "DAV:", "oc": "http://owncloud.org/ns"}
+    def _build_url(self, path: str) -> str:
+        return path.lstrip("/")
+
+    def _parse_current_user_principal(self, response_xml: str) -> str:
+        ns = {"d": "DAV:"}
         root = ET.fromstring(response_xml)
-        for response_element in root.findall("d:response", ns):
-            href_element = response_element.find("d:href", ns)
-            if href_element is None or not href_element.text:
-                continue
-            href = href_element.text
-            path = self._href_to_path(href)
+        current_user_principal = root.find(".//d:current-user-principal/d:href", ns)
+        if current_user_principal is not None and current_user_principal.text:
+            return current_user_principal.text
+        else:
+            raise ValueError("current-user-principal not found in response")
 
-            if path.rstrip("/") == base_path.rstrip("/"):
-                continue
-
-            resourcetype = response_element.find(".//d:resourcetype", ns)
-            if (
-                resourcetype is not None
-                and resourcetype.find("d:collection", ns) is not None
-            ):
-                _item_type = storage.ItemType.FOLDER
-            else:
-                _item_type = storage.ItemType.FILE
-
-            if item_type is not None and _item_type != item_type:
-                continue
-
-            displayname_element = response_element.find(".//d:displayname", ns)
-            if displayname_element is not None and displayname_element.text:
-                displayname = displayname_element.text
-            else:
-                displayname = path.rstrip("/").split("/")[-1]
-
-            yield storage.ItemResult(
-                item_id=_make_item_id(_item_type, path),
-                item_name=displayname,
-                item_type=_item_type,
-            )
+    def _parse_displayname(self, response_xml: str) -> str:
+        ns = {"d": "DAV:"}
+        root = ET.fromstring(response_xml)
+        displayname = root.find(".//d:displayname", ns)
+        if displayname is not None and displayname.text:
+            return displayname.text
+        else:
+            raise ValueError("displayname not found in response")
 
     def _href_to_path(self, href: str) -> str:
         parsed_href = urlparse(unquote(href))

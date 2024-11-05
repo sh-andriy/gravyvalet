@@ -24,10 +24,9 @@ class BoxDotComStorageImp(storage.StorageAddonHttpRequestorImp):
             total_count=1,
         )
 
-    async def build_wb_config(self, root_folder_id: str, service_name: str) -> dict:
+    async def build_wb_config(self) -> dict:
         return {
-            "folder": root_folder_id.split(":")[1],
-            "service": service_name,
+            "folder": self.config.connected_root_id.split(":")[1],
         }
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:

@@ -31,49 +31,28 @@ class NextLinkCursor(Cursor):
 
 @dataclasses.dataclass
 class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
-    workspace_slug: str = dataclasses.field(init=False, default="")
-
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
         async with self.network.GET("user") as response:
-            json_data = await response.json_content()
+            json_data = await self._handle_response(response)
             uuid = json_data.get("uuid")
             if not uuid:
                 raise ValueError("Failed to retrieve user UUID")
-
-        async with self.network.GET("user/permissions/workspaces") as response:
-            data = await response.json_content()
-            workspaces = data.get("values", [])
-            if not workspaces:
-                raise ValueError("No workspaces found")
-
-            for workspace in workspaces:
-                slug = workspace["workspace"]["slug"]
-                perm = workspace.get("permission")
-                if perm in ["admin", "contributor", "member", "owner"]:
-                    self.workspace_slug = slug
-                    break
-            else:
-                raise ValueError("No suitable workspace found")
         return uuid
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         params = self._params_from_cursor(page_cursor)
-        params["role"] = "member"
         params["pagelen"] = "100"
-        endpoint = f"repositories/{self.workspace_slug}"
+        endpoint = "user/permissions/workspaces"
         try:
             async with self.network.GET(endpoint, query=params) as response:
-                json_data = await response.json_content()
+                json_data = await self._handle_response(response)
         except Exception as e:
-            raise ValueError(f"Failed to fetch repositories: {e}")
-
+            raise ValueError(f"Failed to fetch workspaces: {e}")
         items = []
-        for repo in json_data.get("values", []):
-            full_name = repo.get("full_name")
-            name = repo.get("name") or "Unnamed Repository"
-            if not full_name:
-                continue
-            item_id = self._make_item_id(storage.ItemType.FOLDER, full_name)
+        for workspace in json_data.get("values", []):
+            slug = workspace["workspace"]["slug"]
+            name = workspace["workspace"].get("name") or slug
+            item_id = self._make_item_id("workspace", slug)
             items.append(
                 storage.ItemResult(
                     item_id=item_id,
@@ -90,34 +69,46 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         if not item_id:
             raise ValueError("Item ID is empty.")
-        item_type, actual_id = self._parse_item_id(item_id)
-        if item_type == storage.ItemType.FOLDER:
-            endpoint = f"repositories/{actual_id}"
-            try:
-                async with self.network.GET(endpoint) as response:
-                    json_data = await response.json_content()
-            except Exception as e:
-                raise ValueError(f"Failed to fetch item info: {e}")
-            name = json_data.get("name") or "Unnamed Repository"
-            return storage.ItemResult(
-                item_id=item_id,
-                item_name=name,
-                item_type=item_type,
-            )
-        else:
+        item_type_str, actual_id = self._parse_item_id(item_id)
+        if item_type_str == "workspace":
+            endpoint = f"workspaces/{actual_id}"
+            async with self.network.GET(endpoint) as response:
+                json_data = await self._handle_response(response)
+                name = json_data.get("name") or actual_id
+                return storage.ItemResult(
+                    item_id=item_id,
+                    item_name=name,
+                    item_type=storage.ItemType.FOLDER,
+                )
+        elif item_type_str == "repository":
             repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
-            endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
-            try:
+            if not path_param:
+                endpoint = f"repositories/{repo_full_name}"
                 async with self.network.GET(endpoint) as response:
-                    json_data = await response.json_content()
-            except Exception:
-                raise ValueError(f"File not found: {item_id}")
-            file_name = path_param.split("/")[-1] if path_param else "Unnamed File"
-            return storage.ItemResult(
-                item_id=item_id,
-                item_name=file_name,
-                item_type=storage.ItemType.FILE,
-            )
+                    json_data = await self._handle_response(response)
+                    name = json_data.get("name") or repo_full_name
+                    return storage.ItemResult(
+                        item_id=item_id,
+                        item_name=name,
+                        item_type=storage.ItemType.FOLDER,
+                    )
+            else:
+                endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
+                async with self.network.GET(endpoint) as response:
+                    json_data = await self._handle_response(response)
+                    item_type_value = (
+                        storage.ItemType.FOLDER
+                        if json_data.get("type") == "commit_directory"
+                        else storage.ItemType.FILE
+                    )
+                    item_name = path_param.split("/")[-1] or "Unnamed Item"
+                    return storage.ItemResult(
+                        item_id=item_id,
+                        item_name=item_name,
+                        item_type=item_type_value,
+                    )
+        else:
+            raise ValueError(f"Unknown item type: {item_type_str}")
 
     async def list_child_items(
         self,
@@ -127,45 +118,75 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
     ) -> storage.ItemSampleResult:
         if not item_id:
             raise ValueError("Item ID is empty.")
-        item_type_id, actual_id = self._parse_item_id(item_id)
-        if item_type_id != storage.ItemType.FOLDER:
-            raise ValueError("Only folders can have child items")
+        item_type_str, actual_id = self._parse_item_id(item_id)
         params = self._params_from_cursor(page_cursor)
-        repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
-        endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
-        try:
-            async with self.network.GET(endpoint, query=params) as response:
-                json_data = await response.json_content()
-        except Exception as e:
-            raise ValueError(f"Failed to list child items: {e}")
-        items = []
-        for item in json_data.get("values", []):
-            item_type_value = (
-                storage.ItemType.FOLDER
-                if item["type"] == "commit_directory"
-                else storage.ItemType.FILE
-            )
-            if item_type is not None and item_type != item_type_value:
-                continue
-            path = item.get("path")
-            if not path:
-                continue
-            item_name = path.split("/")[-1] or "Unnamed Item"
-            item_id_value = self._make_item_id(
-                item_type_value, f"{repo_full_name}/{path}"
-            )
-            items.append(
-                storage.ItemResult(
-                    item_id=item_id_value,
-                    item_name=item_name,
-                    item_type=item_type_value,
+        if item_type_str == "workspace":
+            workspace_slug = actual_id
+            params["role"] = "member"
+            params["pagelen"] = "100"
+            endpoint = f"repositories/{workspace_slug}"
+            try:
+                async with self.network.GET(endpoint, query=params) as response:
+                    json_data = await self._handle_response(response)
+            except Exception as e:
+                raise ValueError(f"Failed to fetch repositories: {e}")
+            items = []
+            for repo in json_data.get("values", []):
+                full_name = repo.get("full_name")
+                name = repo.get("name") or "Unnamed Repository"
+                if not full_name:
+                    continue
+                item_id = self._make_item_id("repository", full_name)
+                items.append(
+                    storage.ItemResult(
+                        item_id=item_id,
+                        item_name=name,
+                        item_type=storage.ItemType.FOLDER,
+                    )
                 )
-            )
-        result = storage.ItemSampleResult(items=items)
-        next_cursor = json_data.get("next")
-        cursor = NextLinkCursor(next_link=next_cursor)
-        result = result.with_cursor(cursor)
-        return result
+            result = storage.ItemSampleResult(items=items)
+            next_cursor = json_data.get("next")
+            cursor = NextLinkCursor(next_link=next_cursor)
+            result = result.with_cursor(cursor)
+            return result
+        elif item_type_str == "repository":
+            repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
+            endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
+            try:
+                async with self.network.GET(endpoint, query=params) as response:
+                    json_data = await self._handle_response(response)
+            except Exception as e:
+                raise ValueError(f"Failed to list child items: {e}")
+            items = []
+            for item in json_data.get("values", []):
+                item_type_value = (
+                    storage.ItemType.FOLDER
+                    if item["type"] == "commit_directory"
+                    else storage.ItemType.FILE
+                )
+                if item_type is not None and item_type != item_type_value:
+                    continue
+                path = item.get("path")
+                if not path:
+                    continue
+                item_name = path.split("/")[-1] or "Unnamed Item"
+                item_id_value = self._make_item_id(
+                    "repository", f"{repo_full_name}/{path}"
+                )
+                items.append(
+                    storage.ItemResult(
+                        item_id=item_id_value,
+                        item_name=item_name,
+                        item_type=item_type_value,
+                    )
+                )
+            result = storage.ItemSampleResult(items=items)
+            next_cursor = json_data.get("next")
+            cursor = NextLinkCursor(next_link=next_cursor)
+            result = result.with_cursor(cursor)
+            return result
+        else:
+            raise ValueError(f"Cannot list child items for item type {item_type_str}")
 
     def _split_repo_full_name_and_path(self, actual_id: str) -> tuple[str, str]:
         parts = actual_id.split("/", 2)
@@ -185,14 +206,43 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
         flat_query_params = {k: v[0] for k, v in query_params.items()}
         return flat_query_params
 
-    def _make_item_id(self, item_type: storage.ItemType, item_id: str) -> str:
-        return f"{item_type.value}:{item_id}"
+    def _make_item_id(self, item_type: str, item_id: str) -> str:
+        return f"{item_type}:{item_id}"
 
-    def _parse_item_id(self, item_id: str) -> tuple[storage.ItemType, str]:
+    def _parse_item_id(self, item_id: str) -> tuple[str, str]:
         if not item_id:
             raise ValueError("Item ID is empty.")
         try:
             _type_str, actual_id = item_id.split(":", 1)
-            return storage.ItemType(_type_str), actual_id
+            return _type_str, actual_id
         except ValueError:
             raise ValueError(f"Invalid item_id format: {item_id!r}")
+
+    async def _handle_response(self, response) -> dict:
+        if response.http_status >= 400:
+            json_data = await response.json_content()
+            error_message = json_data.get("error", {}).get("message", "Unknown error")
+            raise ValueError(f"HTTP Error {response.http_status}: {error_message}")
+        return await response.json_content()
+
+    async def build_wb_config(self) -> dict:
+        item_type_str, actual_id = self._parse_item_id(self.config.connected_root_id)
+        if item_type_str == "repository":
+            workspace_slug, repo_slug = actual_id.split("/", 1)
+            host = urlparse(self.config.external_api_url).hostname
+            return {
+                "workspace": workspace_slug,
+                "repo_slug": repo_slug,
+                "host": host,
+            }
+        elif item_type_str == "workspace":
+            workspace_slug = actual_id
+            host = urlparse(self.config.external_api_url).hostname
+            return {
+                "workspace": workspace_slug,
+                "host": host,
+            }
+        else:
+            raise ValueError(
+                f"Unsupported item type for build_wb_config: {item_type_str}"
+            )

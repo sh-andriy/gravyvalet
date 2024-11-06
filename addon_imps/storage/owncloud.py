@@ -43,8 +43,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
                 response_xml
             )
 
-        if current_user_principal_url.startswith("/"):
-            current_user_principal_url = current_user_principal_url.lstrip("/")
+        current_user_principal_url = current_user_principal_url.lstrip("/")
 
         async with self.network.PROPFIND(
             uri_path=current_user_principal_url,
@@ -120,6 +119,12 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
             return storage.ItemSampleResult(items=items)
 
+    async def build_wb_config(self) -> dict:
+        return {
+            "folder": self.config.connected_root_id,
+            "host": self.config.external_api_url,
+        }
+
     def _parse_response_element(
         self, response_element: ET.Element, path: str
     ) -> storage.ItemResult:
@@ -146,26 +151,31 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         )
         return item_result
 
-    def _build_url(self, path: str) -> str:
-        return path.lstrip("/")
+    def _parse_property(self, response_xml: str, xpath: str, error_message: str) -> str:
+        ns = {"d": "DAV:"}
+        root = ET.fromstring(response_xml)
+        element = root.find(xpath, ns)
+        if element is not None and element.text:
+            return element.text
+        else:
+            raise ValueError(error_message)
 
     def _parse_current_user_principal(self, response_xml: str) -> str:
-        ns = {"d": "DAV:"}
-        root = ET.fromstring(response_xml)
-        current_user_principal = root.find(".//d:current-user-principal/d:href", ns)
-        if current_user_principal is not None and current_user_principal.text:
-            return current_user_principal.text
-        else:
-            raise ValueError("current-user-principal not found in response")
+        return self._parse_property(
+            response_xml,
+            xpath=".//d:current-user-principal/d:href",
+            error_message="current-user-principal not found in response",
+        )
 
     def _parse_displayname(self, response_xml: str) -> str:
-        ns = {"d": "DAV:"}
-        root = ET.fromstring(response_xml)
-        displayname = root.find(".//d:displayname", ns)
-        if displayname is not None and displayname.text:
-            return displayname.text
-        else:
-            raise ValueError("displayname not found in response")
+        return self._parse_property(
+            response_xml,
+            xpath=".//d:displayname",
+            error_message="displayname not found in response",
+        )
+
+    def _build_url(self, path: str) -> str:
+        return path.lstrip("/")
 
     def _href_to_path(self, href: str) -> str:
         parsed_href = urlparse(unquote(href))

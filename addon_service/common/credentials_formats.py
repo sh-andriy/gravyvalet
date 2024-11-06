@@ -1,3 +1,4 @@
+import base64
 from enum import (
     Enum,
     unique,
@@ -73,3 +74,11 @@ class CredentialsFormats(Enum):
                 credentials, AccessTokenCredentials
             ):
                 yield "PRIVATE-TOKEN", credentials.access_token
+            case CredentialsFormats.USERNAME_PASSWORD if isinstance(
+                credentials, UsernamePasswordCredentials
+            ):
+                credentials_str = f"{credentials.username}:{credentials.password}"
+                base64_credentials = base64.b64encode(
+                    credentials_str.encode("utf-8")
+                ).decode("utf-8")
+                yield "Authorization", f"Basic {base64_credentials}"

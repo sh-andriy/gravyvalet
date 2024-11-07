@@ -60,11 +60,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_type=storage.ItemType.FOLDER,
                 )
             )
-        result = storage.ItemSampleResult(items=items)
-        next_cursor = json_data.get("next")
-        cursor = NextLinkCursor(next_link=next_cursor)
-        result = result.with_cursor(cursor)
-        return result
+        return self._create_item_sample_result(items, json_data)
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         if not item_id:
@@ -121,72 +117,88 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
         item_type_str, actual_id = self._parse_item_id(item_id)
         params = self._params_from_cursor(page_cursor)
         if item_type_str == "workspace":
-            workspace_slug = actual_id
-            params["role"] = "member"
-            params["pagelen"] = "100"
-            endpoint = f"repositories/{workspace_slug}"
-            try:
-                async with self.network.GET(endpoint, query=params) as response:
-                    json_data = await self._handle_response(response)
-            except Exception as e:
-                raise ValueError(f"Failed to fetch repositories: {e}")
-            items = []
-            for repo in json_data.get("values", []):
-                full_name = repo.get("full_name")
-                name = repo.get("name") or "Unnamed Repository"
-                if not full_name:
-                    continue
-                item_id = self._make_item_id("repository", full_name)
-                items.append(
-                    storage.ItemResult(
-                        item_id=item_id,
-                        item_name=name,
-                        item_type=storage.ItemType.FOLDER,
-                    )
-                )
-            result = storage.ItemSampleResult(items=items)
-            next_cursor = json_data.get("next")
-            cursor = NextLinkCursor(next_link=next_cursor)
-            result = result.with_cursor(cursor)
-            return result
+            return await self._list_workspace_child_items(actual_id, params, item_type)
         elif item_type_str == "repository":
-            repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
-            endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
-            try:
-                async with self.network.GET(endpoint, query=params) as response:
-                    json_data = await self._handle_response(response)
-            except Exception as e:
-                raise ValueError(f"Failed to list child items: {e}")
-            items = []
-            for item in json_data.get("values", []):
-                item_type_value = (
-                    storage.ItemType.FOLDER
-                    if item["type"] == "commit_directory"
-                    else storage.ItemType.FILE
-                )
-                if item_type is not None and item_type != item_type_value:
-                    continue
-                path = item.get("path")
-                if not path:
-                    continue
-                item_name = path.split("/")[-1] or "Unnamed Item"
-                item_id_value = self._make_item_id(
-                    "repository", f"{repo_full_name}/{path}"
-                )
-                items.append(
-                    storage.ItemResult(
-                        item_id=item_id_value,
-                        item_name=item_name,
-                        item_type=item_type_value,
-                    )
-                )
-            result = storage.ItemSampleResult(items=items)
-            next_cursor = json_data.get("next")
-            cursor = NextLinkCursor(next_link=next_cursor)
-            result = result.with_cursor(cursor)
-            return result
+            return await self._list_repository_child_items(actual_id, params, item_type)
         else:
             raise ValueError(f"Cannot list child items for item type {item_type_str}")
+
+    async def _list_workspace_child_items(
+        self,
+        actual_id: str,
+        params: dict[str, str],
+        item_type: storage.ItemType | None = None,
+    ) -> storage.ItemSampleResult:
+        workspace_slug = actual_id
+        params["role"] = "member"
+        params["pagelen"] = "100"
+        endpoint = f"repositories/{workspace_slug}"
+        try:
+            async with self.network.GET(endpoint, query=params) as response:
+                json_data = await self._handle_response(response)
+        except Exception as e:
+            raise ValueError(f"Failed to fetch repositories: {e}")
+        items = []
+        for repo in json_data.get("values", []):
+            full_name = repo.get("full_name")
+            name = repo.get("name") or "Unnamed Repository"
+            if not full_name:
+                continue
+            item_id = self._make_item_id("repository", full_name)
+            items.append(
+                storage.ItemResult(
+                    item_id=item_id,
+                    item_name=name,
+                    item_type=storage.ItemType.FOLDER,
+                )
+            )
+        return self._create_item_sample_result(items, json_data)
+
+    async def _list_repository_child_items(
+        self,
+        actual_id: str,
+        params: dict[str, str],
+        item_type: storage.ItemType | None = None,
+    ) -> storage.ItemSampleResult:
+        repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
+        endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
+        try:
+            async with self.network.GET(endpoint, query=params) as response:
+                json_data = await self._handle_response(response)
+        except Exception as e:
+            raise ValueError(f"Failed to list child items: {e}")
+        items = []
+        for item in json_data.get("values", []):
+            item_type_value = (
+                storage.ItemType.FOLDER
+                if item["type"] == "commit_directory"
+                else storage.ItemType.FILE
+            )
+            if item_type is not None and item_type != item_type_value:
+                continue
+            path = item.get("path")
+            if not path:
+                continue
+            item_name = path.split("/")[-1] or "Unnamed Item"
+            item_id_value = self._make_item_id("repository", f"{repo_full_name}/{path}")
+            items.append(
+                storage.ItemResult(
+                    item_id=item_id_value,
+                    item_name=item_name,
+                    item_type=item_type_value,
+                )
+            )
+        return self._create_item_sample_result(items, json_data)
+
+    def _create_item_sample_result(
+        self,
+        items: list[storage.ItemResult],
+        json_data: dict,
+    ) -> storage.ItemSampleResult:
+        result = storage.ItemSampleResult(items=items)
+        next_cursor = json_data.get("next")
+        cursor = NextLinkCursor(next_link=next_cursor)
+        return result.with_cursor(cursor)
 
     def _split_repo_full_name_and_path(self, actual_id: str) -> tuple[str, str]:
         parts = actual_id.split("/", 2)

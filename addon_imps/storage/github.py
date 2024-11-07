@@ -58,7 +58,10 @@ class GitHubStorageImp(storage.StorageAddonHttpRequestorImp):
             if response.http_status == 200:
                 json = await response.json_content()
                 if path != "":
-                    return self._parse_github_item(json, full_name=item_id)
+                    if isinstance(json, dict):
+                        return self._parse_github_item(json, full_name=item_id)
+                    else:
+                        return self._parse_github_item(json[0], full_name=item_id)
                 else:
                     return self._parse_github_repo(json)
             elif response.http_status == 404:

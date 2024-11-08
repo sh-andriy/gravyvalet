@@ -10,6 +10,7 @@ from addon_imps.citations import (
     zotero_org,
 )
 from addon_imps.storage import (
+    bitbucket,
     box_dot_com,
     dataverse,
     dropbox,
@@ -74,6 +75,7 @@ class KnownAddonImps(enum.Enum):
     GOOGLE_DRIVE = google_drive.GoogleDriveStorageImp
     FIGSHARE = figshare.FigshareStorageImp
     MENDELEY = mendeley.MendeleyCitationImp
+    BITBUCKET = bitbucket.BitbucketStorageImp
     DATAVERSE = dataverse.DataverseStorageImp
     OWNCLOUD = owncloud.OwnCloudStorageImp
 
@@ -101,6 +103,7 @@ class AddonImpNumbers(enum.Enum):
     OWNCLOUD = 1009
     DATAVERSE = 1010
     GITLAB = 1011
+    BITBUCKET = 1012
 
     GIT_HUB = 1013
     if __debug__:

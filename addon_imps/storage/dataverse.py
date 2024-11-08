@@ -32,7 +32,7 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
         self,
     ) -> dict:
         match = DATASET_REGEX.match(self.config.connected_root_id)
-        async with self.network.GET(f"datasets/{match['id']}") as response:
+        async with self.network.GET(f"api/datasets/{match['id']}") as response:
             content = await response.json_content()
             parsed = parse_dataset(content)
             return {
@@ -44,7 +44,7 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         async with self.network.GET(
-            "mydata/retrieve",
+            "api/mydata/retrieve",
             query=[
                 ["page", page_cursor],
                 *[("role_ids", role) for role in range(1, 9)],
@@ -104,7 +104,9 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
             return ItemSampleResult(items=[], total_count=0)
 
     async def _fetch_dataverse_items(self, dataverse_id) -> list[ItemResult]:
-        async with self.network.GET(f"dataverses/{dataverse_id}/contents") as response:
+        async with self.network.GET(
+            f"api/dataverses/{dataverse_id}/contents"
+        ) as response:
             response_content = await response.json_content()
             return await asyncio.gather(
                 *[
@@ -122,19 +124,19 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
         raise ValueError(f"Invalid item type: {item['type']}")
 
     async def _fetch_dataverse(self, dataverse_id) -> ItemResult:
-        async with self.network.GET(f"dataverses/{dataverse_id}") as response:
+        async with self.network.GET(f"api/dataverses/{dataverse_id}") as response:
             return parse_dataverse(await response.json_content())
 
     async def _fetch_dataset(self, dataset_id: str) -> ItemResult:
-        async with self.network.GET(f"datasets/{dataset_id}") as response:
+        async with self.network.GET(f"api/datasets/{dataset_id}") as response:
             return parse_dataset(await response.json_content())
 
     async def _fetch_dataset_files(self, dataset_id) -> list[ItemResult]:
-        async with self.network.GET(f"datasets/{dataset_id}") as response:
+        async with self.network.GET(f"api/datasets/{dataset_id}") as response:
             return parse_dataset_files(await response.json_content())
 
     async def _fetch_file(self, dataverse_id) -> ItemResult:
-        async with self.network.GET(f"files/{dataverse_id}") as response:
+        async with self.network.GET(f"api/files/{dataverse_id}") as response:
             return parse_datafile(await response.json_content())
 
 
@@ -147,6 +149,7 @@ def parse_dataverse_as_subitem(data: dict):
         item_type=ItemType.FOLDER,
         item_name=data["title"],
         item_id=f'dataverse/{data["id"]}',
+        can_be_root=False,
     )
 
 

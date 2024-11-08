@@ -55,3 +55,7 @@ class InvalidJsonArgsForSignature(JsonArgumentsError):
 
 class JsonValueInvalidForType(JsonArgumentsError):
     """got a json value mismatched with a given python type annotation"""
+
+
+class JsonValueIsNotNullable(JsonArgumentsError):
+    """got a json value mismatched with a given python type annotation"""

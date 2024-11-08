@@ -35,8 +35,10 @@ OSFDB_SSLMODE = os.environ.get("OSFDB_SSLMODE", "prefer")
 ###
 # for interacting with osf
 
-OSF_SENSITIVE_DATA_SECRET = os.environ.get("OSF_SENSITIVE_DATA_SECRET", "")
-OSF_SENSITIVE_DATA_SALT = os.environ.get("OSF_SENSITIVE_DATA_SALT", "")
+OSF_SENSITIVE_DATA_SECRET = os.environ.get(
+    "OSF_SENSITIVE_DATA_SECRET", "TrainglesAre5Squares"
+)
+OSF_SENSITIVE_DATA_SALT = os.environ.get("OSF_SENSITIVE_DATA_SALT", "yusaltydough")
 OSF_HMAC_KEY = os.environ.get("OSF_HMAC_KEY")
 OSF_HMAC_EXPIRATION_SECONDS = int(os.environ.get("OSF_HMAC_EXPIRATION_SECONDS", 110))
 OSF_BASE_URL = os.environ.get("OSF_BASE_URL", "https://osf.example")

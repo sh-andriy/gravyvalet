@@ -18,6 +18,20 @@ if env.SENTRY_DSN:
             environment=env.OSF_BASE_URL,
         )
 
+if env.NEW_RELIC_CONFIG_FILE:
+    try:
+        import newrelic.agent
+    except ImportError:
+        _logger.warning("NEW_RELIC_CONFIG_FILE defined but newrelic not installed!")
+    else:
+        try:
+            newrelic.agent.initialize(
+                config_file=env.NEW_RELIC_CONFIG_FILE,
+                environment=env.NEW_RELIC_ENVIRONMENT,
+            )
+        except Exception as err:
+            raise Exception(f"Unable to initialize newrelic! {err}")
+
 
 SECRET_KEY = env.SECRET_KEY
 OSF_HMAC_KEY = env.OSF_HMAC_KEY or "changeme"

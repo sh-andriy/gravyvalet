@@ -12,6 +12,8 @@ CORS_ALLOWED_ORIGINS = tuple(
 )
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 SECURE_PROXY_SSL_HEADER = os.environ.get("SECURE_PROXY_SSL_HEADER")
+NEW_RELIC_CONFIG_FILE = os.environ.get("NEW_RELIC_CONFIG_FILE")
+NEW_RELIC_ENVIRONMENT = os.environ.get("NEW_RELIC_ENVIRONMENT")
 
 ###
 # databases

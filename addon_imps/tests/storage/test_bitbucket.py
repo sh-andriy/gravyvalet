@@ -13,10 +13,21 @@ from addon_toolkit.interfaces.storage import (
 
 
 class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
+    BASE_URL = "https://api.bitbucket.org/2.0/"
+    WORKSPACE = "workspace1"
+    WORKSPACE_NAME = "Workspace One"
+    WORKSPACE2 = "workspace2"
+    WORKSPACE2_NAME = "Workspace Two"
+    REPO = "repo1"
+    REPO_NAME = "Repository One"
+    REPO2 = "repo2"
+    REPO2_NAME = "Repository Two"
+    FILE_PATH = "path/to/file.txt"
+    FILE_NAME = "file.txt"
+
     def setUp(self):
-        self.base_url = "https://api.bitbucket.org/2.0/"
         self.config = StorageConfig(
-            external_api_url=self.base_url,
+            external_api_url=self.BASE_URL,
             max_upload_mb=100,
             connected_root_id="",
             external_account_id="",
@@ -25,7 +36,9 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
         self.network.GET = Mock()
         self.imp = BitbucketStorageImp(config=self.config, network=self.network)
 
-    def _patch_get(self, return_value: dict, status: int = 200):
+    def _patch_get(
+        self, endpoint: str, return_value: dict, status: int = 200, query: dict = None
+    ):
         mock_response = AsyncMock()
         mock_response.json_content.return_value = return_value
         mock_response.http_status = status
@@ -35,60 +48,66 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
         context_manager_mock.__aexit__.return_value = None
 
         self.network.GET.return_value = context_manager_mock
+        self.expected_get_call = (endpoint, query)
 
-    def _assert_get(self, endpoint: str, query: dict = None):
+    def _assert_get_called_once(self):
+        endpoint, query = self.expected_get_call
         if query is None:
             self.network.GET.assert_called_once_with(endpoint)
         else:
             self.network.GET.assert_called_once_with(endpoint, query=query)
 
     async def test_get_external_account_id(self):
+        endpoint = "user"
         mock_response = {"uuid": "{user-uuid}"}
-        self._patch_get(mock_response)
+        self._patch_get(endpoint, mock_response)
 
         result = await self.imp.get_external_account_id({})
 
         self.assertEqual(result, "{user-uuid}")
-        self._assert_get("user")
+        self._assert_get_called_once()
 
     async def test_get_external_account_id_no_uuid(self):
+        endpoint = "user"
         mock_response = {}
-        self._patch_get(mock_response)
+        self._patch_get(endpoint, mock_response)
 
         with self.assertRaises(ValueError) as context:
             await self.imp.get_external_account_id({})
 
         self.assertIn("Failed to retrieve user UUID", str(context.exception))
-        self._assert_get("user")
+        self._assert_get_called_once()
 
     async def test_list_root_items(self):
+        endpoint = "user/permissions/workspaces"
         mock_response = {
             "values": [
                 {
                     "workspace": {
-                        "slug": "workspace1",
-                        "name": "Workspace One",
+                        "slug": self.WORKSPACE,
+                        "name": self.WORKSPACE_NAME,
                     }
                 },
                 {
                     "workspace": {
-                        "slug": "workspace2",
-                        "name": "Workspace Two",
+                        "slug": self.WORKSPACE2,
+                        "name": self.WORKSPACE2_NAME,
                     }
                 },
             ],
-            "next": "https://api.bitbucket.org/2.0/user/permissions/workspaces?page=2",
+            "next": f"{self.BASE_URL}user/permissions/workspaces?page=2",
         }
-        self._patch_get(mock_response)
+        query = {"pagelen": "100"}
+        self._patch_get(endpoint, mock_response, query=query)
         expected_items = [
             ItemResult(
-                item_id="workspace:workspace1",
-                item_name="Workspace One",
+                item_id=f"workspace:{self.WORKSPACE}",
+                item_name=self.WORKSPACE_NAME,
                 item_type=ItemType.FOLDER,
             ),
             ItemResult(
-                item_id="workspace:workspace2",
-                item_name="Workspace Two",
+                item_id=f"workspace:{self.WORKSPACE2}",
+                item_name=self.WORKSPACE2_NAME,
                 item_type=ItemType.FOLDER,
             ),
         ]
@@ -97,197 +116,219 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.items, expected_items)
         self.assertEqual(result.next_sample_cursor, mock_response["next"])
-        self._assert_get("user/permissions/workspaces", query={"pagelen": "100"})
+        self._assert_get_called_once()
 
-    async def test_get_item_info_workspace(self):
-        item_id = "workspace:workspace1"
-        mock_response = {
-            "slug": "workspace1",
-            "name": "Workspace One",
-        }
-        self._patch_get(mock_response)
-
-        result = await self.imp.get_item_info(item_id)
-
-        expected_result = ItemResult(
-            item_id=item_id,
-            item_name="Workspace One",
-            item_type=ItemType.FOLDER,
-        )
-        self.assertEqual(result, expected_result)
-        self._assert_get("workspaces/workspace1")
-
-    async def test_get_item_info_repository(self):
-        item_id = "repository:workspace1/repo1"
-        mock_response = {
-            "full_name": "workspace1/repo1",
-            "name": "Repository One",
-        }
-        self._patch_get(mock_response)
-
-        result = await self.imp.get_item_info(item_id)
-
-        expected_result = ItemResult(
-            item_id=item_id,
-            item_name="Repository One",
-            item_type=ItemType.FOLDER,
-        )
-        self.assertEqual(result, expected_result)
-        self._assert_get("repositories/workspace1/repo1")
-
-    async def test_get_item_info_file(self):
-        item_id = "repository:workspace1/repo1/path/to/file.txt"
-        mock_response = {
-            "type": "commit_file",
-            "path": "path/to/file.txt",
-        }
-        self._patch_get(mock_response)
-
-        result = await self.imp.get_item_info(item_id)
-
-        expected_result = ItemResult(
-            item_id=item_id,
-            item_name="file.txt",
-            item_type=ItemType.FILE,
-        )
-        self.assertEqual(result, expected_result)
-        self._assert_get("repositories/workspace1/repo1/src/HEAD/path/to/file.txt")
-
-    async def test_list_child_items_workspace(self):
-        item_id = "workspace:workspace1"
-        mock_response = {
-            "values": [
-                {
-                    "full_name": "workspace1/repo1",
-                    "name": "Repository One",
+    async def test_get_item_info(self):
+        test_cases = [
+            {
+                "item_id": f"workspace:{self.WORKSPACE}",
+                "endpoint": f"workspaces/{self.WORKSPACE}",
+                "mock_response": {
+                    "slug": self.WORKSPACE,
+                    "name": self.WORKSPACE_NAME,
                 },
-                {
-                    "full_name": "workspace1/repo2",
-                    "name": "Repository Two",
+                "expected_result": ItemResult(
+                    item_id=f"workspace:{self.WORKSPACE}",
+                    item_name=self.WORKSPACE_NAME,
+                    item_type=ItemType.FOLDER,
+                ),
+            },
+            {
+                "item_id": f"repository:{self.WORKSPACE}/{self.REPO}",
+                "endpoint": f"repositories/{self.WORKSPACE}/{self.REPO}",
+                "mock_response": {
+                    "full_name": f"{self.WORKSPACE}/{self.REPO}",
+                    "name": self.REPO_NAME,
                 },
-            ],
-            "next": "https://api.bitbucket.org/2.0/repositories/workspace1?page=2",
-        }
-        self._patch_get(mock_response)
-        expected_items = [
-            ItemResult(
-                item_id="repository:workspace1/repo1",
-                item_name="Repository One",
-                item_type=ItemType.FOLDER,
-            ),
-            ItemResult(
-                item_id="repository:workspace1/repo2",
-                item_name="Repository Two",
-                item_type=ItemType.FOLDER,
-            ),
-        ]
-
-        result = await self.imp.list_child_items(item_id)
-
-        self.assertEqual(result.items, expected_items)
-        self.assertEqual(result.next_sample_cursor, mock_response["next"])
-        expected_query = {"role": "member", "pagelen": "100"}
-        self._assert_get("repositories/workspace1", query=expected_query)
-
-    async def test_list_child_items_repository(self):
-        item_id = "repository:workspace1/repo1"
-        mock_response = {
-            "values": [
-                {
-                    "type": "commit_directory",
-                    "path": "src",
-                },
-                {
+                "expected_result": ItemResult(
+                    item_id=f"repository:{self.WORKSPACE}/{self.REPO}",
+                    item_name=self.REPO_NAME,
+                    item_type=ItemType.FOLDER,
+                ),
+            },
+            {
+                "item_id": f"repository:{self.WORKSPACE}/{self.REPO}/{self.FILE_PATH}",
+                "endpoint": f"repositories/{self.WORKSPACE}/{self.REPO}/src/HEAD/{self.FILE_PATH}",
+                "mock_response": {
                     "type": "commit_file",
-                    "path": "README.md",
+                    "path": self.FILE_PATH,
                 },
-            ],
-            "next": None,
-        }
-        self._patch_get(mock_response)
-        expected_items = [
-            ItemResult(
-                item_id="repository:workspace1/repo1/src",
-                item_name="src",
-                item_type=ItemType.FOLDER,
-            ),
-            ItemResult(
-                item_id="repository:workspace1/repo1/README.md",
-                item_name="README.md",
-                item_type=ItemType.FILE,
-            ),
+                "expected_result": ItemResult(
+                    item_id=f"repository:{self.WORKSPACE}/{self.REPO}/{self.FILE_PATH}",
+                    item_name=self.FILE_NAME,
+                    item_type=ItemType.FILE,
+                ),
+            },
         ]
+        for case in test_cases:
+            with self.subTest(item_id=case["item_id"]):
+                self.network.GET.reset_mock()
+                self._patch_get(case["endpoint"], case["mock_response"])
+                result = await self.imp.get_item_info(case["item_id"])
+                self.assertEqual(result, case["expected_result"])
+                self._assert_get_called_once()
 
-        result = await self.imp.list_child_items(item_id)
+    async def test_get_item_info_invalid_item_id(self):
+        item_id = "invalid_item_id"
+        with self.assertRaises(ValueError) as context:
+            await self.imp.get_item_info(item_id)
+        self.assertIn("Invalid item_id format", str(context.exception))
 
-        self.assertEqual(result.items, expected_items)
-        self.assertIsNone(result.next_sample_cursor)
-        self._assert_get("repositories/workspace1/repo1/src/HEAD/", query={})
+    async def test_get_item_info_unknown_item_type(self):
+        item_id = "unknown_type:some_id"
+        with self.assertRaises(ValueError) as context:
+            await self.imp.get_item_info(item_id)
+        self.assertIn("Unknown item type: unknown_type", str(context.exception))
 
-    async def test_list_child_items_repository_with_path(self):
-        item_id = "repository:workspace1/repo1/src"
-        mock_response = {
-            "values": [
-                {
-                    "type": "commit_file",
-                    "path": "src/main.py",
+    async def test_list_child_items(self):
+        test_cases = [
+            {
+                "item_id": f"workspace:{self.WORKSPACE}",
+                "endpoint": f"repositories/{self.WORKSPACE}",
+                "mock_response": {
+                    "values": [
+                        {
+                            "full_name": f"{self.WORKSPACE}/{self.REPO}",
+                            "name": self.REPO_NAME,
+                        },
+                        {
+                            "full_name": f"{self.WORKSPACE}/{self.REPO2}",
+                            "name": self.REPO2_NAME,
+                        },
+                    ],
+                    "next": f"{self.BASE_URL}repositories/{self.WORKSPACE}?page=2",
                 },
-                {
-                    "type": "commit_file",
-                    "path": "src/utils.py",
+                "query": {"role": "member", "pagelen": "100"},
+                "expected_items": [
+                    ItemResult(
+                        item_id=f"repository:{self.WORKSPACE}/{self.REPO}",
+                        item_name=self.REPO_NAME,
+                        item_type=ItemType.FOLDER,
+                    ),
+                    ItemResult(
+                        item_id=f"repository:{self.WORKSPACE}/{self.REPO2}",
+                        item_name=self.REPO2_NAME,
+                        item_type=ItemType.FOLDER,
+                    ),
+                ],
+            },
+            {
+                "item_id": f"repository:{self.WORKSPACE}/{self.REPO}",
+                "endpoint": f"repositories/{self.WORKSPACE}/{self.REPO}/src/HEAD/",
+                "mock_response": {
+                    "values": [
+                        {
+                            "type": "commit_directory",
+                            "path": "src",
+                        },
+                        {
+                            "type": "commit_file",
+                            "path": "README.md",
+                        },
+                    ],
+                    "next": None,
                 },
-            ],
-            "next": None,
-        }
-        self._patch_get(mock_response)
-        expected_items = [
-            ItemResult(
-                item_id="repository:workspace1/repo1/src/main.py",
-                item_name="main.py",
-                item_type=ItemType.FILE,
-            ),
-            ItemResult(
-                item_id="repository:workspace1/repo1/src/utils.py",
-                item_name="utils.py",
-                item_type=ItemType.FILE,
-            ),
+                "query": {},
+                "expected_items": [
+                    ItemResult(
+                        item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src",
+                        item_name="src",
+                        item_type=ItemType.FOLDER,
+                    ),
+                    ItemResult(
+                        item_id=f"repository:{self.WORKSPACE}/{self.REPO}/README.md",
+                        item_name="README.md",
+                        item_type=ItemType.FILE,
+                    ),
+                ],
+            },
+            {
+                "item_id": f"repository:{self.WORKSPACE}/{self.REPO}/src",
+                "endpoint": f"repositories/{self.WORKSPACE}/{self.REPO}/src/HEAD/src",
+                "mock_response": {
+                    "values": [
+                        {
+                            "type": "commit_file",
+                            "path": "src/main.py",
+                        },
+                        {
+                            "type": "commit_file",
+                            "path": "src/utils.py",
+                        },
+                    ],
+                    "next": None,
+                },
+                "query": {},
+                "expected_items": [
+                    ItemResult(
+                        item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src/main.py",
+                        item_name="main.py",
+                        item_type=ItemType.FILE,
+                    ),
+                    ItemResult(
+                        item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src/utils.py",
+                        item_name="utils.py",
+                        item_type=ItemType.FILE,
+                    ),
+                ],
+            },
         ]
+        for case in test_cases:
+            with self.subTest(item_id=case["item_id"]):
+                self.network.GET.reset_mock()
+                self._patch_get(
+                    case["endpoint"], case["mock_response"], query=case["query"]
+                )
+                result = await self.imp.list_child_items(case["item_id"])
+                self.assertEqual(result.items, case["expected_items"])
+                self.assertEqual(
+                    result.next_sample_cursor, case["mock_response"]["next"]
+                )
+                self._assert_get_called_once()
 
-        result = await self.imp.list_child_items(item_id)
+    async def test_list_child_items_invalid_item_id(self):
+        item_id = "invalid_item_id"
+        with self.assertRaises(ValueError) as context:
+            await self.imp.list_child_items(item_id)
+        self.assertIn("Invalid item_id format", str(context.exception))
 
-        self.assertEqual(result.items, expected_items)
-        self.assertIsNone(result.next_sample_cursor)
-        self._assert_get("repositories/workspace1/repo1/src/HEAD/src", query={})
+    async def test_list_child_items_unknown_item_type(self):
+        item_id = "unknown_type:some_id"
+        with self.assertRaises(ValueError) as context:
+            await self.imp.list_child_items(item_id)
+        self.assertIn(
+            "Cannot list child items for item type unknown_type", str(context.exception)
+        )
 
     async def test_build_wb_config_repository(self):
         self.imp.config = StorageConfig(
-            external_api_url="https://api.bitbucket.org/2.0/",
+            external_api_url=self.BASE_URL,
             max_upload_mb=100,
-            connected_root_id="repository:workspace1/repo1",
+            connected_root_id=f"repository:{self.WORKSPACE}/{self.REPO}",
             external_account_id="",
         )
 
         result = await self.imp.build_wb_config()
 
         expected_result = {
-            "workspace": "workspace1",
-            "repo_slug": "repo1",
+            "workspace": self.WORKSPACE,
+            "repo_slug": self.REPO,
             "host": "api.bitbucket.org",
         }
         self.assertEqual(result, expected_result)
 
     async def test_build_wb_config_workspace(self):
         self.imp.config = StorageConfig(
-            external_api_url="https://api.bitbucket.org/2.0/",
+            external_api_url=self.BASE_URL,
             max_upload_mb=100,
-            connected_root_id="workspace:workspace1",
+            connected_root_id=f"workspace:{self.WORKSPACE}",
             external_account_id="",
         )
 
         result = await self.imp.build_wb_config()
 
         expected_result = {
-            "workspace": "workspace1",
+            "workspace": self.WORKSPACE,
             "host": "api.bitbucket.org",
         }
         self.assertEqual(result, expected_result)
@@ -295,7 +336,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
     async def test_handle_response_success(self):
         mock_response = AsyncMock()
         mock_response.http_status = 200
-        mock_response.json_content = AsyncMock(return_value={"key": "value"})
+        mock_response.json_content.return_value = {"key": "value"}
 
         result = await self.imp._handle_response(mock_response)
 
@@ -305,9 +346,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
     async def test_handle_response_error(self):
         mock_response = AsyncMock()
         mock_response.http_status = 400
-        mock_response.json_content = AsyncMock(
-            return_value={"error": {"message": "Bad Request"}}
-        )
+        mock_response.json_content.return_value = {"error": {"message": "Bad Request"}}
 
         with self.assertRaises(ValueError) as context:
             await self.imp._handle_response(mock_response)
@@ -316,26 +355,26 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
         mock_response.json_content.assert_awaited_once()
 
     async def test_parse_item_id(self):
-        item_id = "repository:workspace1/repo1/path/to/file.txt"
+        item_id = f"repository:{self.WORKSPACE}/{self.REPO}/{self.FILE_PATH}"
         result = self.imp._parse_item_id(item_id)
-        self.assertEqual(result, ("repository", "workspace1/repo1/path/to/file.txt"))
+        self.assertEqual(
+            result, ("repository", f"{self.WORKSPACE}/{self.REPO}/{self.FILE_PATH}")
+        )
 
     async def test_make_item_id(self):
         item_type = "repository"
-        actual_id = "workspace1/repo1"
+        actual_id = f"{self.WORKSPACE}/{self.REPO}"
         result = self.imp._make_item_id(item_type, actual_id)
-        self.assertEqual(result, "repository:workspace1/repo1")
+        self.assertEqual(result, f"repository:{self.WORKSPACE}/{self.REPO}")
 
     async def test_split_repo_full_name_and_path(self):
-        actual_id = "workspace1/repo1/path/to/file.txt"
+        actual_id = f"{self.WORKSPACE}/{self.REPO}/{self.FILE_PATH}"
         repo_full_name, path_param = self.imp._split_repo_full_name_and_path(actual_id)
-        self.assertEqual(repo_full_name, "workspace1/repo1")
-        self.assertEqual(path_param, "path/to/file.txt")
+        self.assertEqual(repo_full_name, f"{self.WORKSPACE}/{self.REPO}")
+        self.assertEqual(path_param, self.FILE_PATH)
 
     async def test_params_from_cursor(self):
-        cursor = (
-            "https://api.bitbucket.org/2.0/repositories/workspace1?page=2&pagelen=100"
-        )
+        cursor = f"{self.BASE_URL}repositories/{self.WORKSPACE}?page=2&pagelen=100"
         result = self.imp._params_from_cursor(cursor)
         self.assertEqual(result, {"page": "2", "pagelen": "100"})
 
@@ -343,32 +382,6 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
         cursor = ""
         result = self.imp._params_from_cursor(cursor)
         self.assertEqual(result, {})
-
-    async def test_get_item_info_invalid_item_id(self):
-        item_id = "invalid_item_id"
-        with self.assertRaises(ValueError) as context:
-            await self.imp.get_item_info(item_id)
-        self.assertIn("Invalid item_id format", str(context.exception))
-
-    async def test_list_child_items_invalid_item_id(self):
-        item_id = "invalid_item_id"
-        with self.assertRaises(ValueError) as context:
-            await self.imp.list_child_items(item_id)
-        self.assertIn("Invalid item_id format", str(context.exception))
-
-    async def test_get_item_info_unknown_item_type(self):
-        item_id = "unknown_type:some_id"
-        with self.assertRaises(ValueError) as context:
-            await self.imp.get_item_info(item_id)
-        self.assertIn("Unknown item type: unknown_type", str(context.exception))
-
-    async def test_list_child_items_unknown_item_type(self):
-        item_id = "unknown_type:some_id"
-        with self.assertRaises(ValueError) as context:
-            await self.imp.list_child_items(item_id)
-        self.assertIn(
-            "Cannot list child items for item type unknown_type", str(context.exception)
-        )
 
 
 if __name__ == "__main__":

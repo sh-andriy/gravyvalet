@@ -23,6 +23,8 @@ class SupportedFeatures(Flag):
     PERMISSIONS = auto()
     REGISTERING = auto()
     FILE_VERSIONS = auto()
+    COPY_INTO = auto()
+    DOWNLOAD_AS_ZIP = auto()
 
 
 def validate_supported_features(value):

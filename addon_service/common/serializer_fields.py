@@ -3,6 +3,7 @@ import dataclasses
 from rest_framework import serializers as drf_serializers
 from rest_framework_json_api import serializers as json_api_serializers
 from rest_framework_json_api.relations import (
+    PolymorphicResourceRelatedField,
     ResourceRelatedField,
     SkipDataMixin,
 )
@@ -48,3 +49,17 @@ class _FakeQuerysetForDataclassModel:
 
     def get(self, *, pk):
         return self.model.get_by_pk(pk)
+
+
+class CustomPolymorphicResourceRelatedField(PolymorphicResourceRelatedField):
+    def to_representation(self, value):
+        data = super().to_representation(value)
+        if hasattr(value, "authorizedcitationaccount"):
+            data["type"] = "authorized-citation-accounts"
+        elif hasattr(value, "authorizedstorageaccount"):
+            data["type"] = "authorized-storage-accounts"
+        elif hasattr(value, "configuredcitationaddon"):
+            data["type"] = "configured-citation-addons"
+        elif hasattr(value, "configuredstorageaccount"):
+            data["type"] = "configured-storage-addons"
+        return data

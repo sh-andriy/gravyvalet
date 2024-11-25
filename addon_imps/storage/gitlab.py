@@ -9,8 +9,10 @@ from urllib.parse import (
     urlparse,
 )
 
+from django.core.exceptions import ValidationError
+
 from addon_imps.storage.utils import ItemResultable
-from addon_service.common.exceptions import ItemNotFound
+from addon_toolkit.constrained_network.http import HttpResponseInfo
 from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import (
     ItemResult,
@@ -28,9 +30,29 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
     see https://developers.google.com/drive/api/reference/rest/v3/
     """
 
+    @property
+    def url_base(self):
+        url = urlparse(self.config.external_api_url)
+        if url.path:
+            return ""
+        return "api/v4/"
+
+    async def check_preconditions(self, response: HttpResponseInfo):
+        if response.http_status.is_success:
+            return
+        if response.http_status == HTTPStatus.UNAUTHORIZED:
+            raise ValidationError("Gitlab authentication error: invalid API Token")
+        elif response.http_status.is_client_error:
+            raise ValidationError(
+                "Gitlab error occurred, please replace your access token or renew it if needed"
+            )
+        elif response.http_status.is_server_error:
+            raise ValidationError("Gitlab API is currently unavailable")
+
     async def get_external_account_id(self, _: dict[str, str]) -> str:
-        async with self.network.GET("api/v4/user/preferences") as response:
+        async with self.network.GET(f"{self.url_base}user/preferences") as response:
             resp_json = await response.json_content()
+            await self.check_preconditions(response)
             return resp_json.get("user_id", "")
 
     async def build_wb_config(self) -> dict:
@@ -55,7 +77,9 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
                 "sort": "asc",
             },
         )
-        async with self.network.GET("api/v4/projects", query=query_params) as response:
+        async with self.network.GET(
+            f"{self.url_base}projects", query=query_params
+        ) as response:
             resp = await response.json_content()
             return ItemSampleResult(
                 items=[Repository.from_json(item).item_result for item in resp],
@@ -93,12 +117,16 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
         return (await self._get_repository(parsed_id.repo_id)).item_result
 
     async def _get_repository(self, repo_id):
-        async with self.network.GET(f"api/v4/projects/{repo_id}") as response:
+        async with self.network.GET(f"{self.url_base}projects/{repo_id}") as response:
+            await self.check_preconditions(response)
             content = await response.json_content()
             return Repository.from_json(content)
 
     async def get_file_or_folder(self, parsed_id: ItemId):
-        async with self.network.GET(f"api/v4/projects/{parsed_id.repo_id}") as response:
+        async with self.network.GET(
+            f"{self.url_base}projects/{parsed_id.repo_id}"
+        ) as response:
+            await self.check_preconditions(response)
             content = await response.json_content()
             ref = content.get("default_branch")
         if file_item := await self._get_file(parsed_id, ref):
@@ -113,9 +141,10 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
 
     async def _get_file(self, parsed_id, ref):
         async with self.network.GET(
-            f"api/v4/projects/{parsed_id.repo_id}/repository/files/{quote_plus(parsed_id.file_path)}",
+            f"{self.url_base}projects/{parsed_id.repo_id}/repository/files/{quote_plus(parsed_id.file_path)}",
             query={"ref": ref},
         ) as response:
+            await self.check_preconditions(response)
             content = await response.json_content()
             if "file_name" not in content:
                 return None
@@ -142,11 +171,10 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
             },
         )
         async with self.network.GET(
-            f"api/v4/projects/{parsed_id.repo_id}/repository/tree",
+            f"{self.url_base}projects/{parsed_id.repo_id}/repository/tree",
             query=query_params,
         ) as response:
-            if response.http_status == HTTPStatus.NOT_FOUND:
-                raise ItemNotFound
+            await self.check_preconditions(response)
             content = await response.json_content()
             res_items = [parse_item(parsed_id.repo_id, item) for item in content]
 

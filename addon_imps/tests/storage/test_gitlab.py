@@ -2,8 +2,9 @@ import unittest
 from http import HTTPStatus
 from unittest.mock import AsyncMock
 
+from django.core.exceptions import ValidationError
+
 from addon_imps.storage.gitlab import GitlabStorageImp
-from addon_service.common.exceptions import ItemNotFound
 from addon_toolkit.constrained_network.http import HttpRequestor
 from addon_toolkit.interfaces.storage import (
     ItemResult,
@@ -23,7 +24,7 @@ class TestGitlabStorageImp(unittest.IsolatedAsyncioTestCase):
     def _patch_get(self, return_value: dict | list, status=200, headers=None):
         mock = self.network.GET.return_value.__aenter__.return_value
         mock.json_content = AsyncMock(return_value=return_value)
-        mock.http_status = status
+        mock.http_status = HTTPStatus(status)
         mock.headers = headers or {}
 
     def _assert_get(self, url: str, query: dict = None):
@@ -137,13 +138,13 @@ class TestGitlabStorageImp(unittest.IsolatedAsyncioTestCase):
     async def test_get_item_info_file_not_found(self):
         self._patch_get({}, status=HTTPStatus.NOT_FOUND)
 
-        with self.assertRaises(ItemNotFound):
+        with self.assertRaises(ValidationError):
             await self.imp.get_item_info("1:missing_file.md")
 
     async def test_list_child_items_not_found(self):
         self._patch_get({}, status=HTTPStatus.NOT_FOUND)
 
-        with self.assertRaises(ItemNotFound):
+        with self.assertRaises(ValidationError):
             await self.imp.list_child_items(item_id="1:missing_folder")
 
     async def test_list_root_items_first_page(self):

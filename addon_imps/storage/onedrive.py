@@ -1,3 +1,5 @@
+from dataclasses import replace
+from typing import Final
 from urllib.parse import (
     parse_qs,
     urlparse,
@@ -12,6 +14,9 @@ class NextLinkCursor(Cursor):
         self.this_cursor_str = next_link
 
 
+ROOT_ITEM_ID: Final[str] = "root"
+
+
 class OneDriveStorageImp(storage.StorageAddonHttpRequestorImp):
     """Storage on OneDrive
 
@@ -24,23 +29,24 @@ class OneDriveStorageImp(storage.StorageAddonHttpRequestorImp):
             return str(_json["id"])
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
-        root_item = await self.get_item_info("root")
+        root_item = await self.get_item_info(ROOT_ITEM_ID)
         return storage.ItemSampleResult(
-            items=[root_item],
+            items=[
+                # This is required for waterbutler to understand that root is actual root (it checks if id == 'root')
+                replace(root_item, item_id=ROOT_ITEM_ID),
+            ],
             total_count=1,
         )
 
     async def build_wb_config(self) -> dict:
-        async with self.network.GET("me/drive") as _response:
-            json = await _response.json_content()
-            return {
-                "folder": self.config.connected_root_id,
-                "drive_id": json.get("id"),
-            }
+        return {
+            "folder": self.config.connected_root_id,
+            "drive_id": self.config.external_account_id,
+        }
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         async with self.network.GET(
-            f"me/drive/items/{item_id}",
+            f"drives/{self.config.external_account_id}/items/{item_id}",
             query={"select": "id,name,folder,createdDateTime,lastModifiedDateTime"},
         ) as _response:
             _json = await _response.json_content()
@@ -61,7 +67,7 @@ class OneDriveStorageImp(storage.StorageAddonHttpRequestorImp):
         item_type: storage.ItemType | None = None,
     ) -> storage.ItemSampleResult:
         async with self.network.GET(
-            f"me/drive/items/{item_id}/children",
+            f"drives/{self.config.external_account_id}/items/{item_id}/children",
             query={
                 "select": "id,name,folder,createdDateTime,lastModifiedDateTime",
                 **self._params_from_cursor(page_cursor),

@@ -24,15 +24,19 @@ class WaterButlerConfigSerializer(serializers.Serializer):
 
     def _credentials_for_waterbutler(self, configured_storage_addon):
         _creds_data = configured_storage_addon.credentials
+        config = configured_storage_addon.config
+        host_url = config.external_api_url
+
         match type(_creds_data):
             case credentials.AccessTokenCredentials:
-                return {"token": _creds_data.access_token}
+                return {"token": _creds_data.access_token, "host": host_url}
             case (
                 credentials.AccessKeySecretKeyCredentials
                 | credentials.UsernamePasswordCredentials
             ):
                 # field names line up with waterbutler's expectations
-                return json_arguments.json_for_dataclass(_creds_data)
+                serialized_creds = json_arguments.json_for_dataclass(_creds_data)
+                serialized_creds["host"] = host_url
             case _:
                 raise ValueError(f"unknown credentials type: {_creds_data}")
 

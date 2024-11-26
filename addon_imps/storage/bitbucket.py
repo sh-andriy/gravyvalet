@@ -32,12 +32,42 @@ class NextLinkCursor(Cursor):
 @dataclasses.dataclass
 class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
+        self.token = auth_result_extras.get("token")
+        if not self.token:
+            raise ValueError("Token not found in authentication result extras.")
+
         async with self.network.GET("user") as response:
             json_data = await self._handle_response(response)
             uuid = json_data.get("uuid")
             if not uuid:
                 raise ValueError("Failed to retrieve user UUID")
         return uuid
+
+    async def build_wb_credentials(self) -> dict:
+        return {
+            "token": self.token,
+        }
+
+    async def build_wb_config(self) -> dict:
+        if not self.config.connected_root_id:
+            raise ValueError(
+                "connected_root_id is not set. Cannot build WaterButler config."
+            )
+        item_type_str, actual_id = self._parse_item_id(self.config.connected_root_id)
+        if item_type_str == "repository":
+            workspace_slug, repo_slug = actual_id.split("/", 1)
+            return {
+                "owner": workspace_slug,
+                "repo": repo_slug,
+            }
+        elif item_type_str == "workspace":
+            raise ValueError(
+                "Cannot build WaterButler config without a repository selected."
+            )
+        else:
+            raise ValueError(
+                f"Unsupported item type for build_wb_config: {item_type_str}"
+            )
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         params = self._params_from_cursor(page_cursor)
@@ -236,25 +266,3 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
             error_message = json_data.get("error", {}).get("message", "Unknown error")
             raise ValueError(f"HTTP Error {response.http_status}: {error_message}")
         return await response.json_content()
-
-    async def build_wb_config(self) -> dict:
-        item_type_str, actual_id = self._parse_item_id(self.config.connected_root_id)
-        if item_type_str == "repository":
-            workspace_slug, repo_slug = actual_id.split("/", 1)
-            host = urlparse(self.config.external_api_url).hostname
-            return {
-                "workspace": workspace_slug,
-                "repo_slug": repo_slug,
-                "host": host,
-            }
-        elif item_type_str == "workspace":
-            workspace_slug = actual_id
-            host = urlparse(self.config.external_api_url).hostname
-            return {
-                "workspace": workspace_slug,
-                "host": host,
-            }
-        else:
-            raise ValueError(
-                f"Unsupported item type for build_wb_config: {item_type_str}"
-            )

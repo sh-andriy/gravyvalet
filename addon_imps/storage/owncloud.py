@@ -135,23 +135,16 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
     async def build_wb_config(self) -> dict:
         base_url = self.config.external_api_url.rstrip("/")
-
         parsed_url = urlparse(base_url)
 
-        if "/remote.php/dav/files" in parsed_url.path:
-            root_host = f"{parsed_url.scheme}://{parsed_url.netloc}/remote.php/webdav"
-            folder_path = parsed_url.path.replace("/remote.php/dav/files", "").strip(
-                "/"
-            )
-        else:
-            raise ValueError(
-                "The provided URL does not match the expected OwnCloud WebDAV structure."
-            )
+        root_host = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        folder_path = ""
 
-        return {
+        wb_config = {
             "folder": folder_path,
             "host": root_host,
         }
+        return wb_config
 
     def _parse_response_element(
         self, response_element: ET.Element, path: str

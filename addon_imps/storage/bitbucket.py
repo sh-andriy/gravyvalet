@@ -32,21 +32,12 @@ class NextLinkCursor(Cursor):
 @dataclasses.dataclass
 class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
-        self.token = auth_result_extras.get("token")
-        if not self.token:
-            raise ValueError("Token not found in authentication result extras.")
-
         async with self.network.GET("user") as response:
             json_data = await self._handle_response(response)
             uuid = json_data.get("uuid")
             if not uuid:
                 raise ValueError("Failed to retrieve user UUID")
         return uuid
-
-    async def build_wb_credentials(self) -> dict:
-        return {
-            "token": self.token,
-        }
 
     async def build_wb_config(self) -> dict:
         if not self.config.connected_root_id:

@@ -311,8 +311,8 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
         result = await self.imp.build_wb_config()
 
         expected_result = {
-            "workspace": self.WORKSPACE,
-            "repo_slug": self.REPO,
+            "owner": self.WORKSPACE,
+            "repo": self.REPO,
             "host": "api.bitbucket.org",
         }
         self.assertEqual(result, expected_result)
@@ -328,7 +328,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
         result = await self.imp.build_wb_config()
 
         expected_result = {
-            "workspace": self.WORKSPACE,
+            "owner": self.WORKSPACE,
             "host": "api.bitbucket.org",
         }
         self.assertEqual(result, expected_result)

@@ -50,11 +50,13 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
             return {
                 "owner": workspace_slug,
                 "repo": repo_slug,
+                "host": "api.bitbucket.org",
             }
         elif item_type_str == "workspace":
-            raise ValueError(
-                "Cannot build WaterButler config without a repository selected."
-            )
+            return {
+                "owner": actual_id,
+                "host": "api.bitbucket.org",
+            }
         else:
             raise ValueError(
                 f"Unsupported item type for build_wb_config: {item_type_str}"

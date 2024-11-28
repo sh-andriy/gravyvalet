@@ -63,6 +63,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
             response_xml = await response.text_content()
             return self._parse_displayname(response_xml)
 
+    @property
     def _fallback_username(self) -> str | None:
         return "default-username"
 

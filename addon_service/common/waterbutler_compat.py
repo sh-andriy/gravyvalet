@@ -1,3 +1,5 @@
+import functools
+
 from asgiref.sync import async_to_sync
 from rest_framework_json_api import serializers
 
@@ -22,27 +24,14 @@ class WaterButlerConfigSerializer(serializers.Serializer):
     credentials = serializers.SerializerMethodField("_credentials_for_waterbutler")
     config = serializers.SerializerMethodField("_config_for_waterbutler")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._wb_config_cache = {}
-
-    def _get_wb_config(self, configured_storage_addon):
-        cache_key = configured_storage_addon.id
-        if cache_key in self._wb_config_cache:
-            return self._wb_config_cache[cache_key]
-        else:
-            imp = get_storage_addon_instance__blocking(
-                configured_storage_addon.imp_cls,
-                configured_storage_addon.base_account,
-                configured_storage_addon.config,
-            )
-            wb_config = async_to_sync(imp.build_wb_config)()
-            self._wb_config_cache[cache_key] = wb_config
-            return wb_config
-
     def _credentials_for_waterbutler(self, configured_storage_addon):
         _creds_data = configured_storage_addon.credentials
-        wb_config = self._get_wb_config(configured_storage_addon)
+        imp = get_storage_addon_instance__blocking(
+            configured_storage_addon.imp_cls,
+            configured_storage_addon.base_account,
+            configured_storage_addon.config,
+        )
+        wb_config = async_to_sync(imp.build_wb_config)()
 
         match type(_creds_data):
             case credentials.AccessTokenCredentials:
@@ -62,6 +51,13 @@ class WaterButlerConfigSerializer(serializers.Serializer):
             case _:
                 raise ValueError(f"unknown credentials type: {_creds_data}")
 
-    def _config_for_waterbutler(self, configured_storage_addon: ConfiguredStorageAddon):
-        wb_config = self._get_wb_config(configured_storage_addon)
+    @staticmethod
+    @functools.cache
+    def _config_for_waterbutler(configured_storage_addon: ConfiguredStorageAddon):
+        imp = get_storage_addon_instance__blocking(
+            configured_storage_addon.imp_cls,
+            configured_storage_addon.base_account,
+            configured_storage_addon.config,
+        )
+        wb_config = async_to_sync(imp.build_wb_config)()
         return wb_config

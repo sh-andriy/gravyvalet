@@ -44,9 +44,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
                     response_xml
                 )
             except ValueError:
-                username = (
-                    auth_result_extras.get("username") or self._fallback_username()
-                )
+                username = auth_result_extras.get("username") or self._fallback_username
                 if not username:
                     raise ValueError(
                         "Username is required for fallback but not provided."
@@ -144,6 +142,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         wb_config = {
             "folder": folder_path,
             "host": root_host,
+            "verify_ssl": True,
         }
         return wb_config
 

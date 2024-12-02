@@ -227,6 +227,6 @@ class Command(BaseCommand):
         if external_service.wb_key == "owncloud":
             return f"{osf_account.profile_url.removesuffix('/')}/remote.php/dav/files/{osf_account.display_name}/"
         elif external_service.wb_key == "gitlab":
-            return f"{osf_account.oauth_secret.removesuffix('/')}/api/v4/"
+            return f"{osf_account.oauth_secret.removesuffix('/')}"
         elif external_service.wb_key == "dataverse":
             return f"https://{osf_account.oauth_key}"

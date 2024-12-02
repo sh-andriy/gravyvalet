@@ -39,6 +39,29 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                 raise ValueError("Failed to retrieve user UUID")
         return uuid
 
+    async def build_wb_config(self) -> dict:
+        if not self.config.connected_root_id:
+            raise ValueError(
+                "connected_root_id is not set. Cannot build WaterButler config."
+            )
+        item_type_str, actual_id = self._parse_item_id(self.config.connected_root_id)
+        if item_type_str == "repository":
+            workspace_slug, repo_slug = actual_id.split("/", 1)
+            return {
+                "owner": workspace_slug,
+                "repo": repo_slug,
+                "host": "api.bitbucket.org",
+            }
+        elif item_type_str == "workspace":
+            return {
+                "owner": actual_id,
+                "host": "api.bitbucket.org",
+            }
+        else:
+            raise ValueError(
+                f"Unsupported item type for build_wb_config: {item_type_str}"
+            )
+
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         params = self._params_from_cursor(page_cursor)
         params["pagelen"] = "100"
@@ -236,25 +259,3 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
             error_message = json_data.get("error", {}).get("message", "Unknown error")
             raise ValueError(f"HTTP Error {response.http_status}: {error_message}")
         return await response.json_content()
-
-    async def build_wb_config(self) -> dict:
-        item_type_str, actual_id = self._parse_item_id(self.config.connected_root_id)
-        if item_type_str == "repository":
-            workspace_slug, repo_slug = actual_id.split("/", 1)
-            host = urlparse(self.config.external_api_url).hostname
-            return {
-                "workspace": workspace_slug,
-                "repo_slug": repo_slug,
-                "host": host,
-            }
-        elif item_type_str == "workspace":
-            workspace_slug = actual_id
-            host = urlparse(self.config.external_api_url).hostname
-            return {
-                "workspace": workspace_slug,
-                "host": host,
-            }
-        else:
-            raise ValueError(
-                f"Unsupported item type for build_wb_config: {item_type_str}"
-            )

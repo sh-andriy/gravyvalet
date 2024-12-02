@@ -34,32 +34,43 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
             "Depth": "0",
         }
         async with self.network.PROPFIND(
-            uri_path="",
+            uri_path=self._strip_absolute_path(""),
             headers=headers,
             content=_BUILD_PROPFIND_CURRENT_USER_PRINCIPAL,
         ) as response:
             response_xml = await response.text_content()
-            current_user_principal_url = self._parse_current_user_principal(
-                response_xml
-            )
+            try:
+                current_user_principal_url = self._parse_current_user_principal(
+                    response_xml
+                )
+            except ValueError:
+                username = auth_result_extras.get("username") or self._fallback_username
+                if not username:
+                    raise ValueError(
+                        "Username is required for fallback but not provided."
+                    )
+                current_user_principal_url = f"/remote.php/dav/files/{username}/"
 
         current_user_principal_url = current_user_principal_url.lstrip("/")
 
         async with self.network.PROPFIND(
-            uri_path=current_user_principal_url,
+            uri_path=self._strip_absolute_path(current_user_principal_url),
             headers=headers,
             content=_BUILD_PROPFIND_DISPLAYNAME,
         ) as response:
             response_xml = await response.text_content()
-            displayname = self._parse_displayname(response_xml)
-            return displayname
+            return self._parse_displayname(response_xml)
+
+    @property
+    def _fallback_username(self) -> str | None:
+        return "default-username"
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         return await self.list_child_items(_owncloud_root_id(), page_cursor)
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         item_type, path = _parse_item_id(item_id)
-        url = self._build_url(path)
+        url = self._strip_absolute_path(path)
 
         headers = {
             "Depth": "0",
@@ -87,14 +98,13 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         item_type: storage.ItemType | None = None,
     ) -> storage.ItemSampleResult:
         _item_type, path = _parse_item_id(item_id)
-        url = self._build_url(path)
-
+        relative_path = self._strip_absolute_path(path)
         headers = {
             "Depth": "1",
         }
 
         async with self.network.PROPFIND(
-            uri_path=url,
+            uri_path=relative_path,
             headers=headers,
             content=_BUILD_PROPFIND_ALLPROPS,
         ) as response:
@@ -119,46 +129,45 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
             return storage.ItemSampleResult(items=items)
 
+    def _strip_absolute_path(self, path: str) -> str:
+        return path.lstrip("/")
+
     async def build_wb_config(self) -> dict:
-        return {
-            "folder": self.config.connected_root_id,
-            "host": self.config.external_api_url,
+        base_url = self.config.external_api_url.rstrip("/")
+        parsed_url = urlparse(base_url)
+
+        root_host = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        folder_path = ""
+
+        wb_config = {
+            "folder": folder_path,
+            "host": root_host,
+            "verify_ssl": True,
         }
+        return wb_config
 
     def _parse_response_element(
         self, response_element: ET.Element, path: str
     ) -> storage.ItemResult:
         ns = {"d": "DAV:", "oc": "http://owncloud.org/ns"}
         resourcetype = response_element.find(".//d:resourcetype", ns)
-        if (
-            resourcetype is not None
+        item_type = (
+            storage.ItemType.FOLDER
+            if resourcetype is not None
             and resourcetype.find("d:collection", ns) is not None
-        ):
-            item_type = storage.ItemType.FOLDER
-        else:
-            item_type = storage.ItemType.FILE
-
+            else storage.ItemType.FILE
+        )
         displayname_element = response_element.find(".//d:displayname", ns)
-        if displayname_element is not None and displayname_element.text:
-            displayname = displayname_element.text
-        else:
-            displayname = path.rstrip("/").split("/")[-1]
-
-        item_result = storage.ItemResult(
+        displayname = (
+            displayname_element.text
+            if displayname_element is not None and displayname_element.text
+            else path.rstrip("/").split("/")[-1]
+        )
+        return storage.ItemResult(
             item_id=_make_item_id(item_type, path),
             item_name=displayname,
             item_type=item_type,
         )
-        return item_result
-
-    def _parse_property(self, response_xml: str, xpath: str, error_message: str) -> str:
-        ns = {"d": "DAV:"}
-        root = ET.fromstring(response_xml)
-        element = root.find(xpath, ns)
-        if element is not None and element.text:
-            return element.text
-        else:
-            raise ValueError(error_message)
 
     def _parse_current_user_principal(self, response_xml: str) -> str:
         return self._parse_property(
@@ -168,14 +177,23 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         )
 
     def _parse_displayname(self, response_xml: str) -> str:
-        return self._parse_property(
-            response_xml,
-            xpath=".//d:displayname",
-            error_message="displayname not found in response",
-        )
+        try:
+            return self._parse_property(
+                response_xml,
+                xpath=".//d:displayname",
+                error_message="displayname not found in response",
+            )
+        except ValueError:
+            return "default-name"
 
-    def _build_url(self, path: str) -> str:
-        return path.lstrip("/")
+    def _parse_property(self, response_xml: str, xpath: str, error_message: str) -> str:
+        ns = {"d": "DAV:"}
+        root = ET.fromstring(response_xml)
+        element = root.find(xpath, ns)
+        if element is not None and element.text:
+            return element.text
+        else:
+            raise ValueError(error_message)
 
     def _href_to_path(self, href: str) -> str:
         parsed_href = urlparse(unquote(href))
@@ -187,6 +205,8 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
             path = href_path[len(base_path):]
         else:
             path = href_path
+
+        path = path.strip("/")
         return path or "/"
 
 
@@ -195,15 +215,10 @@ def _make_item_id(item_type: storage.ItemType, path: str) -> str:
 
 
 def _parse_item_id(item_id: str) -> tuple[storage.ItemType, str]:
-    try:
-        if not item_id:
-            return ItemType.FOLDER, "/"
-        (_type, _path) = item_id.split(":", maxsplit=1)
-        return (storage.ItemType(_type), _path)
-    except ValueError:
-        raise ValueError(
-            f'Expected id of format "type:path", e.g. "FOLDER:/path/to/folder" (got "{item_id}")'
-        )
+    if not item_id:
+        return ItemType.FOLDER, "/"
+    _type, _path = item_id.split(":", maxsplit=1)
+    return storage.ItemType(_type), _path
 
 
 def _owncloud_root_id() -> str:

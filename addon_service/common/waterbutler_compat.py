@@ -1,3 +1,5 @@
+import functools
+
 from asgiref.sync import async_to_sync
 from rest_framework_json_api import serializers
 
@@ -24,22 +26,38 @@ class WaterButlerConfigSerializer(serializers.Serializer):
 
     def _credentials_for_waterbutler(self, configured_storage_addon):
         _creds_data = configured_storage_addon.credentials
-        match type(_creds_data):
-            case credentials.AccessTokenCredentials:
-                return {"token": _creds_data.access_token}
-            case (
-                credentials.AccessKeySecretKeyCredentials
-                | credentials.UsernamePasswordCredentials
-            ):
-                # field names line up with waterbutler's expectations
-                return json_arguments.json_for_dataclass(_creds_data)
-            case _:
-                raise ValueError(f"unknown credentials type: {_creds_data}")
-
-    def _config_for_waterbutler(self, configured_storage_addon: ConfiguredStorageAddon):
         imp = get_storage_addon_instance__blocking(
             configured_storage_addon.imp_cls,
             configured_storage_addon.base_account,
             configured_storage_addon.config,
         )
-        return async_to_sync(imp.build_wb_config)()
+        wb_config = async_to_sync(imp.build_wb_config)()
+
+        match type(_creds_data):
+            case credentials.AccessTokenCredentials:
+                creds = {"token": _creds_data.access_token}
+                if "host" in wb_config:
+                    creds["host"] = wb_config["host"]
+                return creds
+            case (
+                credentials.AccessKeySecretKeyCredentials
+                | credentials.UsernamePasswordCredentials
+            ):
+                # field names line up with waterbutler's expectations
+                serialized_creds = json_arguments.json_for_dataclass(_creds_data)
+                if "host" in wb_config:
+                    serialized_creds["host"] = wb_config["host"]
+                return serialized_creds
+            case _:
+                raise ValueError(f"unknown credentials type: {_creds_data}")
+
+    @staticmethod
+    @functools.cache
+    def _config_for_waterbutler(configured_storage_addon: ConfiguredStorageAddon):
+        imp = get_storage_addon_instance__blocking(
+            configured_storage_addon.imp_cls,
+            configured_storage_addon.base_account,
+            configured_storage_addon.config,
+        )
+        wb_config = async_to_sync(imp.build_wb_config)()
+        return wb_config

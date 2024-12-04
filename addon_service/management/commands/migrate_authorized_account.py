@@ -65,19 +65,19 @@ def fetch_external_accounts(user_id: int, provider: str):
 
 
 services = [
-    ["storage", "dropbox", DropboxUserSettings, DropboxNodeSettings, None],
-    ["storage", "bitbucket", BitbucketUserSettings, BitbucketNodeSettings, None],
-    ["storage", "box", BoxUserSettings, BoxNodeSettings, None],
-    ["storage", "github", GithubUserSettings, GithubNodeSettings, None],
-    ["storage", "googledrive", GoogleDriveUserSettings, GoogleDriveNodeSettings, None],
-    ["storage", "gitlab", GitlabUserSettings, GitlabNodeSettings, None],
-    ["storage", "dataverse", DataverseUserSettings, DataverseNodeSettings, None],
-    ["storage", "owncloud", OwnCloudUserSettings, OwnCloudNodeSettings, None],
-    ["storage", "figshare", FigshareUserSettings, FigshareNodeSettings, None],
-    ["storage", "onedrive", OneDriveUserSettings, OneDriveNodeSettings, None],
-    ["storage", "s3", S3UserSettings, S3NodeSettings, None],
-    ["citations", "mendeley", MendeleyUserSettings, MendeleyNodeSettings, None],
-    ["citations", "zotero", ZoteroUserSettings, ZoteroNodeSettings, None],
+    ["storage", "dropbox", DropboxUserSettings, DropboxNodeSettings],
+    ["storage", "bitbucket", BitbucketUserSettings, BitbucketNodeSettings],
+    ["storage", "box", BoxUserSettings, BoxNodeSettings],
+    ["storage", "github", GithubUserSettings, GithubNodeSettings],
+    ["storage", "googledrive", GoogleDriveUserSettings, GoogleDriveNodeSettings],
+    ["storage", "gitlab", GitlabUserSettings, GitlabNodeSettings],
+    ["storage", "dataverse", DataverseUserSettings, DataverseNodeSettings],
+    ["storage", "owncloud", OwnCloudUserSettings, OwnCloudNodeSettings],
+    ["storage", "figshare", FigshareUserSettings, FigshareNodeSettings],
+    ["storage", "onedrive", OneDriveUserSettings, OneDriveNodeSettings],
+    ["storage", "s3", S3UserSettings, S3NodeSettings],
+    ["citations", "mendeley", MendeleyUserSettings, MendeleyNodeSettings],
+    ["citations", "zotero", ZoteroUserSettings, ZoteroNodeSettings],
 ]
 
 
@@ -110,6 +110,8 @@ def get_root_folder_for_provider(node_settings, service_name):
             return f"repository:{node_settings.user}/{node_settings.repo}"
         case "zotero":
             return f"{node_settings.library_id}/{node_settings.list_id}"
+        case "mendeley":
+            return node_settings.list_id
 
 
 class Command(BaseCommand):
@@ -120,9 +122,8 @@ class Command(BaseCommand):
             service_name,
             user_settings_class,
             node_settings_class,
-            quirk,
         ) in services:
-            for user_settings in user_settings_class.objects.filter(owner_id=7):
+            for user_settings in user_settings_class.objects.all():
                 try:
                     self.migrate_for_user(
                         integration_type,
@@ -131,9 +132,8 @@ class Command(BaseCommand):
                         node_settings_class,
                     )
                 except BaseException as e:
-                    print(e)
-                    print(service_name)
-                    raise
+                    print(f"Failed to migrate {service_name} service with error {e}")
+                    raise e
 
     def migrate_for_user(
         self, integration_type, service_name, user_settings, node_settings_class

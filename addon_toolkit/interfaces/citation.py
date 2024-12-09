@@ -42,7 +42,16 @@ class ItemResult:
     item_name: str
     item_type: ItemType
     item_path: list[str] | None = None
+    can_be_root: bool = None
+    may_contain_root_candidates: bool = None
     csl: dict | None = None
+
+    def __post_init__(self):
+        """By default can_be_root and may_contain_root_candidates are bound to item_type"""
+        if self.can_be_root is None:
+            self.can_be_root = self.item_type == ItemType.COLLECTION
+        if self.may_contain_root_candidates is None:
+            self.may_contain_root_candidates = self.item_type == ItemType.COLLECTION
 
 
 @dataclasses.dataclass(slots=True)

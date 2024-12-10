@@ -16,7 +16,7 @@ from addon_toolkit.interfaces.storage import (
 
 class TestGitlabStorageImp(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.base_url = "https://gitlab.com/api/v4"
+        self.base_url = "https://gitlab.com"
         self.config = StorageConfig(external_api_url=self.base_url, max_upload_mb=100)
         self.network = AsyncMock(spec_set=HttpRequestor)
         self.imp = GitlabStorageImp(config=self.config, network=self.network)
@@ -31,7 +31,7 @@ class TestGitlabStorageImp(unittest.IsolatedAsyncioTestCase):
         extra_params = {"query": query} if query else {}
         self.network.GET.assert_called_once_with(f"api/v4/{url}", **extra_params)
         self.network.GET.return_value.__aenter__.assert_awaited_once()
-        self.network.GET.return_value.__aenter__.return_value.json_content.assert_awaited_once()
+        self.network.GET.return_value.__aenter__.return_value.json_content.assert_awaited()
         self.network.GET.return_value.__aexit__.assert_awaited_once_with(
             None, None, None
         )

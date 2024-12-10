@@ -38,13 +38,16 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
         return "api/v4/"
 
     async def check_preconditions(self, response: HttpResponseInfo):
+        resp_json = await response.json_content()
         if response.http_status.is_success:
             return
         if response.http_status == HTTPStatus.UNAUTHORIZED:
-            raise ValidationError("Gitlab authentication error: invalid API Token")
+            raise ValidationError(
+                f"Gitlab authentication error: {resp_json.get("error_description", "invalid API Token")}",
+            )
         elif response.http_status.is_client_error:
             raise ValidationError(
-                "Gitlab error occurred, please replace your access token or renew it if needed"
+                "Gitlab error occurred, please check your api token or try later"
             )
         elif response.http_status.is_server_error:
             raise ValidationError("Gitlab API is currently unavailable")

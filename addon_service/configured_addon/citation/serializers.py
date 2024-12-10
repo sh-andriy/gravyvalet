@@ -37,7 +37,7 @@ class ConfiguredCitationAddonSerializer(ConfiguredAddonSerializer):
         many=False,
         read_only=True,
         model=ExternalCitationService,
-        source="base_account.external_service.externalstorageservice",
+        source="base_account.external_service.externalcitationservice",
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
     )
     authorized_resource = ResourceRelatedField(

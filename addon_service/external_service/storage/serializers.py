@@ -41,6 +41,7 @@ class ExternalStorageServiceSerializer(ExternalServiceSerializer):
             "display_name",
             "url",
             "wb_key",
+            "external_service_name",
             "configurable_api_root",
             "supported_features",
         ]

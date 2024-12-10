@@ -23,6 +23,8 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
 
+    external_service_name = serializers.CharField(read_only=True)
+
     included_serializers = {
         "addon_imp": "addon_service.serializers.AddonImpSerializer",
     }
@@ -39,4 +41,5 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
             "display_name",
             "url",
             "wb_key",
+            "external_service_name",
         ]

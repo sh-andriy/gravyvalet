@@ -80,6 +80,11 @@ class ExternalService(AddonsServiceBaseModel):
     def configurable_api_root(self):
         return ServiceTypes.HOSTED in self.service_type
 
+    @property
+    def external_service_name(self):
+        number = self.int_addon_imp
+        return known_imps.AddonImpNumbers(number).name.lower()
+
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)
         if not self.configurable_api_root and not self.api_base_url:

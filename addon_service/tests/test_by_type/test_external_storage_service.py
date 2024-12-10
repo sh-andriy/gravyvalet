@@ -131,6 +131,7 @@ class TestExternalStorageServiceViewSet(TestCase):
                     "addon_imp",
                     "url",
                     "wb_key",
+                    "external_service_name",
                     "configurable_api_root",
                     "supported_features",
                 },

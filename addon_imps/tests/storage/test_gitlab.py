@@ -28,7 +28,7 @@ class TestGitlabStorageImp(unittest.IsolatedAsyncioTestCase):
 
     def _assert_get(self, url: str, query: dict = None):
         extra_params = {"query": query} if query else {}
-        self.network.GET.assert_called_once_with(url, **extra_params)
+        self.network.GET.assert_called_once_with(f"api/v4/{url}", **extra_params)
         self.network.GET.return_value.__aenter__.assert_awaited_once()
         self.network.GET.return_value.__aenter__.return_value.json_content.assert_awaited_once()
         self.network.GET.return_value.__aexit__.assert_awaited_once_with(

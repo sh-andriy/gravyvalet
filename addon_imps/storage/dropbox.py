@@ -14,9 +14,20 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
         return ""
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
-        return await self.list_child_items(item_id="", page_cursor=page_cursor)
+        return storage.ItemSampleResult(
+            items=[
+                storage.ItemResult(
+                    item_id="/",
+                    item_name="Root",
+                    item_type=ItemType.FOLDER,
+                )
+            ],
+            total_count=1,
+        )
 
     async def build_wb_config(self) -> dict:
+        if not self.config.connected_root_id or self.config.connected_root_id == "/":
+            return {"folder": self.config.connected_root_id}
         async with self.network.POST(
             "files/get_metadata",
             json={

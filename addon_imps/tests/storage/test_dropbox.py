@@ -51,16 +51,13 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
 
         expected_result = ItemSampleResult(
             items=[
-                ItemResult(
-                    item_id="123", item_name="root folder", item_type=ItemType.FOLDER
-                )
+                ItemResult(item_id="/", item_name="Root", item_type=ItemType.FOLDER)
             ],
             total_count=1,
-            next_sample_cursor="test_cursor",
         )
 
         self.assertEqual(result, expected_result)
-        self._assert_post("files/list_folder", json={"path": "", "recursive": False})
+        self.network.POST.assert_not_called()
 
     async def test_get_item_info(self):
         cases = [("", "root folder"), ("file_id", "file")]

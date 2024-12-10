@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from aiohttp import ClientError
 from asgiref.sync import async_to_sync
 from django.core.exceptions import ValidationError as ModelValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework_json_api import serializers
 
 from addon_service.authorized_account.models import AuthorizedAccount
@@ -123,9 +125,14 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             authorized_account.save()
         except ModelValidationError as e:
             raise serializers.ValidationError(e)
-
-        if authorized_account.credentials_format.is_direct_from_user:
-            async_to_sync(authorized_account.execute_post_auth_hook)()
+        try:
+            if authorized_account.credentials_format.is_direct_from_user:
+                async_to_sync(authorized_account.execute_post_auth_hook)()
+        except ClientError:
+            raise ValidationError(
+                f"Service not available, please "
+                f"{"check host url or " if authorized_account.has_custom_base_url else ""} try later"
+            )
 
         return authorized_account
 

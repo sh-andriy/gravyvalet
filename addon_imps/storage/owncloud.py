@@ -4,6 +4,8 @@ from urllib.parse import (
     urlparse,
 )
 
+from rest_framework.exceptions import ValidationError
+
 from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import ItemType
 
@@ -50,6 +52,10 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
                         "Username is required for fallback but not provided."
                     )
                 current_user_principal_url = f"/remote.php/dav/files/{username}/"
+            except ET.ParseError:
+                raise ValidationError(
+                    "Please check base url, as it doesn't point to a valid owncloud deployment"
+                )
 
         current_user_principal_url = current_user_principal_url.lstrip("/")
 

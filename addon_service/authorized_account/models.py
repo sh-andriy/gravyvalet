@@ -225,6 +225,10 @@ class AuthorizedAccount(AddonsServiceBaseModel):
         )
 
     @property
+    def has_custom_base_url(self) -> bool:
+        return bool(self._api_base_url)
+
+    @property
     def imp_cls(self) -> type[AddonImp]:
         return self.external_service.addon_imp.imp_cls
 

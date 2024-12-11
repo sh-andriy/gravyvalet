@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from addon_service.authorized_account.citation.models import AuthorizedCitationAccount
 from addon_service.authorized_account.storage.models import AuthorizedStorageAccount
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.configured_addon.storage.models import ConfiguredStorageAddon
@@ -31,6 +32,10 @@ class UserReference(AddonsServiceBaseModel):
     @property
     def authorized_storage_accounts(self):
         return AuthorizedStorageAccount.objects.filter(account_owner=self)
+
+    @property
+    def authorized_citation_accounts(self):
+        return AuthorizedCitationAccount.objects.filter(account_owner=self)
 
     class Meta:
         verbose_name = "User Reference"

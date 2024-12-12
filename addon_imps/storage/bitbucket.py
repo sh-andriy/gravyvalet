@@ -53,14 +53,28 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                 "host": "api.bitbucket.org",
             }
         elif item_type_str == "workspace":
+            repos = await self._list_repos_for_workspace(actual_id)
+            if not repos:
+                raise ValueError("No repositories found in this workspace.")
+
+            default_repo = repos[0]
             return {
                 "owner": actual_id,
+                "repo": default_repo,
                 "host": "api.bitbucket.org",
             }
         else:
             raise ValueError(
                 f"Unsupported item type for build_wb_config: {item_type_str}"
             )
+
+    async def _list_repos_for_workspace(self, workspace_slug: str) -> list[str]:
+        endpoint = f"repositories/{workspace_slug}"
+        params = {"role": "member", "pagelen": "100"}
+        async with self.network.GET(endpoint, query=params) as response:
+            json_data = await response.json_content()
+        repos = [repo["slug"] for repo in json_data.get("values", []) if "slug" in repo]
+        return repos
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         params = self._params_from_cursor(page_cursor)

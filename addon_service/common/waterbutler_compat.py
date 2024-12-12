@@ -1,5 +1,3 @@
-import functools
-
 from asgiref.sync import async_to_sync
 from rest_framework_json_api import serializers
 
@@ -24,14 +22,13 @@ class WaterButlerConfigSerializer(serializers.Serializer):
     credentials = serializers.SerializerMethodField("_credentials_for_waterbutler")
     config = serializers.SerializerMethodField("_config_for_waterbutler")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._wb_config = None
+
     def _credentials_for_waterbutler(self, configured_storage_addon):
         _creds_data = configured_storage_addon.credentials
-        imp = get_storage_addon_instance__blocking(
-            configured_storage_addon.imp_cls,
-            configured_storage_addon.base_account,
-            configured_storage_addon.config,
-        )
-        wb_config = async_to_sync(imp.build_wb_config)()
+        wb_config = self._config_for_waterbutler(configured_storage_addon)
 
         match type(_creds_data):
             case credentials.AccessTokenCredentials:
@@ -51,13 +48,16 @@ class WaterButlerConfigSerializer(serializers.Serializer):
             case _:
                 raise ValueError(f"unknown credentials type: {_creds_data}")
 
+    def _config_for_waterbutler(self, configured_storage_addon: ConfiguredStorageAddon):
+        if not self._wb_config:
+            self._wb_config = self._fetch_wb_config(configured_storage_addon)
+        return self._wb_config
+
     @staticmethod
-    @functools.cache
-    def _config_for_waterbutler(configured_storage_addon: ConfiguredStorageAddon):
+    def _fetch_wb_config(configured_storage_addon: ConfiguredStorageAddon):
         imp = get_storage_addon_instance__blocking(
             configured_storage_addon.imp_cls,
             configured_storage_addon.base_account,
             configured_storage_addon.config,
         )
-        wb_config = async_to_sync(imp.build_wb_config)()
-        return wb_config
+        return async_to_sync(imp.build_wb_config)()

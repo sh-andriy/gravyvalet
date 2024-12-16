@@ -5,6 +5,9 @@ from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import ItemType
 
 
+ROOT_ITEM_ID: typing.Final[str] = "/"
+
+
 class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
     """storage on dropbox.com
     see https://www.dropbox.com/developers/documentation/http/documentation
@@ -17,7 +20,7 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
         return storage.ItemSampleResult(
             items=[
                 storage.ItemResult(
-                    item_id="/",
+                    item_id=ROOT_ITEM_ID,
                     item_name="Root",
                     item_type=ItemType.FOLDER,
                 )
@@ -26,7 +29,7 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
         )
 
     async def build_wb_config(self) -> dict:
-        if not self.config.connected_root_id or self.config.connected_root_id == "/":
+        if self._is_root_id(self.config.connected_root_id):
             return {"folder": self.config.connected_root_id}
         async with self.network.POST(
             "files/get_metadata",
@@ -40,9 +43,9 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
             }
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
-        if not item_id:
+        if await self._is_root_id(item_id):
             return storage.ItemResult(
-                item_id="",
+                item_id="/",
                 item_name="root folder",
                 item_type=ItemType.FOLDER,
             )
@@ -55,6 +58,9 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
             ) as _response:
                 _parsed = _DropboxParsedJson(await _response.json_content())
                 return _parsed.single_item_result()
+
+    async def _is_root_id(self, item_id):
+        return not item_id or item_id == ROOT_ITEM_ID
 
     async def list_child_items(
         self,
@@ -71,18 +77,21 @@ class DropboxStorageImp(storage.StorageAddonHttpRequestorImp):
                 return storage.ItemSampleResult(
                     items=list(_parsed.item_results(item_type=item_type)),
                     total_count=len(_parsed.response_json["entries"]),
-                    next_sample_cursor=_parsed.response_json["cursor"],
+                    next_sample_cursor=_parsed.cursor,
                 )
         async with self.network.POST(
             "files/list_folder",
-            json={"path": item_id, "recursive": False},
+            json={
+                "path": item_id if item_id != ROOT_ITEM_ID else "",
+                "recursive": False,
+            },
         ) as _response:
             _parsed = _DropboxParsedJson(await _response.json_content())
             items = list(_parsed.item_results(item_type=item_type))
             return storage.ItemSampleResult(
                 items=items,
                 total_count=len(items),
-                next_sample_cursor=_parsed.response_json["cursor"],
+                next_sample_cursor=_parsed.cursor,
             )
 
 
@@ -106,6 +115,11 @@ class _DropboxParsedJson:
             item_type=_item_type,
         )
         return _item_result
+
+    @property
+    def cursor(self) -> str | None:
+        if self.response_json["has_more"]:
+            return self.response_json["cursor"]
 
     def _item_has_type(
         self,

@@ -53,28 +53,13 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                 "host": "api.bitbucket.org",
             }
         elif item_type_str == "workspace":
-            repos = await self._list_repos_for_workspace(actual_id)
-            if not repos:
-                raise ValueError("No repositories found in this workspace.")
-
-            default_repo = repos[0]
-            return {
-                "owner": actual_id,
-                "repo": default_repo,
-                "host": "api.bitbucket.org",
-            }
+            raise ValueError(
+                "Selecting only a workspace is not allowed. Please choose a repository."
+            )
         else:
             raise ValueError(
                 f"Unsupported item type for build_wb_config: {item_type_str}"
             )
-
-    async def _list_repos_for_workspace(self, workspace_slug: str) -> list[str]:
-        endpoint = f"repositories/{workspace_slug}"
-        params = {"role": "member", "pagelen": "100"}
-        async with self.network.GET(endpoint, query=params) as response:
-            json_data = await response.json_content()
-        repos = [repo["slug"] for repo in json_data.get("values", []) if "slug" in repo]
-        return repos
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
         params = self._params_from_cursor(page_cursor)
@@ -95,6 +80,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_id=item_id,
                     item_name=name,
                     item_type=storage.ItemType.FOLDER,
+                    can_be_root=False,
                 )
             )
         return self._create_item_sample_result(items, json_data)
@@ -112,6 +98,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_id=item_id,
                     item_name=name,
                     item_type=storage.ItemType.FOLDER,
+                    can_be_root=False,
                 )
         elif item_type_str == "repository":
             repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
@@ -124,6 +111,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                         item_id=item_id,
                         item_name=name,
                         item_type=storage.ItemType.FOLDER,
+                        can_be_root=True,
                     )
             else:
                 endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
@@ -135,10 +123,12 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                         else storage.ItemType.FILE
                     )
                     item_name = path_param.split("/")[-1] or "Unnamed Item"
+                    can_be_root_val = item_type_value == storage.ItemType.FOLDER
                     return storage.ItemResult(
                         item_id=item_id,
                         item_name=item_name,
                         item_type=item_type_value,
+                        can_be_root=can_be_root_val,
                     )
         else:
             raise ValueError(f"Unknown item type: {item_type_str}")
@@ -187,6 +177,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_id=item_id,
                     item_name=name,
                     item_type=storage.ItemType.FOLDER,
+                    can_be_root=True,
                 )
             )
         return self._create_item_sample_result(items, json_data)
@@ -218,11 +209,13 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                 continue
             item_name = path.split("/")[-1] or "Unnamed Item"
             item_id_value = self._make_item_id("repository", f"{repo_full_name}/{path}")
+            can_be_root_val = item_type_value == storage.ItemType.FOLDER
             items.append(
                 storage.ItemResult(
                     item_id=item_id_value,
                     item_name=item_name,
                     item_type=item_type_value,
+                    can_be_root=can_be_root_val,
                 )
             )
         return self._create_item_sample_result(items, json_data)

@@ -41,12 +41,6 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
         self.network.POST.assert_not_called()
 
     async def test_list_root_items(self):
-        mock_response = {
-            "entries": [{"id": "123", "name": "root folder", ".tag": "folder"}],
-            "cursor": "test_cursor",
-        }
-        self._patch_post(mock_response)
-
         result = await self.imp.list_root_items()
 
         expected_result = ItemSampleResult(
@@ -64,7 +58,7 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
         for item_id, item_name in cases:
             with self.subTest(item_id=item_id):
                 mock_response = {
-                    "id": item_id or "",
+                    "id": item_id or "/",
                     "name": item_name,
                     ".tag": "folder" if not item_id else "file",
                 }
@@ -73,7 +67,7 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
                 result = await self.imp.get_item_info(item_id)
 
                 expected_result = ItemResult(
-                    item_id=item_id or "",
+                    item_id=item_id or "/",
                     item_name=item_name,
                     item_type=ItemType.FOLDER if not item_id else ItemType.FILE,
                 )
@@ -90,6 +84,7 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
                 {"id": "456", "name": "child file", ".tag": "file"},
             ],
             "cursor": "test_cursor",
+            "has_more": True,
         }
         self._patch_post(mock_response)
 
@@ -112,10 +107,21 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
         self._assert_post(
             "files/list_folder", json={"path": "test_id", "recursive": False}
         )
+        self.network.POST.assert_has_calls(
+            [
+                call("files/list_folder", json={"path": "test_id", "recursive": False}),
+                call().__aenter__(),
+                call().__aenter__().json_content(),
+                call().__aexit__(None, None, None),
+            ]
+        )
+
+    async def test_list_child_items_with_cursor(self):
 
         mock_response_continue = {
             "entries": [{"id": "789", "name": "another child file", ".tag": "file"}],
             "cursor": "next_cursor",
+            "has_more": False,
         }
         self._patch_post(mock_response_continue)
 
@@ -132,17 +138,13 @@ class TestDropboxStorageImp(unittest.IsolatedAsyncioTestCase):
                 )
             ],
             total_count=1,
-            next_sample_cursor="next_cursor",
+            next_sample_cursor=None,
         )
 
         self.assertEqual(result, expected_result_continue)
 
         self.network.POST.assert_has_calls(
             [
-                call("files/list_folder", json={"path": "test_id", "recursive": False}),
-                call().__aenter__(),
-                call().__aenter__().json_content(),
-                call().__aexit__(None, None, None),
                 call("files/list_folder/continue", json={"cursor": "test_cursor"}),
                 call().__aenter__(),
                 call().__aenter__().json_content(),

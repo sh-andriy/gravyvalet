@@ -53,10 +53,9 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                 "host": "api.bitbucket.org",
             }
         elif item_type_str == "workspace":
-            return {
-                "owner": actual_id,
-                "host": "api.bitbucket.org",
-            }
+            raise ValueError(
+                "Selecting only a workspace is not allowed. Please choose a repository."
+            )
         else:
             raise ValueError(
                 f"Unsupported item type for build_wb_config: {item_type_str}"
@@ -81,6 +80,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_id=item_id,
                     item_name=name,
                     item_type=storage.ItemType.FOLDER,
+                    can_be_root=False,
                 )
             )
         return self._create_item_sample_result(items, json_data)
@@ -98,6 +98,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_id=item_id,
                     item_name=name,
                     item_type=storage.ItemType.FOLDER,
+                    can_be_root=False,
                 )
         elif item_type_str == "repository":
             repo_full_name, path_param = self._split_repo_full_name_and_path(actual_id)
@@ -125,6 +126,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                         item_id=item_id,
                         item_name=item_name,
                         item_type=item_type_value,
+                        can_be_root=False,
                     )
         else:
             raise ValueError(f"Unknown item type: {item_type_str}")
@@ -170,9 +172,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
             item_id = self._make_item_id("repository", full_name)
             items.append(
                 storage.ItemResult(
-                    item_id=item_id,
-                    item_name=name,
-                    item_type=storage.ItemType.FOLDER,
+                    item_id=item_id, item_name=name, item_type=storage.ItemType.FOLDER
                 )
             )
         return self._create_item_sample_result(items, json_data)
@@ -209,6 +209,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                     item_id=item_id_value,
                     item_name=item_name,
                     item_type=item_type_value,
+                    can_be_root=False,
                 )
             )
         return self._create_item_sample_result(items, json_data)

@@ -104,11 +104,13 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                 item_id=f"workspace:{self.WORKSPACE}",
                 item_name=self.WORKSPACE_NAME,
                 item_type=ItemType.FOLDER,
+                can_be_root=False,
             ),
             ItemResult(
                 item_id=f"workspace:{self.WORKSPACE2}",
                 item_name=self.WORKSPACE2_NAME,
                 item_type=ItemType.FOLDER,
+                can_be_root=False,
             ),
         ]
 
@@ -131,6 +133,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                     item_id=f"workspace:{self.WORKSPACE}",
                     item_name=self.WORKSPACE_NAME,
                     item_type=ItemType.FOLDER,
+                    can_be_root=False,
                 ),
             },
             {
@@ -144,6 +147,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                     item_id=f"repository:{self.WORKSPACE}/{self.REPO}",
                     item_name=self.REPO_NAME,
                     item_type=ItemType.FOLDER,
+                    can_be_root=True,
                 ),
             },
             {
@@ -157,6 +161,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                     item_id=f"repository:{self.WORKSPACE}/{self.REPO}/{self.FILE_PATH}",
                     item_name=self.FILE_NAME,
                     item_type=ItemType.FILE,
+                    can_be_root=False,
                 ),
             },
         ]
@@ -204,11 +209,13 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}",
                         item_name=self.REPO_NAME,
                         item_type=ItemType.FOLDER,
+                        can_be_root=True,
                     ),
                     ItemResult(
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO2}",
                         item_name=self.REPO2_NAME,
                         item_type=ItemType.FOLDER,
+                        can_be_root=True,
                     ),
                 ],
             },
@@ -234,11 +241,13 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src",
                         item_name="src",
                         item_type=ItemType.FOLDER,
+                        can_be_root=False,
                     ),
                     ItemResult(
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}/README.md",
                         item_name="README.md",
                         item_type=ItemType.FILE,
+                        can_be_root=False,
                     ),
                 ],
             },
@@ -264,11 +273,13 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src/main.py",
                         item_name="main.py",
                         item_type=ItemType.FILE,
+                        can_be_root=False,
                     ),
                     ItemResult(
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src/utils.py",
                         item_name="utils.py",
                         item_type=ItemType.FILE,
+                        can_be_root=False,
                     ),
                 ],
             },
@@ -325,13 +336,11 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
             external_account_id="",
         )
 
-        result = await self.imp.build_wb_config()
-
-        expected_result = {
-            "owner": self.WORKSPACE,
-            "host": "api.bitbucket.org",
-        }
-        self.assertEqual(result, expected_result)
+        with self.assertRaises(ValueError) as context:
+            await self.imp.build_wb_config()
+        self.assertIn(
+            "Selecting only a workspace is not allowed", str(context.exception)
+        )
 
     async def test_handle_response_success(self):
         mock_response = AsyncMock()

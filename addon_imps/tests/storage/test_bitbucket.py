@@ -241,7 +241,7 @@ class TestBitbucketStorageImp(unittest.IsolatedAsyncioTestCase):
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}/src",
                         item_name="src",
                         item_type=ItemType.FOLDER,
-                        can_be_root=True,
+                        can_be_root=False,
                     ),
                     ItemResult(
                         item_id=f"repository:{self.WORKSPACE}/{self.REPO}/README.md",

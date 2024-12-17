@@ -111,7 +111,6 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                         item_id=item_id,
                         item_name=name,
                         item_type=storage.ItemType.FOLDER,
-                        can_be_root=True,
                     )
             else:
                 endpoint = f"repositories/{repo_full_name}/src/HEAD/{path_param}"
@@ -123,12 +122,11 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                         else storage.ItemType.FILE
                     )
                     item_name = path_param.split("/")[-1] or "Unnamed Item"
-                    can_be_root_val = item_type_value == storage.ItemType.FOLDER
                     return storage.ItemResult(
                         item_id=item_id,
                         item_name=item_name,
                         item_type=item_type_value,
-                        can_be_root=can_be_root_val,
+                        can_be_root=False,
                     )
         else:
             raise ValueError(f"Unknown item type: {item_type_str}")
@@ -174,10 +172,7 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
             item_id = self._make_item_id("repository", full_name)
             items.append(
                 storage.ItemResult(
-                    item_id=item_id,
-                    item_name=name,
-                    item_type=storage.ItemType.FOLDER,
-                    can_be_root=True,
+                    item_id=item_id, item_name=name, item_type=storage.ItemType.FOLDER
                 )
             )
         return self._create_item_sample_result(items, json_data)
@@ -209,13 +204,12 @@ class BitbucketStorageImp(storage.StorageAddonHttpRequestorImp):
                 continue
             item_name = path.split("/")[-1] or "Unnamed Item"
             item_id_value = self._make_item_id("repository", f"{repo_full_name}/{path}")
-            can_be_root_val = item_type_value == storage.ItemType.FOLDER
             items.append(
                 storage.ItemResult(
                     item_id=item_id_value,
                     item_name=item_name,
                     item_type=item_type_value,
-                    can_be_root=can_be_root_val,
+                    can_be_root=False,
                 )
             )
         return self._create_item_sample_result(items, json_data)

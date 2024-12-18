@@ -77,7 +77,7 @@ class TestFigshareStorageImp(IsolatedAsyncioTestCase):
         result = await self.imp.list_root_items(f"{cursor}")
 
         expected_result = ItemSampleResult(
-            items=[sentinel.item_result1, sentinel.item_result2], next_sample_cursor="2"
+            items=[sentinel.item_result1, sentinel.item_result2]
         )
 
         self.assertEqual(expected_result, result)
@@ -135,10 +135,8 @@ class TestFigshareStorageImp(IsolatedAsyncioTestCase):
         self.imp._fetch_article.assert_not_called()
 
     async def test_list_child_items(self):
-        expected_positive_result = ItemSampleResult(
-            items=[sentinel.item_result], next_sample_cursor="2"
-        )
-        expected_negative_result = ItemSampleResult(items=[], next_sample_cursor="2")
+        expected_positive_result = ItemSampleResult(items=[sentinel.item_result])
+        expected_negative_result = ItemSampleResult(items=[])
 
         cases = [
             _ListChildItemsArgs(
@@ -280,6 +278,10 @@ class TestFigshareStorageImp(IsolatedAsyncioTestCase):
         self._patch_get({"id": 1, "title": "foo"})
         assert Article(id=1, title="foo") == await self.imp._fetch_article("bar")
         self._assert_get("account/articles/bar")
+
+    async def test_get_next_cursor(self):
+        assert self.imp._get_next_cursor(1, [1, 2, 3]) is None
+        assert self.imp._get_next_cursor(1, [_ for _ in range(20)]) == "2"
 
     async def test_fetch_file(self):
         self._patch_get({"id": 1, "name": "foo"})

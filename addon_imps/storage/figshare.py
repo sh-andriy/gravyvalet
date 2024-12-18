@@ -74,7 +74,7 @@ class FigshareStorageImp(storage.StorageAddonHttpRequestorImp):
         item_type: storage.ItemType | None = None,
     ) -> storage.ItemSampleResult:
         cursor = int(page_cursor or 1)
-        if match := ARTICLE_REGEX.match(item_id):
+        if item_type != ItemType.FOLDER and (match := ARTICLE_REGEX.match(item_id)):
             result = await self._fetch_article_files(match["article_id"], cursor)
         elif item_type != ItemType.FILE and (match := PROJECT_REGEX.match(item_id)):
             result = await self._fetch_project_articles(match["project_id"], cursor)

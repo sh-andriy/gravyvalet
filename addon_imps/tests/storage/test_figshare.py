@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from http import HTTPStatus
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import (
     AsyncMock,
@@ -42,7 +43,7 @@ class TestFigshareStorageImp(IsolatedAsyncioTestCase):
     def _patch_get(self, return_value: dict | list | str):
         mock = self.network.GET.return_value.__aenter__.return_value
         mock.json_content = AsyncMock(return_value=return_value)
-        mock.http_status = 200
+        mock.http_status = HTTPStatus(200)
 
     def _assert_get(self, url: str, query: dict = None):
         extra_params = {"query": query} if query else {}

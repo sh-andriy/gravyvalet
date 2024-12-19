@@ -96,6 +96,7 @@ OSF_BASE = settings.OSF_API_BASE_URL.replace("192.168.168.167", "localhost").rep
 
 
 def get_root_folder_for_provider(node_settings, service_name):
+    node_settings: FigshareNodeSettings
     match service_name:
         case "dropbox":
             return node_settings.folder
@@ -120,7 +121,12 @@ def get_root_folder_for_provider(node_settings, service_name):
         case "boa":
             return None
         case "figshare":
-            return f"{node_settings.folder_path}/{node_settings.folder_id}".replace(
+            folder_type = (
+                node_settings.folder_path
+                if node_settings.folder_path == "project"
+                else "article"
+            )
+            return f"{folder_type}/{node_settings.folder_id}".replace(
                 "dataset", "article"
             )
 

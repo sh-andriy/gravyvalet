@@ -2,6 +2,7 @@ from rest_framework_json_api import serializers
 
 from addon_service.common.credentials_formats import CredentialsFormats
 from addon_service.common.enum_serializers import EnumNameChoiceField
+from addon_service.external_service.models import ExternalService
 
 
 REQUIRED_FIELDS = frozenset(["url", "addon_imp"])
@@ -22,6 +23,13 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
         enum_cls=CredentialsFormats,
         read_only=True,
     )
+    icon_url = serializers.SerializerMethodField()
+
+    def get_icon_url(self, obj: ExternalService):
+        request = self.context.get("request")
+        if request and obj.icon_name:
+            return f"{request.build_absolute_uri('/')}static/provider_icons/{obj.icon_name.split('/')[-1]}"
+        return None
 
     external_service_name = serializers.CharField(read_only=True)
 
@@ -30,6 +38,7 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
     }
 
     class Meta:
+        model = ExternalService
         resource_name = "external-services"
         fields = [
             "id",
@@ -42,4 +51,5 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
             "url",
             "wb_key",
             "external_service_name",
+            "icon_url",
         ]

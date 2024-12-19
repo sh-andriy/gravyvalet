@@ -11,6 +11,7 @@ from addon_service.common.validators import (
     validate_credentials_format,
     validate_service_type,
 )
+from app import settings
 
 
 class ExternalService(AddonsServiceBaseModel):
@@ -25,6 +26,13 @@ class ExternalService(AddonsServiceBaseModel):
         default=ServiceTypes.PUBLIC.value,
         validators=[validate_service_type],
         verbose_name="Service type",
+    )
+    icon_name = models.FilePathField(
+        path=settings.PROVIDER_ICONS_DIR,
+        recursive=False,
+        match=r".*\.(jpg|png|svg)$",
+        blank=True,
+        null=True,
     )
     int_addon_imp = models.IntegerField(
         null=False,

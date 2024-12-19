@@ -221,6 +221,10 @@ USE_TZ = True
 STATIC_ROOT = BASE_DIR / "static"
 STATIC_URL = "/static/"
 
+
+PROVIDER_ICONS_DIR = BASE_DIR / "addon_service" / "static" / "provider_icons"
+
+
 OSF_SENSITIVE_DATA_SECRET = env.OSF_SENSITIVE_DATA_SECRET
 OSF_SENSITIVE_DATA_SALT = env.OSF_SENSITIVE_DATA_SALT
 

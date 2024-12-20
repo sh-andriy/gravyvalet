@@ -7,6 +7,9 @@ from addon_toolkit.interfaces.citation import (
 )
 
 
+ROOT_ITEM_ID = "ROOT"
+
+
 class ZoteroOrgCitationImp(CitationAddonImp):
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
         user_id = auth_result_extras.get("userID")
@@ -57,7 +60,7 @@ class ZoteroOrgCitationImp(CitationAddonImp):
             collections = await response.json_content()
             items = [
                 ItemResult(
-                    item_id=f'{collection["id"]}:',
+                    item_id=f'{ItemType.COLLECTION}:{collection["id"]}:{ROOT_ITEM_ID}',
                     item_name=collection["data"].get("name", "Unnamed Library"),
                     item_type=ItemType.COLLECTION,
                 )
@@ -65,19 +68,26 @@ class ZoteroOrgCitationImp(CitationAddonImp):
             ]
             items.append(
                 ItemResult(
-                    item_id="personal:",
+                    item_id=f"{ItemType.COLLECTION}:personal:{ROOT_ITEM_ID}",
                     item_name="My Library",
                     item_type=ItemType.COLLECTION,
                 )
             )
             return ItemSampleResult(items=items, total_count=len(items))
 
+    async def get_item_info(self, item_id: str) -> ItemResult:
+        item_type, library, id_ = item_id.split(":")
+        if item_type == ItemType.COLLECTION:
+            return await self._fetch_collection(library, id_)
+        elif item_type == ItemType.DOCUMENT:
+            return await self._fetch_document(library, id_)
+
     async def list_collection_items(
         self,
         collection_id: str,
         filter_items: ItemType | None = None,
     ) -> ItemSampleResult:
-        library, collection = collection_id.split(":")
+        _, library, collection = collection_id.split(":")
         tasks = []
         if filter_items != ItemType.COLLECTION:
             tasks.append(self.fetch_collection_documents(library, collection))
@@ -87,17 +97,20 @@ class ZoteroOrgCitationImp(CitationAddonImp):
         return ItemSampleResult(items=all_items, total_count=len(all_items))
 
     async def fetch_subcollections(self, library, collection):
-        prefix = self.resolve_collection_prefix(library, collection)
-        async with self.network.GET(f"{prefix}/collections/top") as response:
+        prefix = f"{self.resolve_collection_prefix(library, collection)}/collections"
+        if collection == "ROOT":
+            prefix = f"{prefix}/top"
+        async with self.network.GET(prefix) as response:
             items_json = await response.json_content()
-            return [
-                ItemResult(
-                    item_id=f'{library}:{item["key"]}',
-                    item_name=item["data"].get("name", "Unnamed title"),
-                    item_type=ItemType.COLLECTION,
-                )
-                for item in items_json
-            ]
+            return [self._parse_collection(item, library) for item in items_json]
+
+    @staticmethod
+    def _parse_collection(item: dict, library: str) -> ItemResult:
+        return ItemResult(
+            item_id=f'{ItemType.COLLECTION}:{library}:{item["key"]}',
+            item_name=item["data"].get("name", "Unnamed title"),
+            item_type=ItemType.COLLECTION,
+        )
 
     async def fetch_collection_documents(self, library, collection):
         prefix = self.resolve_collection_prefix(library, collection)
@@ -105,17 +118,18 @@ class ZoteroOrgCitationImp(CitationAddonImp):
             f"{prefix}/items/top", query={"format": "csljson"}
         ) as response:
             items_json = await response.json_content()
-            return [
-                ItemResult(
-                    item_id=f'{library}:{item["id"]}',
-                    item_name=item.get("title", "Unnamed title"),
-                    item_type=ItemType.DOCUMENT,
-                    csl=item,
-                )
-                for item in items_json["items"]
-            ]
+            return [self._parse_document(item, library) for item in items_json["items"]]
 
-    def resolve_collection_prefix(self, library: str, collection):
+    @staticmethod
+    def _parse_document(item: dict, library: str) -> ItemResult:
+        return ItemResult(
+            item_id=f'{ItemType.DOCUMENT}:{library}:{item["id"]}',
+            item_name=item.get("title", "Unnamed title"),
+            item_type=ItemType.DOCUMENT,
+            csl=item,
+        )
+
+    def resolve_collection_prefix(self, library: str, collection="ROOT"):
         if library == "personal":
             prefix = f"users/{self.config.external_account_id}"
         else:
@@ -123,3 +137,17 @@ class ZoteroOrgCitationImp(CitationAddonImp):
         if collection != "ROOT":
             prefix = f"{prefix}/collections/{collection}"
         return prefix
+
+    async def _fetch_collection(self, library: str, collection_id: str) -> ItemResult:
+        prefix = self.resolve_collection_prefix(library, collection_id)
+        async with self.network.GET(prefix, query={"format": "csljson"}) as response:
+            raw_collection = await response.json_content()
+            return self._parse_collection(raw_collection, library)
+
+    async def _fetch_document(self, library: str, document_id: str) -> ItemResult:
+        prefix = self.resolve_collection_prefix(library)
+        async with self.network.GET(
+            f"{prefix}/items/{document_id}", query={"format": "csljson"}
+        ) as response:
+            raw_collection = await response.json_content()
+            return self._parse_document(raw_collection, library)

@@ -114,9 +114,9 @@ def get_root_folder_for_provider(node_settings, service_name):
         case "bitbucket":
             return f"repository:{node_settings.user}/{node_settings.repo}"
         case "zotero":
-            return f"{node_settings.library_id}/{node_settings.list_id}"
+            return f"collection:{node_settings.library_id}:{node_settings.list_id}"
         case "mendeley":
-            return node_settings.list_id
+            return f"collection:{node_settings.list_id}"
         case "boa":
             return None
 

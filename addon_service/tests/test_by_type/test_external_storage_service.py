@@ -134,6 +134,7 @@ class TestExternalStorageServiceViewSet(TestCase):
                     "external_service_name",
                     "configurable_api_root",
                     "supported_features",
+                    "icon_url",
                 },
             )
         with self.subTest("Confirm expected relationships"):

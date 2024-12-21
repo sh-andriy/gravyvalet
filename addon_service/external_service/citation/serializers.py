@@ -40,4 +40,5 @@ class ExternalCitationServiceSerializer(ExternalServiceSerializer):
             "wb_key",
             "external_service_name",
             "supported_features",
+            "icon_url",
         ]

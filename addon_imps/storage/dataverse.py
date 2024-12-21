@@ -5,6 +5,8 @@ import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from django.core.exceptions import ValidationError
+
 from addon_toolkit.interfaces import storage
 from addon_toolkit.interfaces.storage import (
     ItemResult,
@@ -26,7 +28,13 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
     """
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
-        return ""
+        async with self.network.GET("api/v1/users/:me") as response:
+            if not response.http_status.is_success:
+                raise ValidationError(
+                    "Could not get dataverse account id, check your API Token"
+                )
+            content = await response.json_content()
+            return content.get("data", {}).get("id")
 
     async def build_wb_config(
         self,

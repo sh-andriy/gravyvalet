@@ -6,6 +6,7 @@ from http import (
     HTTPMethod,
     HTTPStatus,
 )
+from typing import AsyncContextManager
 
 from addon_toolkit.iri_utils import (
     KeyValuePairs,
@@ -79,7 +80,7 @@ class HttpRequestor(typing.Protocol):
         headers: Multidict | KeyValuePairs | None = None,
         json: dict | None = None,
         content: str | None = None,
-    ):
+    ) -> AsyncContextManager[HttpResponseInfo]:
         _request_info = HttpRequestInfo(
             http_method=http_method,
             uri_path=uri_path,

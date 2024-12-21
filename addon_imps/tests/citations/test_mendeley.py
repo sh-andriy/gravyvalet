@@ -110,7 +110,7 @@ class TestMendeleyCitationImp(unittest.IsolatedAsyncioTestCase):
 
         expected_items = [
             ItemResult(
-                item_id="doc1",
+                item_id="document:doc1",
                 item_name="Doc Title 1",
                 item_type=ItemType.DOCUMENT,
                 item_path=[],
@@ -122,7 +122,7 @@ class TestMendeleyCitationImp(unittest.IsolatedAsyncioTestCase):
                 },
             ),
             ItemResult(
-                item_id="doc2",
+                item_id="document:doc2",
                 item_name="Doc Title 2",
                 item_type=ItemType.DOCUMENT,
                 item_path=[],
@@ -150,10 +150,14 @@ class TestMendeleyCitationImp(unittest.IsolatedAsyncioTestCase):
         expected_result = ItemSampleResult(
             items=[
                 ItemResult(
-                    item_id="1", item_name="Collection 1", item_type=ItemType.COLLECTION
+                    item_id="collection:1",
+                    item_name="Collection 1",
+                    item_type=ItemType.COLLECTION,
                 ),
                 ItemResult(
-                    item_id="2", item_name="Collection 2", item_type=ItemType.COLLECTION
+                    item_id="collection:2",
+                    item_name="Collection 2",
+                    item_type=ItemType.COLLECTION,
                 ),
             ],
             total_count=2,
@@ -205,7 +209,7 @@ class TestMendeleyCitationImp(unittest.IsolatedAsyncioTestCase):
         ) in cases:
             with self.subTest(item_filter):
                 result = await self.mendeley_imp.list_collection_items(
-                    "collection_id", filter_items=item_filter
+                    "collection:collection_id", filter_items=item_filter
                 )
                 for call in calls_to_be_made:
                     call.assert_awaited_once_with("collection_id")

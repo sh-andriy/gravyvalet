@@ -31,16 +31,43 @@ class MendeleyCitationImp(CitationAddonImp):
             ]
         )
 
+    async def get_item_info(self, item_id: str):
+        if item_id == "ROOT":
+            return ItemResult(
+                item_id="ROOT",
+                item_type=ItemType.COLLECTION,
+                item_name="ROOT",
+            )
+        item_type, parsed_id = item_id.split(":", maxsplit=1)
+        if item_type == "collection":
+            return await self._fetch_collection(parsed_id)
+        elif item_type == "document":
+            return await self._fetch_item_details(parsed_id)
+
+    async def _fetch_collection(self, item_id: str):
+        async with self.network.GET(f"folders/{item_id}") as response:
+            collection = await response.json_content()
+            return ItemResult(
+                item_id=f'{ItemType.COLLECTION}:{collection["id"]}',
+                item_name=collection["name"],
+                item_type=ItemType.COLLECTION,
+            )
+
     async def list_collection_items(
         self,
         collection_id: str,
         filter_items: ItemType | None = None,
     ) -> ItemSampleResult:
+        parsed_id = (
+            collection_id
+            if collection_id == "ROOT"
+            else collection_id.split(":", maxsplit=1)[1]
+        )
         tasks = []
         if filter_items != ItemType.COLLECTION:
-            tasks.append(self._fetch_collection_documents(collection_id))
+            tasks.append(self._fetch_collection_documents(parsed_id))
         if filter_items != ItemType.DOCUMENT:
-            tasks.append(self._fetch_subcollections(collection_id))
+            tasks.append(self._fetch_subcollections(parsed_id))
         items = await join_list(tasks)
 
         return ItemSampleResult(items=items, total_count=len(items))
@@ -81,7 +108,7 @@ class MendeleyCitationImp(CitationAddonImp):
             item_name = item_details.get("title", f"Untitled Document {item_id}")
             csl_data = _citation_for_mendeley_document(item_id, item_details)
             return ItemResult(
-                item_id=item_id,
+                item_id=f"{ItemType.DOCUMENT}:{item_id}",
                 item_name=item_name,
                 item_type=ItemType.DOCUMENT,
                 item_path=item_details.get("path", []),
@@ -93,7 +120,7 @@ class MendeleyCitationImp(CitationAddonImp):
     ) -> ItemSampleResult:
         items = [
             ItemResult(
-                item_id=collection["id"],
+                item_id=f'{ItemType.COLLECTION}:{collection["id"]}',
                 item_name=collection["name"],
                 item_type=ItemType.COLLECTION,
             )

@@ -77,6 +77,10 @@ class CitationServiceInterface(BaseAddonInterface):
     ) -> ItemSampleResult:
         """Lists directories (or collections) and sources (books) inside root"""
 
+    @immediate_operation(capability=AddonCapabilities.ACCESS)
+    def get_item_info(self, item_id: str) -> ItemResult:
+        """Lists directories (or collections) and sources (books) inside root"""
+
 
 @dataclasses.dataclass(frozen=True)
 class CitationAddonImp(AddonImp):

@@ -55,17 +55,17 @@ class TestZoteroOrgCitationImp(unittest.IsolatedAsyncioTestCase):
 
         expected_items = [
             ItemResult(
-                item_id="collection-1:",
+                item_id="collection:collection-1:ROOT",
                 item_name="Collection 1",
                 item_type=ItemType.COLLECTION,
             ),
             ItemResult(
-                item_id="collection-2:",
+                item_id="collection:collection-2:ROOT",
                 item_name="Collection 2",
                 item_type=ItemType.COLLECTION,
             ),
             ItemResult(
-                item_id="personal:",
+                item_id="collection:personal:ROOT",
                 item_name="My Library",
                 item_type=ItemType.COLLECTION,
             ),
@@ -108,7 +108,9 @@ class TestZoteroOrgCitationImp(unittest.IsolatedAsyncioTestCase):
         self.zotero_imp.fetch_subcollections = create_autospec(
             self.zotero_imp.fetch_subcollections, return_value=collections
         )
-        result = await self.zotero_imp.list_collection_items("personal:collection-123")
+        result = await self.zotero_imp.list_collection_items(
+            "collection:personal:collection-123"
+        )
 
         expected_items = docs + collections
         self.zotero_imp.fetch_collection_documents.assert_awaited_once_with(
@@ -156,7 +158,7 @@ class TestZoteroOrgCitationImp(unittest.IsolatedAsyncioTestCase):
         for item_type, call, not_call in cases:
             with self.subTest(item_type):
                 result = await self.zotero_imp.list_collection_items(
-                    "personal:collection-123", filter_items=item_type
+                    "collection:personal:collection-123", filter_items=item_type
                 )
                 call.assert_awaited_once_with("personal", "collection-123")
                 not_call.assert_not_called()
@@ -180,13 +182,13 @@ class TestZoteroOrgCitationImp(unittest.IsolatedAsyncioTestCase):
         )
         expected_result = [
             ItemResult(
-                item_id="personal:item-1",
+                item_id="document:personal:item-1",
                 item_name="Item Title 1",
                 item_type=ItemType.DOCUMENT,
                 csl={"id": "item-1", "title": "Item Title 1"},
             ),
             ItemResult(
-                item_id="personal:item-2",
+                item_id="document:personal:item-2",
                 item_name="Item Title 2",
                 item_type=ItemType.DOCUMENT,
                 csl={"id": "item-2", "title": "Item Title 2"},
@@ -214,17 +216,28 @@ class TestZoteroOrgCitationImp(unittest.IsolatedAsyncioTestCase):
         )
         expected_result = [
             ItemResult(
-                item_id="personal:collection-1",
+                item_id="collection:personal:collection-1",
                 item_name="Collection 1",
                 item_type=ItemType.COLLECTION,
             ),
             ItemResult(
-                item_id="personal:collection-2",
+                item_id="collection:personal:collection-2",
                 item_name="Collection 2",
                 item_type=ItemType.COLLECTION,
             ),
         ]
-        result = await self.zotero_imp.fetch_subcollections("personal", "collection")
+        with self.subTest("ROOT collection"):
+            result = await self.zotero_imp.fetch_subcollections("personal", "ROOT")
 
-        self.assertEqual(result, expected_result)
-        self.zotero_imp.network.GET.assert_called_once_with("la/collections/top")
+            self.assertEqual(result, expected_result)
+            self.zotero_imp.network.GET.assert_called_once_with("la/collections/top")
+
+        self.zotero_imp.network.GET.reset_mock()
+
+        with self.subTest("ordinary collection"):
+            result = await self.zotero_imp.fetch_subcollections(
+                "personal", "some-collection"
+            )
+
+            self.assertEqual(result, expected_result)
+            self.zotero_imp.network.GET.assert_called_once_with("la/collections")

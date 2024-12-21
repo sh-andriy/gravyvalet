@@ -233,7 +233,10 @@ class TestFigshareStorageImp(IsolatedAsyncioTestCase):
                 self.imp._fetch_project_articles,
                 "lalala",
                 "account/projects/lalala/articles",
-                [{"id": 123, "title": "sdaas"}],
+                [
+                    {"id": 123, "title": "sdaas", "defined_type": 4},
+                    {"id": 6436, "title": "sdaas", "defined_type": 3123123},
+                ],
                 [Article(id=123, title="sdaas")],
             ],
             [
@@ -247,7 +250,10 @@ class TestFigshareStorageImp(IsolatedAsyncioTestCase):
                 self.imp._fetch_articles,
                 None,
                 "account/articles",
-                [{"id": 123, "title": "sdaas"}],
+                [
+                    {"id": 123, "title": "sdaas", "defined_type": 4},
+                    {"id": 567, "title": "sdaas", "defined_type": 1234},
+                ],
                 [Article(id=123, title="sdaas")],
             ],
             [

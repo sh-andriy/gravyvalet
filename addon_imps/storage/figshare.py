@@ -18,7 +18,7 @@ from addon_toolkit.interfaces.storage import (
 FILE_REGEX = re.compile(r"^article/(?P<article_id>\d*)/files/(?P<file_id>\d*)$")
 ARTICLE_REGEX = re.compile(r"^article/(?P<article_id>\d*)$")
 PROJECT_REGEX = re.compile(r"^project/(?P<project_id>\d*)$")
-
+FOLDER_ITEM_TYPES = {3, 4}
 PAGE_SIZE = 20
 
 
@@ -101,7 +101,9 @@ class FigshareStorageImp(storage.StorageAddonHttpRequestorImp):
         ) as response:
             await self._check_response(response)
             return [
-                Article.from_json(project) for project in await response.json_content()
+                Article.from_json(raw_article)
+                for raw_article in await response.json_content()
+                if raw_article["defined_type"] in FOLDER_ITEM_TYPES
             ]
 
     async def _fetch_project_articles(
@@ -116,7 +118,11 @@ class FigshareStorageImp(storage.StorageAddonHttpRequestorImp):
         ) as response:
             await self._check_response(response)
             json = await response.json_content()
-            return [Article.from_json(project) for project in json]
+            return [
+                Article.from_json(raw_article)
+                for raw_article in json
+                if raw_article["defined_type"] in FOLDER_ITEM_TYPES
+            ]
 
     async def _fetch_article_files(
         self, article_id: str, page_cursor: int

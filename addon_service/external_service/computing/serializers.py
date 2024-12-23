@@ -32,4 +32,5 @@ class ExternalComputingServiceSerializer(ExternalServiceSerializer):
             "display_name",
             "url",
             "configurable_api_root",
+            "icon_url",
         ]

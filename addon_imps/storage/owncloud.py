@@ -145,12 +145,15 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         root_host = f"{parsed_url.scheme}://{parsed_url.netloc}"
         folder_path = ""
 
-        wb_config = {
+        if self.config.connected_root_id:
+            _, subpath = _parse_item_id(self.config.connected_root_id)
+            folder_path = subpath.strip("/") or ""
+
+        return {
             "folder": folder_path,
             "host": root_host,
             "verify_ssl": True,
         }
-        return wb_config
 
     def _parse_response_element(
         self, response_element: ET.Element, path: str

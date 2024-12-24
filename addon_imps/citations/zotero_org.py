@@ -77,6 +77,8 @@ class ZoteroOrgCitationImp(CitationAddonImp):
 
     async def get_item_info(self, item_id: str) -> ItemResult:
         item_type, library, id_ = item_id.split(":")
+        if item_type == ItemType.COLLECTION and id_ == ROOT_ITEM_ID:
+            return await self._fetch_library(library)
         if item_type == ItemType.COLLECTION:
             return await self._fetch_collection(library, id_)
         elif item_type == ItemType.DOCUMENT:
@@ -140,7 +142,7 @@ class ZoteroOrgCitationImp(CitationAddonImp):
 
     async def _fetch_collection(self, library: str, collection_id: str) -> ItemResult:
         prefix = self.resolve_collection_prefix(library, collection_id)
-        async with self.network.GET(prefix, query={"format": "csljson"}) as response:
+        async with self.network.GET(prefix) as response:
             raw_collection = await response.json_content()
             return self._parse_collection(raw_collection, library)
 
@@ -151,3 +153,16 @@ class ZoteroOrgCitationImp(CitationAddonImp):
         ) as response:
             raw_collection = await response.json_content()
             return self._parse_document(raw_collection, library)
+
+    async def _fetch_library(self, library: str) -> ItemResult:
+        if library == "personal":
+            return ItemResult(
+                item_id=f"{ItemType.COLLECTION}:personal:{ROOT_ITEM_ID}",
+                item_name="My Library",
+                item_type=ItemType.COLLECTION,
+            )
+        else:
+            root_collections = await self.list_root_collections()
+            for collection in root_collections.items:
+                if library in collection.item_id:
+                    return collection

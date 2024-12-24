@@ -138,12 +138,12 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             instance.credentials = validated_data["credentials"]
         instance.save()  # may raise ValidationError
         if validated_data.get("initiate_oauth", False):
-            self.initiate_oauth_flow(instance, validated_data)
+            self.initiate_oauth_flow(instance, validated_data.get("authorized_scopes"))
         return instance
 
-    def initiate_oauth_flow(self, instance, validated_data):
+    def initiate_oauth_flow(self, instance, authorized_scopes):
         if instance.credentials_format is CredentialsFormats.OAUTH2:
-            instance.initiate_oauth2_flow(validated_data.get("authorized_scopes"))
+            instance.initiate_oauth2_flow(authorized_scopes)
         elif instance.credentials_format is CredentialsFormats.OAUTH1A:
             instance.initiate_oauth1_flow()
             self.context["request"].session["oauth1a_account_id"] = encrypt_string(

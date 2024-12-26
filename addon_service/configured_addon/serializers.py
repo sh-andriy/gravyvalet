@@ -30,6 +30,13 @@ class ConfiguredAddonSerializer(serializers.HyperlinkedModelSerializer):
         required=False, source="resource_uri", write_only=True
     )
 
+    current_user_is_owner = serializers.SerializerMethodField()
+
+    def get_current_user_is_owner(self, configured_addon: ConfiguredAddon):
+        return configured_addon.owner_uri == self.context["request"].session.get(
+            "user_reference_uri"
+        )
+
     def create(self, validated_data):
         validated_data = self.fix_dotted_base_account(validated_data)
         base_account = validated_data["base_account"]
@@ -64,4 +71,5 @@ class ConfiguredAddonSerializer(serializers.HyperlinkedModelSerializer):
             "connected_capabilities",
             "connected_operations",
             "connected_operation_names",
+            "current_user_is_owner",
         ]

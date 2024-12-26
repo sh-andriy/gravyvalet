@@ -70,4 +70,5 @@ class ConfiguredCitationAddonSerializer(ConfiguredAddonSerializer):
             "connected_operation_names",
             "external_service_name",
             "external_citation_service",
+            "current_user_is_owner",
         ]

@@ -147,7 +147,7 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
         if self.config.connected_root_id:
             _, subpath = _parse_item_id(self.config.connected_root_id)
-            folder_path = subpath.strip("/") or ""
+            folder_path = subpath.strip("/")
 
         return {
             "folder": folder_path,

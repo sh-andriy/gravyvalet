@@ -98,21 +98,9 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         validated_data: dict,
     ) -> AuthorizedAccount:
         if validated_data.get("initiate_oauth", False):
-            if authorized_account.credentials_format is CredentialsFormats.OAUTH2:
-                authorized_account.initiate_oauth2_flow(
-                    validated_data.get("authorized_scopes")
-                )
-            elif authorized_account.credentials_format is CredentialsFormats.OAUTH1A:
-                authorized_account.initiate_oauth1_flow()
-                self.context["request"].session["oauth1a_account_id"] = encrypt_string(
-                    f"{authorized_account.__class__.__name__}/{authorized_account.pk}"
-                )
-            else:
-                raise serializers.ValidationError(
-                    {
-                        "initiate_oauth": "this external service is not configured for oauth"
-                    }
-                )
+            self.initiate_oauth_flow(
+                authorized_account, validated_data.get("authorized_scopes")
+            )
         elif authorized_account.credentials_format.is_direct_from_user:
             if not validated_data.get("credentials"):
                 raise ModelValidationError("Credentials are required")
@@ -149,12 +137,22 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         if validated_data.get("credentials"):
             instance.credentials = validated_data["credentials"]
         instance.save()  # may raise ValidationError
-        if (
-            validated_data.get("initiate_oauth", False)
-            and instance.credentials_format is CredentialsFormats.OAUTH2
-        ):
-            instance.initiate_oauth2_flow(validated_data.get("authorized_scopes"))
+        if validated_data.get("initiate_oauth", False):
+            self.initiate_oauth_flow(instance, validated_data.get("authorized_scopes"))
         return instance
+
+    def initiate_oauth_flow(self, instance, authorized_scopes):
+        if instance.credentials_format is CredentialsFormats.OAUTH2:
+            instance.initiate_oauth2_flow(authorized_scopes)
+        elif instance.credentials_format is CredentialsFormats.OAUTH1A:
+            instance.initiate_oauth1_flow()
+            self.context["request"].session["oauth1a_account_id"] = encrypt_string(
+                f"{instance.__class__.__name__}/{instance.pk}"
+            )
+        else:
+            raise serializers.ValidationError(
+                {"initiate_oauth": "this external service is not configured for oauth"}
+            )
 
     class Meta:
         resource_name = "authorized-accounts"

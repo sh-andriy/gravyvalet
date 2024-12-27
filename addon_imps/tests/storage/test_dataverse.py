@@ -1,7 +1,9 @@
 import unittest
+from http import HTTPStatus
 from unittest.mock import AsyncMock
 
 from addon_imps.storage.dataverse import DataverseStorageImp
+from addon_toolkit.constrained_network.http import HttpRequestor
 from addon_toolkit.interfaces.storage import (
     ItemResult,
     ItemSampleResult,
@@ -14,13 +16,13 @@ class TestDataverseStorageImp(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.base_url = "https://dataverse.org/api"
         self.config = StorageConfig(external_api_url=self.base_url, max_upload_mb=100)
-        self.network = AsyncMock()
+        self.network = AsyncMock(spec_set=HttpRequestor)
         self.imp = DataverseStorageImp(config=self.config, network=self.network)
 
     def _patch_get(self, return_value):
         mock = self.network.GET.return_value.__aenter__.return_value
         mock.json_content = AsyncMock(return_value=return_value)
-        mock.http_status = 200
+        mock.http_status = HTTPStatus(200)
 
     def _assert_get(self, url, query=None):
         extra_params = {"query": query} if query else {}
@@ -32,8 +34,9 @@ class TestDataverseStorageImp(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_get_external_account_id(self):
+        self._patch_get({"data": {"id": "124"}})
         result = await self.imp.get_external_account_id({})
-        self.assertEqual(result, "")
+        self.assertEqual(result, "124")
 
     async def test_list_root_items(self):
         mock_response = {

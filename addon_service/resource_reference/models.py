@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 
 from addon_service.common.base_model import AddonsServiceBaseModel
 from addon_service.configured_addon.citation.models import ConfiguredCitationAddon
@@ -11,7 +12,9 @@ class ResourceReference(AddonsServiceBaseModel):
 
     @property
     def configured_storage_addons(self):
-        return ConfiguredStorageAddon.objects.filter(authorized_resource=self)
+        return ConfiguredStorageAddon.objects.filter(authorized_resource=self).order_by(
+            Lower("_display_name")
+        )
 
     @property
     def configured_citation_addons(self):

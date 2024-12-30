@@ -11,7 +11,9 @@ class ResourceReference(AddonsServiceBaseModel):
 
     @property
     def configured_storage_addons(self):
-        return ConfiguredStorageAddon.objects.filter(authorized_resource=self)
+        return ConfiguredStorageAddon.objects.filter(authorized_resource=self).order_by(
+            "_display_name"
+        )
 
     @property
     def configured_citation_addons(self):

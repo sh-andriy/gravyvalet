@@ -72,7 +72,14 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
         return "default-username"
 
     async def list_root_items(self, page_cursor: str = "") -> storage.ItemSampleResult:
-        return await self.list_child_items(_owncloud_root_id(), page_cursor)
+        root_item = storage.ItemResult(
+            item_id=_owncloud_root_id(),
+            item_name="Root Directory",
+            item_type=ItemType.FOLDER,
+            can_be_root=True,
+            may_contain_root_candidates=True,
+        )
+        return storage.ItemSampleResult(items=[root_item])
 
     async def get_item_info(self, item_id: str) -> storage.ItemResult:
         item_type, path = _parse_item_id(item_id)
@@ -147,7 +154,10 @@ class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
 
         if self.config.connected_root_id:
             _, subpath = _parse_item_id(self.config.connected_root_id)
-            folder_path = subpath.strip("/")
+            if subpath == "/":
+                folder_path = ""
+            else:
+                folder_path = subpath.strip("/")
 
         return {
             "folder": folder_path,

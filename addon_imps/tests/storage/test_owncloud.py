@@ -1,8 +1,5 @@
 import unittest
-from unittest.mock import (
-    AsyncMock,
-    sentinel,
-)
+from unittest.mock import AsyncMock
 
 from addon_imps.storage.owncloud import (
     _BUILD_PROPFIND_ALLPROPS,
@@ -81,12 +78,13 @@ class TestOwnCloudStorageImp(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, "Test User")
 
     async def test_list_root_items(self):
-        mock_response = sentinel.result
-        self.imp.list_child_items = AsyncMock(return_value=mock_response)
         result = await self.imp.list_root_items()
-
-        self.assertEqual(result, mock_response)
-        self.imp.list_child_items.assert_awaited_once_with("folder:/", "")
+        self.assertEqual(len(result.items), 1)
+        root_item = result.items[0]
+        self.assertEqual(root_item.item_id, "folder:/")
+        self.assertEqual(root_item.item_name, "Root Directory")
+        self.assertEqual(root_item.item_type, ItemType.FOLDER)
+        self.assertTrue(root_item.can_be_root)
 
     async def test_get_item_info(self):
         response_xml = """<?xml version="1.0" encoding="UTF-8"?>

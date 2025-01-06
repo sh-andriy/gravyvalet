@@ -68,7 +68,12 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
     thru_addon = CustomPolymorphicResourceRelatedField(
         many=False,
         required=False,
-        queryset=ConfiguredAddon.objects.active(),
+        queryset=ConfiguredAddon.objects.active().select_related(
+            "base_account__external_service",
+            "base_account__authorizedstorageaccount",
+            "base_account__authorizedcitationaccount",
+            "base_account__account_owner",
+        ),
         related_link_view_name=view_names.related_view(RESOURCE_TYPE),
         polymorphic_serializer=ConfiguredAddonPolymorphicSerializer,
     )
@@ -91,6 +96,10 @@ class AddonOperationInvocationSerializer(serializers.HyperlinkedModelSerializer)
         "operation": "addon_service.serializers.AddonOperationSerializer",
         "by_user": "addon_service.serializers.UserReferenceSerializer",
     }
+
+    def to_internal_value(self, data):
+        validated_data = super().to_internal_value(data)
+        return validated_data
 
     def create(self, validated_data):
         _thru_addon = validated_data.get("thru_addon")

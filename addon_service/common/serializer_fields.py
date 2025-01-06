@@ -8,6 +8,9 @@ from rest_framework_json_api.relations import (
     SkipDataMixin,
 )
 
+from addon_service.authorized_account.models import AuthorizedAccount
+from addon_service.configured_addon.models import ConfiguredAddon
+
 
 class ReadOnlyResourceRelatedField(
     json_api_serializers.ResourceRelatedField, drf_serializers.ReadOnlyField
@@ -54,16 +57,18 @@ class _FakeQuerysetForDataclassModel:
 class CustomPolymorphicResourceRelatedField(PolymorphicResourceRelatedField):
     def to_representation(self, value):
         data = super().to_representation(value)
-        if hasattr(value, "authorizedcitationaccount"):
-            data["type"] = "authorized-citation-accounts"
-        elif hasattr(value, "authorizedcomputingaccount"):
-            data["type"] = "authorized-computing-accounts"
-        elif hasattr(value, "authorizedstorageaccount"):
-            data["type"] = "authorized-storage-accounts"
-        elif hasattr(value, "configuredcitationaddon"):
-            data["type"] = "configured-citation-addons"
-        elif hasattr(value, "configuredcomputingaddon"):
-            data["type"] = "configured-computing-addons"
-        elif hasattr(value, "configuredstorageaccount"):
-            data["type"] = "configured-storage-addons"
+        if isinstance(value, AuthorizedAccount):
+            if hasattr(value, "authorizedcitationaccount"):
+                data["type"] = "authorized-citation-accounts"
+            elif hasattr(value, "authorizedstorageaccount"):
+                data["type"] = "authorized-storage-accounts"
+            elif hasattr(value, "authorizedcomputingaccount"):
+                data["type"] = "authorized-computing-accounts"
+        elif isinstance(value, ConfiguredAddon):
+            if hasattr(value, "configuredcitationaddon"):
+                data["type"] = "configured-citation-addons"
+            elif hasattr(value, "configuredstorageaddon"):
+                data["type"] = "configured-storage-addons"
+            elif hasattr(value, "configuredcomputingaddon"):
+                data["type"] = "configured-computing-addons"
         return data

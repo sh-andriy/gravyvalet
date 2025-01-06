@@ -5,5 +5,7 @@ from .serializers import ExternalComputingServiceSerializer
 
 
 class ExternalComputingServiceViewSet(ReadOnlyModelViewSet):
-    queryset = ExternalComputingService.objects.all()
+    queryset = ExternalComputingService.objects.all().select_related(
+        "oauth2_client_config"
+    )
     serializer_class = ExternalComputingServiceSerializer

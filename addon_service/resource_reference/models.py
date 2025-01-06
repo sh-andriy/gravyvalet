@@ -12,17 +12,35 @@ class ResourceReference(AddonsServiceBaseModel):
 
     @property
     def configured_storage_addons(self):
-        return ConfiguredStorageAddon.objects.filter(authorized_resource=self).order_by(
-            Lower("_display_name")
+        return (
+            ConfiguredStorageAddon.objects.filter(authorized_resource=self)
+            .select_related(
+                "base_account__external_service__externalstorageservice",
+                "base_account__authorizedstorageaccount",
+                "base_account__account_owner",
+            )
+            .order_by(Lower("_display_name"))
         )
 
     @property
     def configured_citation_addons(self):
-        return ConfiguredCitationAddon.objects.filter(authorized_resource=self)
+        return ConfiguredCitationAddon.objects.filter(
+            authorized_resource=self
+        ).select_related(
+            "base_account__external_service__externalcitationservice",
+            "base_account__authorizedcitationaccount",
+            "base_account__account_owner",
+        )
 
     @property
     def configured_computing_addons(self):
-        return ConfiguredComputingAddon.objects.filter(authorized_resource=self)
+        return ConfiguredComputingAddon.objects.filter(
+            authorized_resource=self
+        ).select_related(
+            "base_account__external_service__externalcomputingservice",
+            "base_account__authorizedcitationaccount",
+            "base_account__account_owner",
+        )
 
     class Meta:
         verbose_name = "Resource Reference"

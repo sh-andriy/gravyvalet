@@ -83,6 +83,7 @@ if env.SECURE_PROXY_SSL_HEADER:
 # Application definition
 
 INSTALLED_APPS = [
+    "silk",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -101,6 +102,7 @@ if DEBUG:
     ASGI_APPLICATION = "app.asgi.application"
 
 MIDDLEWARE = [
+    "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -168,6 +170,7 @@ if env.OSFDB_HOST:
         },
     }
 
+SILKY_PYTHON_PROFILER = True
 DATABASE_ROUTERS = ["addon_service.osf_models.db_router.OsfDatabaseRouter"]
 
 REST_FRAMEWORK = {

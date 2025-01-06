@@ -14,4 +14,5 @@ urlpatterns = [
         RedirectView.as_view(url="/static/gravyvalet_code_docs/index.html"),
         name="docs-root",
     ),
+    path("silk/", include("silk.urls", namespace="silk")),
 ]

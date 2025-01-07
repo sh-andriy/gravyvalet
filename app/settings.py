@@ -83,7 +83,6 @@ if env.SECURE_PROXY_SSL_HEADER:
 # Application definition
 
 INSTALLED_APPS = [
-    "silk",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -96,13 +95,7 @@ INSTALLED_APPS = [
     "addon_service",
 ]
 
-if DEBUG:
-    # run under ASGI locally:
-    INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
-    ASGI_APPLICATION = "app.asgi.application"
-
 MIDDLEWARE = [
-    "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -112,6 +105,16 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+
+if DEBUG:
+    # add django-silk to enable profiling
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+    # run under ASGI locally:
+    INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
+    ASGI_APPLICATION = "app.asgi.application"
+
 
 ROOT_URLCONF = "app.urls"
 

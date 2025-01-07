@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import (
     include,
@@ -14,5 +15,7 @@ urlpatterns = [
         RedirectView.as_view(url="/static/gravyvalet_code_docs/index.html"),
         name="docs-root",
     ),
-    path("silk/", include("silk.urls", namespace="silk")),
 ]
+
+if "silk" in settings.INSTALLED_APPS:
+    urlpatterns.append(path("silk/", include("silk.urls", namespace="silk")))

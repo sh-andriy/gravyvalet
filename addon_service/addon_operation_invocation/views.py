@@ -87,7 +87,15 @@ class AddonOperationInvocationViewSet(RetrieveWriteViewSet):
     def perform_create(self, serializer):
         super().perform_create(serializer)
         # after creating the AddonOperationInvocation, look into invoking it
-        _invocation = serializer.instance
+        _invocation = (
+            AddonOperationInvocation.objects.filter(pk=serializer.instance.pk)
+            .select_related(
+                *self._get_narrowed_down_selects(serializer),
+                "thru_account___credentials",
+            )
+            .first()
+        )
+        _invocation.thru_addon.base_account = _invocation.thru_account
         _operation_type = _invocation.operation.operation_type
         match _operation_type:
             case AddonOperationType.REDIRECT | AddonOperationType.IMMEDIATE:
@@ -96,3 +104,15 @@ class AddonOperationInvocationViewSet(RetrieveWriteViewSet):
                 perform_invocation__celery.delay(_invocation.pk)
             case _:
                 raise ValueError(f"unknown operation type: {_operation_type}")
+        serializer.instance = _invocation
+
+    def _get_narrowed_down_selects(self, serializer):
+        addon_resource_name = serializer.initial_data.get(
+            "thru_addon", serializer.initial_data.get("thru_account")
+        )["type"]
+        addon_type = addon_resource_name.split("-")[1]
+        return [
+            f"thru_addon__configured{addon_type}addon",
+            f"thru_account__authorized{addon_type}account",
+            f"thru_account__external_service__external{addon_type}service",
+        ]

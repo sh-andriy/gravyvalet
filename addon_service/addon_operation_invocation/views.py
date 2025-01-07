@@ -95,7 +95,8 @@ class AddonOperationInvocationViewSet(RetrieveWriteViewSet):
             )
             .first()
         )
-        _invocation.thru_addon.base_account = _invocation.thru_account
+        if _invocation.thru_addon:
+            _invocation.thru_addon.base_account = _invocation.thru_account
         _operation_type = _invocation.operation.operation_type
         match _operation_type:
             case AddonOperationType.REDIRECT | AddonOperationType.IMMEDIATE:

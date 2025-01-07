@@ -88,32 +88,37 @@ class ExternalCredentials(AddonsServiceBaseModel):
     ###
 
     @property
-    def authorized_account(self):
+    def authorized_accounts(self):
         """Returns the list of all accounts that point to this set of credentials.
 
         For now, this will just be a single AuthorizedAccount, but in the future other
         types of accounts for the same user could point to the same set of credentials
         """
         try:
-            if account := getattr(self, "authorized_account", None):
-                return account
-            else:
-                return getattr(self, "temporary_authorized_account", None)
+            return [
+                *filter(
+                    bool,
+                    [
+                        getattr(self, "authorized_account", None),
+                        getattr(self, "temporary_authorized_account", None),
+                    ],
+                )
+            ]
         except ExternalCredentials.authorized_account.RelatedObjectDoesNotExist:
             return None
 
     @property
     def format(self):
-        if not self.authorized_account:
+        if not self.authorized_accounts:
             return None
-        return self.authorized_account.external_service.credentials_format
+        return self.authorized_accounts[0].external_service.credentials_format
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)
         self._validate_credentials()
 
     def _validate_credentials(self):
-        if not self.authorized_account:
+        if not self.authorized_accounts:
             return
         try:
             self.decrypted_credentials

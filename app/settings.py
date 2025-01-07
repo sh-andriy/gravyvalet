@@ -107,10 +107,11 @@ MIDDLEWARE = [
 ]
 
 
-if DEBUG:
+if DEBUG and not env.TESTING:
     # add django-silk to enable profiling
     INSTALLED_APPS.append("silk")
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+if DEBUG:
     # run under ASGI locally:
     INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
     ASGI_APPLICATION = "app.asgi.application"

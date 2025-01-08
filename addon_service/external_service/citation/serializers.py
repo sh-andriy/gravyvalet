@@ -41,4 +41,5 @@ class ExternalCitationServiceSerializer(ExternalServiceSerializer):
             "external_service_name",
             "supported_features",
             "icon_url",
+            "api_base_url_options",
         ]

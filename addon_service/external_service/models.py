@@ -40,6 +40,7 @@ class ExternalService(AddonsServiceBaseModel):
     )
     supported_scopes = ArrayField(models.CharField(), null=True, blank=True)
     api_base_url = models.URLField(blank=True, default="")
+    api_base_url_options = ArrayField(models.CharField(), null=True, blank=True)
     wb_key = models.CharField(null=False, blank=True, default="")
     oauth1_client_config = models.ForeignKey(
         "addon_service.OAuth1ClientConfig",

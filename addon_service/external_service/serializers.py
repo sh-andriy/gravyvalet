@@ -32,6 +32,9 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
         return None
 
     external_service_name = serializers.CharField(read_only=True)
+    api_base_url_options = serializers.ListField(
+        child=serializers.CharField(), read_only=True
+    )
 
     included_serializers = {
         "addon_imp": "addon_service.serializers.AddonImpSerializer",
@@ -52,4 +55,5 @@ class ExternalServiceSerializer(serializers.HyperlinkedModelSerializer):
             "wb_key",
             "external_service_name",
             "icon_url",
+            "api_base_url_options",
         ]

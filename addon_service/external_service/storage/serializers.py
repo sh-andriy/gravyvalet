@@ -45,4 +45,5 @@ class ExternalStorageServiceSerializer(ExternalServiceSerializer):
             "configurable_api_root",
             "supported_features",
             "icon_url",
+            "api_base_url_options",
         ]

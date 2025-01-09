@@ -5,6 +5,7 @@ from django.db import models
 
 from addon_service.addon_operation.models import AddonOperationModel
 from addon_service.common.base_model import AddonsServiceBaseModel
+from addon_service.common.known_imps import AddonImpNumbers
 from addon_service.common.validators import validate_addon_capability
 from addon_toolkit import (
     AddonCapabilities,
@@ -107,6 +108,11 @@ class ConfiguredAddon(AddonsServiceBaseModel):
     @property
     def imp_cls(self) -> type[AddonImp]:
         return self.base_account.imp_cls
+
+    @property
+    def external_service_name(self):
+        number = self.base_account.external_service.int_addon_imp
+        return AddonImpNumbers(number).name.lower()
 
     def clean_fields(self, *args, **kwargs):
         super().clean_fields(*args, **kwargs)

@@ -71,4 +71,5 @@ class ConfiguredComputingAddonSerializer(ConfiguredAddonSerializer):
             "external_service_name",
             "external_computing_service",
             "current_user_is_owner",
+            "external_service_name",
         ]

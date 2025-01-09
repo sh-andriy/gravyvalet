@@ -69,18 +69,18 @@ def get_imp_number(imp: type[AddonImp]) -> int:
 class KnownAddonImps(enum.Enum):
     """Static mapping from API-facing name for an AddonImp to the Imp itself"""
 
-    BOX_DOT_COM = box_dot_com.BoxDotComStorageImp
+    BOX = box_dot_com.BoxDotComStorageImp
     S3 = s3.S3StorageImp
     ONEDRIVE = onedrive.OneDriveStorageImp
-    ZOTERO_ORG = zotero_org.ZoteroOrgCitationImp
-    GOOGLE_DRIVE = google_drive.GoogleDriveStorageImp
+    ZOTERO = zotero_org.ZoteroOrgCitationImp
+    GOOGLEDRIVE = google_drive.GoogleDriveStorageImp
     FIGSHARE = figshare.FigshareStorageImp
     MENDELEY = mendeley.MendeleyCitationImp
     BITBUCKET = bitbucket.BitbucketStorageImp
     DATAVERSE = dataverse.DataverseStorageImp
     OWNCLOUD = owncloud.OwnCloudStorageImp
 
-    GIT_HUB = github.GitHubStorageImp
+    GITHUB = github.GitHubStorageImp
     GITLAB = gitlab.GitlabStorageImp
     DROPBOX = dropbox.DropboxStorageImp
 
@@ -95,11 +95,11 @@ class KnownAddonImps(enum.Enum):
 class AddonImpNumbers(enum.Enum):
     """Static mapping from each AddonImp name to a unique integer (for database use)"""
 
-    BOX_DOT_COM = 1001
-    ZOTERO_ORG = 1002
+    BOX = 1001
+    ZOTERO = 1002
     S3 = 1003
     MENDELEY = 1004
-    GOOGLE_DRIVE = 1005
+    GOOGLEDRIVE = 1005
     DROPBOX = 1006
     FIGSHARE = 1007
     ONEDRIVE = 1008
@@ -108,7 +108,7 @@ class AddonImpNumbers(enum.Enum):
     GITLAB = 1011
     BITBUCKET = 1012
 
-    GIT_HUB = 1013
+    GITHUB = 1013
 
     BOA = 1020
 

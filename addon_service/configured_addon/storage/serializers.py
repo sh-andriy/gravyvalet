@@ -72,4 +72,5 @@ class ConfiguredStorageAddonSerializer(ConfiguredAddonSerializer):
             "connected_operation_names",
             "external_storage_service",
             "current_user_is_owner",
+            "external_service_name",
         ]

@@ -72,4 +72,5 @@ class ConfiguredAddonSerializer(serializers.HyperlinkedModelSerializer):
             "connected_operations",
             "connected_operation_names",
             "current_user_is_owner",
+            "external_service_name",
         ]

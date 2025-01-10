@@ -9,8 +9,6 @@ class GVCombinedAuthentication(drf_authentication.BaseAuthentication):
     """Authentication supporting session, basic, and token methods."""
 
     def authenticate(self, request: DrfRequest):
-        if request.session.get("user_reference_uri"):
-            return True, None
         _user_uri = osf.get_osf_user_uri(request)
         if _user_uri:
             UserReference.objects.get_or_create(user_uri=_user_uri)

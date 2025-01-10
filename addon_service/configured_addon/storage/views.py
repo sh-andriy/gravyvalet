@@ -12,7 +12,12 @@ from .serializers import ConfiguredStorageAddonSerializer
 
 
 class ConfiguredStorageAddonViewSet(ConfiguredAddonViewSet):
-    queryset = ConfiguredStorageAddon.objects.active()
+    queryset = ConfiguredStorageAddon.objects.active().select_related(
+        "base_account__authorizedstorageaccount",
+        "base_account__account_owner",
+        "base_account__external_service__externalstorageservice",
+        "authorized_resource",
+    )
     serializer_class = ConfiguredStorageAddonSerializer
 
     @action(

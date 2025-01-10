@@ -39,15 +39,21 @@ class UserReference(AddonsServiceBaseModel):
 
     @property
     def authorized_storage_accounts(self):
-        return AuthorizedStorageAccount.objects.filter(account_owner=self)
+        return AuthorizedStorageAccount.objects.filter(
+            account_owner=self
+        ).select_related("external_service")
 
     @property
     def authorized_citation_accounts(self):
-        return AuthorizedCitationAccount.objects.filter(account_owner=self)
+        return AuthorizedCitationAccount.objects.filter(
+            account_owner=self
+        ).select_related("external_service")
 
     @property
     def authorized_computing_accounts(self):
-        return AuthorizedComputingAccount.objects.filter(account_owner=self)
+        return AuthorizedComputingAccount.objects.filter(
+            account_owner=self
+        ).select_related("external_service")
 
     class Meta:
         verbose_name = "User Reference"

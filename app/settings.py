@@ -106,15 +106,14 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# run under ASGI locally:
+INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
+ASGI_APPLICATION = "app.asgi.application"
 
 if DEBUG and not env.TESTING:
     # add django-silk to enable profiling
     INSTALLED_APPS.append("silk")
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
-if DEBUG:
-    # run under ASGI locally:
-    INSTALLED_APPS.insert(0, "daphne")  # django's reference asgi server
-    ASGI_APPLICATION = "app.asgi.application"
 
 
 ROOT_URLCONF = "app.urls"
@@ -174,7 +173,6 @@ if env.OSFDB_HOST:
         },
     }
 
-SILKY_PYTHON_PROFILER = True
 DATABASE_ROUTERS = ["addon_service.osf_models.db_router.OsfDatabaseRouter"]
 
 REST_FRAMEWORK = {

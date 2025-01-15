@@ -1,5 +1,7 @@
 from urllib.parse import quote_plus
 
+from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.management import BaseCommand
 from django.db import transaction
 
@@ -87,7 +89,16 @@ services = [
 
 
 def get_node_guid(id_):
-    return Guid.objects.filter(content_type_id=7, object_id=id_).first()._id
+    content_type_id = cache.get_or_set(
+        "node_contenttype_id",
+        lambda: ContentType.objects.using("osf")
+        .get(app_label="osf", model="abstractnode")
+        .id,
+        timeout=None,
+    )
+    return (
+        Guid.objects.filter(content_type_id=content_type_id, object_id=id_).first()._id
+    )
 
 
 OSF_BASE = settings.OSF_API_BASE_URL.replace("192.168.168.167", "localhost").replace(
@@ -136,15 +147,12 @@ class Command(BaseCommand):
                         integration_type,
                         service_name,
                         user_settings,
-                        node_settings_class,
                     )
                 except BaseException as e:
                     print(f"Failed to migrate {service_name} service with error {e}")
                     raise e
 
-    def migrate_for_user(
-        self, integration_type, service_name, user_settings, node_settings_class
-    ):
+    def migrate_for_user(self, integration_type, service_name, user_settings):
         if integration_type == "storage":
             AuthorizedAccount = AuthorizedStorageAccount
             ConfiguredAddon = ConfiguredStorageAddon
@@ -198,13 +206,15 @@ class Command(BaseCommand):
                 resource_uri=f"{OSF_BASE}/{get_node_guid(node_settings.owner_id)}"
             )[0]
             configured_addon = ConfiguredAddon(
-                root_folder=get_root_folder_for_provider(node_settings, service_name),
                 int_connected_capabilities=(
                     AddonCapabilities.UPDATE | AddonCapabilities.ACCESS
                 ).value,
                 base_account=account,
                 authorized_resource=resource_reference,
             )
+            root_folder = get_root_folder_for_provider(node_settings, service_name)
+            if root_folder is not None:
+                configured_addon.root_folder = root_folder
             configured_addon.save()
 
     def get_credentials(self, external_service, osf_account):

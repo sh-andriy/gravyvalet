@@ -1,4 +1,6 @@
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.core.cache import cache
 from django.db import models
 from django.db.models import CharField
 
@@ -75,15 +77,33 @@ class Guid(Model):
         app_label = "osf"
 
 
+class AbstractNode(Model):
+    class Meta:
+        db_table = "osf_guid"
+        managed = False
+        app_label = "osf"
+
+
 class OsfUser(Model):
     @property
     def guid(self):
-        return Guid.objects.filter(content_type_id=70, object_id=self.id).first()._id
+        content_type_id = cache.get_or_set(
+            "user_contenttype_id",
+            lambda: ContentType.objects.using("osf")
+            .get(app_label="osf", model="osfuser")
+            .id,
+            timeout=None,
+        )
+        return (
+            Guid.objects.filter(content_type_id=content_type_id, object_id=self.id)
+            .first()
+            ._id
+        )
 
     class Meta:
         db_table = "osf_osfuser"
         managed = False
-        app_label = "addons"
+        app_label = "osf"
 
 
 class UserToExternalAccount(Model):
@@ -93,7 +113,7 @@ class UserToExternalAccount(Model):
     class Meta:
         db_table = "osf_osfuser_external_accounts"
         managed = False
-        app_label = "addons"
+        app_label = "osf"
 
 
 class BaseOAuthNodeSettings(Model):

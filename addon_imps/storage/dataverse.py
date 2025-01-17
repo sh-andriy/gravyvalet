@@ -28,13 +28,20 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
     """
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
-        async with self.network.GET("api/v1/users/:me") as response:
-            if not response.http_status.is_success:
+        try:
+            async with self.network.GET("api/v1/users/:me") as response:
+                if not response.http_status.is_success:
+                    raise ValidationError(
+                        "Could not get dataverse account id, check your API Token"
+                    )
+                content = await response.json_content()
+                return content.get("data", {}).get("id")
+        except ValueError as exc:
+            if "relative url may not alter the base url" in str(exc).lower():
                 raise ValidationError(
-                    "Could not get dataverse account id, check your API Token"
+                    "Invalid host URL. Please check your Dataverse base URL."
                 )
-            content = await response.json_content()
-            return content.get("data", {}).get("id")
+            raise
 
     async def build_wb_config(
         self,
@@ -168,7 +175,7 @@ def parse_datafile(data: dict):
     return ItemResult(
         item_type=ItemType.FILE,
         item_name=data["label"],
-        item_id=f'file/{data['dataFile']["id"]}',
+        item_id=f'file/{data["dataFile"]["id"]}',
     )
 
 

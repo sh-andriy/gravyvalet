@@ -2,7 +2,10 @@ from urllib.parse import quote_plus
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.management import BaseCommand
+from django.core.management import (
+    BaseCommand,
+    CommandError,
+)
 from django.db import transaction
 
 from addon_service.authorized_account.citation.models import AuthorizedCitationAccount
@@ -87,6 +90,8 @@ services = [
     ["computing", "boa", BoaUserSettings, BoaNodeSettings],
 ]
 
+SERVICE_CHOICES = [service[1] for service in services]
+
 
 def get_node_guid(id_):
     content_type_id = cache.get_or_set(
@@ -133,14 +138,24 @@ def get_root_folder_for_provider(node_settings, service_name):
 
 
 class Command(BaseCommand):
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--only", nargs="*", type=str, default=None, choices=SERVICE_CHOICES
+        )
+        parser.add_argument(
+            "--without", nargs="*", type=str, default=None, choices=SERVICE_CHOICES
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
+        services_to_migrate = self._get_services_to_migrate(options)
         for (
             integration_type,
             service_name,
             user_settings_class,
             node_settings_class,
-        ) in services:
+        ) in services_to_migrate:
             for user_settings in user_settings_class.objects.all():
                 try:
                     self.migrate_for_user(
@@ -152,7 +167,26 @@ class Command(BaseCommand):
                     print(f"Failed to migrate {service_name} service with error {e}")
                     raise e
 
+    def _get_services_to_migrate(self, options) -> list:
+        only = options["only"]
+        without = options["without"]
+        if only and without:
+            raise CommandError(
+                "Cannot provide both --only and --without at the same time"
+            )
+        if only:
+            return [service for service in services if service[1] in only]
+        elif without:
+            return [service for service in services if service[1] not in without]
+        return services
+
     def migrate_for_user(self, integration_type, service_name, user_settings):
+        node_settings_set = getattr(
+            user_settings, f"{service_name}nodesettings_set"
+        ).all()
+        if not node_settings_set:
+            return
+
         if integration_type == "storage":
             AuthorizedAccount = AuthorizedStorageAccount
             ConfiguredAddon = ConfiguredStorageAddon
@@ -176,6 +210,8 @@ class Command(BaseCommand):
         user_uri = f"{OSF_BASE}/{user.guid}"
         account_owner = UserReference.objects.get_or_create(user_uri=user_uri)
         credentials = self.get_credentials(external_service, osf_account)
+        if not credentials:
+            return
         account = AuthorizedAccount(
             display_name=service_name.capitalize(),
             int_authorized_capabilities=(
@@ -199,9 +235,7 @@ class Command(BaseCommand):
             account.api_base_url = api_url
 
         account.save()
-        for node_settings in getattr(
-            user_settings, f"{service_name}nodesettings_set"
-        ).all():
+        for node_settings in node_settings_set:
             resource_reference = ResourceReference.objects.get_or_create(
                 resource_uri=f"{OSF_BASE}/{get_node_guid(node_settings.owner_id)}"
             )[0]
@@ -239,6 +273,8 @@ class Command(BaseCommand):
             )
         elif external_service.wb_key == "dataverse":
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_secret)
+        elif external_service.wb_key == "dropbox" and not osf_account.refresh_token:
+            return
         else:
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_key)
         return credentials

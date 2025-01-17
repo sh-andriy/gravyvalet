@@ -135,6 +135,15 @@ def get_root_folder_for_provider(node_settings, service_name):
             return f"collection:{node_settings.list_id}"
         case "boa":
             return None
+        case "figshare":
+            folder_type = (
+                node_settings.folder_path
+                if node_settings.folder_path == "project"
+                else "article"
+            )
+            return f"{folder_type}/{node_settings.folder_id}".replace(
+                "dataset", "article"
+            )
 
 
 class Command(BaseCommand):

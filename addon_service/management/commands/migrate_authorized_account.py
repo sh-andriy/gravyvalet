@@ -18,6 +18,8 @@ from addon_service.configured_addon.computing.models import ConfiguredComputingA
 from addon_service.configured_addon.storage.models import ConfiguredStorageAddon
 from addon_service.external_service.models import ExternalService
 from addon_service.oauth2 import OAuth2TokenMetadata
+from addon_service.oauth2 import utils as oauth2_utils
+from addon_service.oauth2.models import OAuth2ServiceQuirks
 from addon_service.osf_models.models import (
     BitbucketNodeSettings,
     BitbucketUserSettings,
@@ -173,15 +175,16 @@ class Command(BaseCommand):
             user_settings_class,
             node_settings_class,
         ) in services_to_migrate:
+            external_service = ExternalService.objects.filter(wb_key=service_name)[0]
             for user_settings in user_settings_class.objects.all():
                 try:
                     self.migrate_for_user(
-                        integration_type,
-                        service_name,
-                        user_settings,
+                        integration_type, service_name, user_settings, external_service
                     )
                 except BaseException as e:
-                    print(f"Failed to migrate {service_name} service with error {e}")
+                    print(
+                        f"Failed to migrate {service_name} for user with pk={user_settings.owner_id}service with error {e}"
+                    )
                     raise e
 
     def _get_services_to_migrate(self, options) -> list:
@@ -197,7 +200,9 @@ class Command(BaseCommand):
             return [service for service in services if service[1] not in without]
         return services
 
-    def migrate_for_user(self, integration_type, service_name, user_settings):
+    def migrate_for_user(
+        self, integration_type, service_name, user_settings, external_service
+    ):
         node_settings_set = getattr(
             user_settings, f"{service_name}nodesettings_set"
         ).all()
@@ -223,7 +228,6 @@ class Command(BaseCommand):
             return
         osf_account: ExternalAccount = users_external_accounts[0]
         user = OsfUser.objects.get(pk=user_settings.owner_id)
-        external_service = ExternalService.objects.filter(wb_key=service_name)[0]
         try:
             credentials = self.get_credentials(external_service, osf_account)
         except CredentialException as e:
@@ -244,9 +248,16 @@ class Command(BaseCommand):
             credentials=credentials,
             external_account_id=osf_account.provider_id,
         )
+        mock_refresh_token = None
         if external_service.credentials_format == CredentialsFormats.OAUTH2:
+            mock_refresh_token = (
+                oauth2_utils.generate_state_nonce()
+                if external_service.oauth2_client_config.quirks
+                == OAuth2ServiceQuirks.ONLY_ACCESS_TOKEN
+                else None
+            )  # crutch to make creating OAuth2TokenMetadata working without refresh token during instantiation
             token_metadata = OAuth2TokenMetadata(
-                refresh_token=osf_account.refresh_token,
+                refresh_token=mock_refresh_token,
                 access_token_expiration=osf_account.expires_at,
                 authorized_scopes=external_service.supported_scopes,
             )
@@ -257,6 +268,10 @@ class Command(BaseCommand):
             account.api_base_url = api_url
 
         account.save()
+        if mock_refresh_token:
+            account.oauth2_token_metadata.refresh_token = None
+            account.oauth2_token_metadata.save()
+
         for node_settings in node_settings_set:
             resource_reference = ResourceReference.objects.get_or_create(
                 resource_uri=f"{OSF_BASE}/{get_node_guid(node_settings.owner_id)}"

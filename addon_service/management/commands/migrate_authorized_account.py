@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import quote_plus
 
 from django.contrib.contenttypes.models import ContentType
@@ -63,6 +64,9 @@ from addon_toolkit.credentials import (
 from app import settings
 
 
+logger = logging.getLogger(__name__)
+
+
 def fetch_external_accounts(user_id: int, provider: str):
     return [
         obj.externalaccount
@@ -71,6 +75,10 @@ def fetch_external_accounts(user_id: int, provider: str):
         ).filter(osfuser_id=user_id)
         if obj.externalaccount.provider == provider
     ]
+
+
+class CredentialException(Exception):
+    pass
 
 
 services = [
@@ -216,11 +224,16 @@ class Command(BaseCommand):
         osf_account: ExternalAccount = users_external_accounts[0]
         user = OsfUser.objects.get(pk=user_settings.owner_id)
         external_service = ExternalService.objects.filter(wb_key=service_name)[0]
+        try:
+            credentials = self.get_credentials(external_service, osf_account)
+        except CredentialException as e:
+            logger.error(
+                f"Skipping account migration with {osf_account.pk=} for service {external_service.display_name} "
+                f"due to credentials parse error {e=}"
+            )
+            return
         user_uri = f"{OSF_BASE}/{user.guid}"
         account_owner = UserReference.objects.get_or_create(user_uri=user_uri)
-        credentials = self.get_credentials(external_service, osf_account)
-        if not credentials:
-            return
         account = AuthorizedAccount(
             display_name=service_name.capitalize(),
             int_authorized_capabilities=(
@@ -260,11 +273,14 @@ class Command(BaseCommand):
                 configured_addon.root_folder = root_folder
             configured_addon.save()
 
-    def get_credentials(self, external_service, osf_account):
+    def get_credentials(
+        self, external_service: ExternalService, osf_account: ExternalAccount
+    ):
         if (
             external_service.credentials_format
             == CredentialsFormats.ACCESS_KEY_SECRET_KEY
         ):
+            self.check_fields(osf_account, ["oauth_key", "oauth_secret"])
             credentials = AccessKeySecretKeyCredentials(
                 access_key=osf_account.oauth_key,
                 secret_key=osf_account.oauth_secret,
@@ -272,21 +288,34 @@ class Command(BaseCommand):
         elif (
             external_service.credentials_format == CredentialsFormats.USERNAME_PASSWORD
         ):
+            self.check_fields(osf_account, ["display_name", "oauth_key"])
             credentials = UsernamePasswordCredentials(
                 username=osf_account.display_name, password=osf_account.oauth_key
             )
         elif external_service.credentials_format == CredentialsFormats.OAUTH1A:
+            self.check_fields(osf_account, ["oauth_key", "oauth_secret"])
             credentials = OAuth1Credentials(
                 oauth_token=osf_account.oauth_key,
                 oauth_token_secret=osf_account.oauth_secret,
             )
         elif external_service.wb_key == "dataverse":
+            self.check_fields(osf_account, ["oauth_secret"])
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_secret)
         elif external_service.wb_key == "dropbox" and not osf_account.refresh_token:
-            return
+            raise CredentialException("Skipping Dropbox account without refresh token")
         else:
+            self.check_fields(osf_account, ["oauth_key"])
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_key)
         return credentials
+
+    def check_fields(self, osf_account: ExternalAccount, fields: list[str]):
+        errors = []
+        for field in fields:
+            if getattr(osf_account, field, None) is None:
+                error_string = f"Required field <<{field}>> is None"
+                errors.append(error_string)
+        if errors:
+            raise CredentialException(errors)
 
     def get_api_base_url(self, external_service, osf_account):
         if external_service.wb_key == "owncloud":

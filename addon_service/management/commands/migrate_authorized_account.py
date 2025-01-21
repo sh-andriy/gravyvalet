@@ -198,6 +198,7 @@ class Command(BaseCommand):
         return services
 
     def migrate_for_user(self, integration_type, service_name, user_settings):
+        logger.info(f"OSF_BASE = {OSF_BASE}")
         node_settings_set = getattr(
             user_settings, f"{service_name}nodesettings_set"
         ).all()

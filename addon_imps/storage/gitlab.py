@@ -43,7 +43,7 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
             return
         if response.http_status == HTTPStatus.UNAUTHORIZED:
             raise ValidationError(
-                f"Gitlab authentication error: {resp_json.get("error_description", "invalid API Token")}",
+                f"Gitlab authentication error: {resp_json.get('error_description', 'invalid API Token')}",
             )
         elif response.http_status.is_client_error:
             raise ValidationError(
@@ -53,10 +53,17 @@ class GitlabStorageImp(storage.StorageAddonHttpRequestorImp):
             raise ValidationError("Gitlab API is currently unavailable")
 
     async def get_external_account_id(self, _: dict[str, str]) -> str:
-        async with self.network.GET(f"{self.url_base}user/preferences") as response:
-            resp_json = await response.json_content()
-            await self.check_preconditions(response)
-            return resp_json.get("user_id", "")
+        try:
+            async with self.network.GET(f"{self.url_base}user/preferences") as response:
+                resp_json = await response.json_content()
+                await self.check_preconditions(response)
+                return resp_json.get("user_id", "")
+        except ValueError as exc:
+            if "relative url may not alter the base url" in str(exc).lower():
+                raise ValidationError(
+                    "Invalid host URL. Please check your GitLab base URL."
+                )
+            raise
 
     async def build_wb_config(self) -> dict:
         item_id = ItemId.parse(self.config.connected_root_id)

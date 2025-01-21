@@ -32,40 +32,49 @@ _BUILD_PROPFIND_ALLPROPS = """<?xml version="1.0" encoding="UTF-8"?>
 
 class OwnCloudStorageImp(storage.StorageAddonHttpRequestorImp):
     async def get_external_account_id(self, auth_result_extras: dict[str, str]) -> str:
-        headers = {
-            "Depth": "0",
-        }
-        async with self.network.PROPFIND(
-            uri_path=self._strip_absolute_path(""),
-            headers=headers,
-            content=_BUILD_PROPFIND_CURRENT_USER_PRINCIPAL,
-        ) as response:
-            response_xml = await response.text_content()
-            try:
-                current_user_principal_url = self._parse_current_user_principal(
-                    response_xml
-                )
-            except ValueError:
-                username = auth_result_extras.get("username") or self._fallback_username
-                if not username:
-                    raise ValueError(
-                        "Username is required for fallback but not provided."
+        try:
+            headers = {
+                "Depth": "0",
+            }
+            async with self.network.PROPFIND(
+                uri_path=self._strip_absolute_path(""),
+                headers=headers,
+                content=_BUILD_PROPFIND_CURRENT_USER_PRINCIPAL,
+            ) as response:
+                response_xml = await response.text_content()
+                try:
+                    current_user_principal_url = self._parse_current_user_principal(
+                        response_xml
                     )
-                current_user_principal_url = f"/remote.php/dav/files/{username}/"
-            except ET.ParseError:
+                except ValueError:
+                    username = (
+                        auth_result_extras.get("username") or self._fallback_username
+                    )
+                    if not username:
+                        raise ValueError(
+                            "Username is required for fallback but not provided."
+                        )
+                    current_user_principal_url = f"/remote.php/dav/files/{username}/"
+                except ET.ParseError:
+                    raise ValidationError(
+                        "Please check base url, as it doesn't point to a valid owncloud deployment"
+                    )
+
+            current_user_principal_url = current_user_principal_url.lstrip("/")
+
+            async with self.network.PROPFIND(
+                uri_path=self._strip_absolute_path(current_user_principal_url),
+                headers=headers,
+                content=_BUILD_PROPFIND_DISPLAYNAME,
+            ) as response:
+                response_xml = await response.text_content()
+                return self._parse_displayname(response_xml)
+        except ValueError as exc:
+            if "relative url may not alter the base url" in str(exc).lower():
                 raise ValidationError(
-                    "Please check base url, as it doesn't point to a valid owncloud deployment"
+                    "Invalid host URL. Please check your OwnCloud base URL."
                 )
-
-        current_user_principal_url = current_user_principal_url.lstrip("/")
-
-        async with self.network.PROPFIND(
-            uri_path=self._strip_absolute_path(current_user_principal_url),
-            headers=headers,
-            content=_BUILD_PROPFIND_DISPLAYNAME,
-        ) as response:
-            response_xml = await response.text_content()
-            return self._parse_displayname(response_xml)
+            raise
 
     @property
     def _fallback_username(self) -> str | None:

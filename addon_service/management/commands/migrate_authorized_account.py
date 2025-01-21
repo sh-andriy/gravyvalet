@@ -163,9 +163,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--without", nargs="*", type=str, default=None, choices=SERVICE_CHOICES
         )
+        parser.add_argument("--fake", action="store_true")
 
     @transaction.atomic
     def handle(self, *args, **options):
+        fake = options["fake"]
         services_to_migrate = self._get_services_to_migrate(options)
         for (
             integration_type,
@@ -183,6 +185,9 @@ class Command(BaseCommand):
                 except BaseException as e:
                     print(f"Failed to migrate {service_name} service with error {e}")
                     raise e
+        if fake:
+            print("Rolling back the transactions because this is a fake run")
+            transaction.set_rollback(True)
 
     def _get_services_to_migrate(self, options) -> list:
         only = options["only"]
@@ -198,7 +203,6 @@ class Command(BaseCommand):
         return services
 
     def migrate_for_user(self, integration_type, service_name, user_settings):
-        logger.info(f"OSF_BASE = {OSF_BASE}")
         node_settings_set = getattr(
             user_settings, f"{service_name}nodesettings_set"
         ).all()

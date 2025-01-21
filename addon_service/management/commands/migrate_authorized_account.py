@@ -114,7 +114,7 @@ def get_node_guid(id_):
     )
 
 
-OSF_BASE = settings.OSF_API_BASE_URL.replace("192.168.168.167", "localhost").replace(
+OSF_BASE = settings.OSF_BASE_URL.replace("192.168.168.167", "localhost").replace(
     "8000", "5000"
 )
 

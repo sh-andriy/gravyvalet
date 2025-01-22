@@ -22,18 +22,36 @@ NEW_OSF_BASE = settings.OSF_BASE_URL.replace("192.168.168.167", "localhost")
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--original",
+            type=str,
+            default=None,
+        )
+        parser.add_argument(
+            "--replacement",
+            type=str,
+            default=None,
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
+        original = options["original"]
+        replacement = options["replacement"]
+
         UserReference.objects.all().update(
             user_uri=Func(
-                F("user_uri"), Value(OSF_BASE), Value(NEW_OSF_BASE), function="REPLACE"
+                F("user_uri"),
+                Value(original if original is not None else OSF_BASE),
+                Value(replacement if replacement is not None else NEW_OSF_BASE),
+                function="REPLACE",
             )
         )
         ResourceReference.objects.all().update(
             resource_uri=Func(
                 F("resource_uri"),
-                Value(OSF_BASE),
-                Value(NEW_OSF_BASE),
+                Value(original if original is not None else OSF_BASE),
+                Value(replacement if replacement is not None else NEW_OSF_BASE),
                 function="REPLACE",
             )
         )

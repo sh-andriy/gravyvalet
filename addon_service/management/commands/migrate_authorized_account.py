@@ -116,7 +116,7 @@ def get_node_guid(id_):
     )
 
 
-OSF_BASE = settings.OSF_API_BASE_URL.replace("192.168.168.167", "localhost").replace(
+OSF_BASE = settings.OSF_BASE_URL.replace("192.168.168.167", "localhost").replace(
     "8000", "5000"
 )
 
@@ -165,9 +165,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--without", nargs="*", type=str, default=None, choices=SERVICE_CHOICES
         )
+        parser.add_argument("--fake", action="store_true")
 
     @transaction.atomic
     def handle(self, *args, **options):
+        fake = options["fake"]
         services_to_migrate = self._get_services_to_migrate(options)
         for (
             integration_type,
@@ -186,6 +188,9 @@ class Command(BaseCommand):
                         f"Failed to migrate {service_name} for user with pk={user_settings.owner_id}service with error {e}"
                     )
                     raise e
+        if fake:
+            print("Rolling back the transactions because this is a fake run")
+            transaction.set_rollback(True)
 
     def _get_services_to_migrate(self, options) -> list:
         only = options["only"]

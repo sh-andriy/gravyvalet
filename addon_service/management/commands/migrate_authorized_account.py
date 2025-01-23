@@ -259,7 +259,7 @@ class Command(BaseCommand):
                 oauth2_utils.generate_state_nonce()
                 if external_service.oauth2_client_config.quirks
                 == OAuth2ServiceQuirks.ONLY_ACCESS_TOKEN
-                else None
+                else osf_account.refresh_token
             )  # crutch to make creating OAuth2TokenMetadata working without refresh token during instantiation
             token_metadata = OAuth2TokenMetadata(
                 refresh_token=mock_refresh_token,

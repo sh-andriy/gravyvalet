@@ -262,7 +262,7 @@ class Command(BaseCommand):
                 else None
             )  # crutch to make creating OAuth2TokenMetadata working without refresh token during instantiation
             token_metadata = OAuth2TokenMetadata(
-                refresh_token=mock_refresh_token,
+                refresh_token=mock_refresh_token or osf_account.refresh_token,
                 access_token_expiration=osf_account.expires_at,
                 authorized_scopes=external_service.supported_scopes,
             )

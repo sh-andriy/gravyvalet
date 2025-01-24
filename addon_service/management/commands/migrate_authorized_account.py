@@ -322,11 +322,11 @@ class Command(BaseCommand):
             self.check_fields(osf_account, ["oauth_secret"])
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_secret)
         elif external_service.wb_key == "dropbox" and not osf_account.refresh_token:
-            # Dropbox updated their Oauth2 access token policies to no longer issue non-expiring access tokens.
+            # Dropbox updated their Oauth2 access token policy to no longer issue non-expiring access tokens.
             # A OSF PR (https://github.com/CenterForOpenScience/osf.io/pull/9935)
             # was merged on 05/09/2022 to address this issue.
-            # Hence, there are many accounts without refresh tokens on production.
-            # Access tokens issued prior to policy change still works, and we should migrate them as is.
+            # Hence, there are many accounts without refresh tokens created before 05/09/2022 on production.
+            # Access tokens issued prior to the change still works, and we should migrate them as is.
             print("Migrating Dropbox account without refresh token")
         else:
             self.check_fields(osf_account, ["oauth_key"])

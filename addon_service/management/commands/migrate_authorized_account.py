@@ -3,6 +3,7 @@ from urllib.parse import quote_plus
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.management import (
     BaseCommand,
     CommandError,
@@ -270,7 +271,10 @@ class Command(BaseCommand):
             account.oauth2_token_metadata = token_metadata
 
         if api_url := self.get_api_base_url(external_service, osf_account):
-            account.api_base_url = api_url
+            try:
+                account.api_base_url = api_url
+            except ValidationError:
+                print(api_url)
 
         account.save()
         if mock_refresh_token:

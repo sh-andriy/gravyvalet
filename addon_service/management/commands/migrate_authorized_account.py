@@ -3,6 +3,7 @@ from urllib.parse import quote_plus
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.management import (
     BaseCommand,
     CommandError,
@@ -270,7 +271,10 @@ class Command(BaseCommand):
             account.oauth2_token_metadata = token_metadata
 
         if api_url := self.get_api_base_url(external_service, osf_account):
-            account.api_base_url = api_url
+            try:
+                account.api_base_url = api_url
+            except ValidationError:
+                print(api_url)
 
         account.save()
         if mock_refresh_token:
@@ -322,7 +326,14 @@ class Command(BaseCommand):
             self.check_fields(osf_account, ["oauth_secret"])
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_secret)
         elif external_service.wb_key == "dropbox" and not osf_account.refresh_token:
-            raise CredentialException("Skipping Dropbox account without refresh token")
+            # Dropbox updated their Oauth2 access token policy to no longer issue non-expiring access tokens.
+            # An OSF PR (https://github.com/CenterForOpenScience/osf.io/pull/9935)
+            # was merged on 05/09/2022 to address this issue.
+            # Hence, there are many accounts without refresh tokens created before 05/09/2022 on production.
+            # Access tokens issued prior to the change still works, and we should migrate them as is.
+            print("Migrating Dropbox account without refresh token")
+            self.check_fields(osf_account, ["oauth_key"])
+            credentials = AccessTokenCredentials(access_token=osf_account.oauth_key)
         else:
             self.check_fields(osf_account, ["oauth_key"])
             credentials = AccessTokenCredentials(access_token=osf_account.oauth_key)

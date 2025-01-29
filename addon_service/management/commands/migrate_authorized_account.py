@@ -168,7 +168,6 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        settings.AUTO_FULL_CLEAN = False
         fake = options["fake"]
         services_to_migrate = self._get_services_to_migrate(options)
         for (
@@ -260,7 +259,7 @@ class Command(BaseCommand):
                 access_token_expiration=osf_account.expires_at,
                 authorized_scopes=external_service.supported_scopes,
             )
-            token_metadata.save()
+            token_metadata.save(full_clean=False)
             account.oauth2_token_metadata = token_metadata
 
         if api_url := self.get_api_base_url(external_service, osf_account):
@@ -269,7 +268,7 @@ class Command(BaseCommand):
             except ValidationError:
                 print(api_url)
 
-        account.save()
+        account.save(full_clean=False)
 
         for node_settings in node_settings_set:
             resource_reference = ResourceReference.objects.get_or_create(

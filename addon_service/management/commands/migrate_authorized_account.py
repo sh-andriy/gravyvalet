@@ -350,7 +350,7 @@ class Command(BaseCommand):
 
     def get_api_base_url(self, external_service, osf_account):
         if external_service.wb_key == "owncloud":
-            return f"{osf_account.profile_url.removesuffix('/')}/remote.php/dav/files/{osf_account.display_name}/"
+            return f"{osf_account.profile_url.removesuffix('/')}/remote.php/dav/files/{quote_plus(osf_account.display_name)}/"
         elif external_service.wb_key == "gitlab":
             return f"{osf_account.oauth_secret.removesuffix('/')}"
         elif external_service.wb_key == "dataverse":

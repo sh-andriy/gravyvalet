@@ -19,8 +19,6 @@ from addon_service.configured_addon.computing.models import ConfiguredComputingA
 from addon_service.configured_addon.storage.models import ConfiguredStorageAddon
 from addon_service.external_service.models import ExternalService
 from addon_service.oauth2 import OAuth2TokenMetadata
-from addon_service.oauth2 import utils as oauth2_utils
-from addon_service.oauth2.models import OAuth2ServiceQuirks
 from addon_service.osf_models.models import (
     BitbucketNodeSettings,
     BitbucketUserSettings,
@@ -254,20 +252,14 @@ class Command(BaseCommand):
             credentials=credentials,
             external_account_id=osf_account.provider_id,
         )
-        mock_refresh_token = None
+
         if external_service.credentials_format == CredentialsFormats.OAUTH2:
-            mock_refresh_token = (
-                oauth2_utils.generate_state_nonce()
-                if external_service.oauth2_client_config.quirks
-                == OAuth2ServiceQuirks.ONLY_ACCESS_TOKEN
-                else None
-            )  # crutch to make creating OAuth2TokenMetadata working without refresh token during instantiation
             token_metadata = OAuth2TokenMetadata(
-                refresh_token=mock_refresh_token or osf_account.refresh_token,
+                refresh_token=osf_account.refresh_token,
                 access_token_expiration=osf_account.expires_at,
                 authorized_scopes=external_service.supported_scopes,
             )
-            token_metadata.save()
+            token_metadata.save(full_clean=False)
             account.oauth2_token_metadata = token_metadata
 
         if api_url := self.get_api_base_url(external_service, osf_account):
@@ -276,10 +268,7 @@ class Command(BaseCommand):
             except ValidationError:
                 print(api_url)
 
-        account.save()
-        if mock_refresh_token:
-            account.oauth2_token_metadata.refresh_token = None
-            account.oauth2_token_metadata.save()
+        account.save(full_clean=False)
 
         for node_settings in node_settings_set:
             resource_reference = ResourceReference.objects.get_or_create(

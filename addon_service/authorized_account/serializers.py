@@ -119,7 +119,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
         except ClientError:
             raise ValidationError(
                 f"Service not available, please "
-                f"{"check host url or " if authorized_account.has_custom_base_url else ""} try later"
+                f"{'check host url or ' if authorized_account.has_custom_base_url else ''} try later"
             )
 
         return authorized_account
@@ -136,6 +136,7 @@ class AuthorizedAccountSerializer(serializers.HyperlinkedModelSerializer):
             instance.default_root_folder = validated_data["default_root_folder"]
         if validated_data.get("credentials"):
             instance.credentials = validated_data["credentials"]
+            async_to_sync(instance.execute_post_auth_hook)()
         instance.save()  # may raise ValidationError
         if validated_data.get("initiate_oauth", False):
             self.initiate_oauth_flow(instance, validated_data.get("authorized_scopes"))

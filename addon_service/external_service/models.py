@@ -101,5 +101,8 @@ class ExternalService(AddonsServiceBaseModel):
         if (
             self.credentials_format is CredentialsFormats.OAUTH2
             and not self.oauth2_client_config
+        ) or (
+            self.credentials_format is CredentialsFormats.OAUTH1A
+            and not self.oauth1_client_config
         ):
             raise ValidationError("OAuth Services must link their Client Config")

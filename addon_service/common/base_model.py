@@ -5,6 +5,7 @@ from addon_service.common.str_uuid_field import (
     StrUUIDField,
     str_uuid4,
 )
+from app import settings
 
 
 class AddonsServiceBaseModel(models.Model):
@@ -18,7 +19,8 @@ class AddonsServiceBaseModel(models.Model):
         if self._state.adding:
             self.created = timezone.now()
         self.modified = timezone.now()
-        self.full_clean()
+        if settings.AUTO_FULL_CLEAN:
+            self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from app import env
 
 
@@ -93,6 +95,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_json_api",
     "addon_service",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -242,3 +245,20 @@ OSF_SENSITIVE_DATA_SALT = env.OSF_SENSITIVE_DATA_SALT
 AMQP_BROKER_URL = env.AMQP_BROKER_URL
 OSF_BACKCHANNEL_QUEUE_NAME = env.OSF_BACKCHANNEL_QUEUE_NAME
 GV_QUEUE_NAME_PREFIX = env.GV_QUEUE_NAME_PREFIX
+
+# Celery Beat
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "refresh_addon_tokens": {
+        "task": "addon_service.management.commands.refresh_addon_tokens.refresh_addon_tokens",
+        "schedule": crontab(minute=0, hour=7),  # Daily 2:00 a.m,
+        "kwargs": {
+            "fake": False,
+            "addons": {
+                "box": 60,  # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                "googledrive": 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                "mendeley": 14,  # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            },
+        },
+    },
+}

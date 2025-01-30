@@ -81,6 +81,8 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
     refresh_token = models.CharField(null=True, blank=True, db_index=True)
     # The expiration time of the access token stored in Credentials
     access_token_expiration = models.DateTimeField(null=True, blank=True)
+    # The date of last token refresh
+    date_last_refreshed = models.DateTimeField(null=True, blank=True)
     # The scopes associated with the access token stored in Credentials
     authorized_scopes = ArrayField(models.CharField(), null=False)
 
@@ -144,6 +146,7 @@ class OAuth2TokenMetadata(AddonsServiceBaseModel):
             )
         if fresh_token_result.scopes is not None:
             self.authorized_scopes = fresh_token_result.scopes
+        self.date_last_refreshed = timezone.now()
         self.save()
         # update related records' fields
         _credentials = AccessTokenCredentials(

@@ -251,7 +251,7 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULE = {
     "refresh_addon_tokens": {
         "task": "addon_service.management.commands.refresh_addon_tokens.refresh_addon_tokens",
-        "schedule": crontab(minute="*"),
+        "schedule": crontab(minute=0, hour=7),  # Daily 2:00 a.m,
         "kwargs": {
             "fake": False,
             "addons": {

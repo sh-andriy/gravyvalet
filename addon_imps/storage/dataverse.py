@@ -61,7 +61,7 @@ class DataverseStorageImp(storage.StorageAddonHttpRequestorImp):
         async with self.network.GET(
             "api/mydata/retrieve",
             query=[
-                ["page", page_cursor],
+                ["selected_page", page_cursor],
                 *[("role_ids", role) for role in range(1, 9)],
                 ("dvobject_types", "Dataverse"),
                 *[
@@ -205,7 +205,11 @@ def parse_mydata(data: dict):
             for file in data["items"]
         ],
         total_count=data["total_count"],
-        next_sample_cursor=data["pagination"]["nextPageNumber"],
+        next_sample_cursor=(
+            data["pagination"]["nextPageNumber"]
+            if data["pagination"]["hasNextPageNumber"]
+            else None
+        ),
     )
 
 

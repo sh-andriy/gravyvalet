@@ -1,5 +1,4 @@
 import enum
-import os
 
 from celery import (
     Celery,
@@ -30,7 +29,6 @@ gv_chill_queue = Queue(TaskUrgency.CHILL.queue_name())
 gv_reactive_queue = Queue(TaskUrgency.REACTIVE.queue_name())
 gv_interactive_queue = Queue(TaskUrgency.INTERACTIVE.queue_name())
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 app = Celery(
     broker_url=AMQP_BROKER_URL,
     task_queues=(

@@ -39,7 +39,21 @@ services:
       context: .
       target: gv-deploy
     restart: unless-stopped
-    command: /usr/local/bin/celery --app app worker --uid daemon -l INFO
+    command: python -m celery --app app worker --uid daemon -l info
+    depends_on:
+      - rabbitmq
+      - postgres
+    volumes:
+      - ./:/code:cached
+    environment: *gv_environment
+    stdin_open: true
+
+  celerybeat:
+    build:
+      context: .
+      target: gv-deploy
+    restart: unless-stopped
+    command: python -m celery --app app beat --uid daemon -l info
     depends_on:
       - rabbitmq
       - postgres
